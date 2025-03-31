@@ -1,0 +1,100 @@
+/* Patient Profile Styles */
+.patient-profile {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  max-width: 900px;
+  margin: auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  padding-bottom: 30px;
+}
+
+h2 {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+label {
+  font-weight: bold;
+  display: block;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+select, input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+input[readonly] {
+  background-color: #f4f4f4;
+}
+
+.patient-profile select:disabled {
+  background-color: #e0e0e0;
+}
+
+/* Layout Styling */
+.form-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.form-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.small-input {
+  max-width: 150px;
+}
+
+.center-text {
+  text-align: center;
+  font-weight: bold;
+}
+
+.register-button {
+  width: 20%;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.register-button:hover {
+  background-color: #0056b3;
+}
+
+.login-instead {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.login-instead a {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.login-instead a:hover {
+  text-decoration: underline;
+}
+
+.footer {
+  margin-top: 300px;
+}

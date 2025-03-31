@@ -1,0 +1,51 @@
+.about-us-content-one {
+    background-color: #ffffff;
+    text-align: center;
+    padding: 3rem 1rem;
+  }
+  
+  .about-us-content-one h2 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+  
+  .about-us-content-one p {
+    max-width: 800px;
+    margin: 0 auto;
+    font-size: 1.125rem;
+    color: #555;
+  }
+  
+  .solutions-container {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+  }
+  
+  .solution-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    max-width: 300px;
+    text-align: center;
+  }
+  
+  .solution-card .icon {
+    font-size: 3rem;
+  }
+  
+  .solution-card h3 {
+    font-size: 1.25rem;
+    margin-top: 1rem;
+  }
+  
+  .solution-card p {
+    color: #1A1248;
+    font-size: 1rem;
+    margin-top: 0.5rem;
+  }
+  

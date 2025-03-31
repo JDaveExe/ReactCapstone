@@ -1,0 +1,26 @@
+.dashboard-container {
+  display: flex;
+  height: 100vh;
+}
+
+.dashboard-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px; /* Increased gap for better spacing */
+  padding: 20px;
+}
+
+.grid-box {
+  background: white;
+  border: 2px solid gray;
+  border-radius: 10px; /* Added rounded corners */
+  min-height: 345px; /* Increased height for better structure */
+  padding: 15px; /* Added padding for inner content */
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Added shadow for better UI */
+}

@@ -1,0 +1,187 @@
+.admitting-data-container {
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .admitting-data-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 900px;
+    padding: 24px;
+  }
+  
+  .admitting-data-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+  }
+  
+  .admitting-data-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+  }
+  
+  .form-section {
+    margin-bottom: 20px;
+  }
+  
+  .form-section h3 {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  .radio-group,
+  .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .radio-option,
+  .checkbox-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-right: 30px;
+  }
+  
+  .option-label {
+    font-size: 16px;
+  }
+  
+  .long-label {
+    flex-grow: 1;
+    margin-right: 10px;
+  }
+  
+  .inline-text-input {
+    width: 120px;
+    margin-left: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px 8px;
+  }
+  
+  .vitamin-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    align-items: center;
+  }
+  
+  .date-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .date-field span {
+    margin-right: 4px;
+  }
+  
+  .date-field input {
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .tt-number {
+    margin-top: 5px;
+    margin-left: 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .tt-number input {
+    flex-grow: 1;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .parent-section {
+    padding-left: 10px;
+  }
+  
+  .feeding-table-section {
+    margin-top: 30px;
+  }
+  
+  .feeding-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  
+  .feeding-table th, 
+  .feeding-table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: center;
+  }
+  
+  .feeding-table th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  
+  .feeding-table input,
+  .feeding-table textarea {
+    width: 100%;
+    border: none;
+    padding: 4px;
+    font-size: 14px;
+    text-align: center;
+    background: transparent;
+  }
+  
+  .feeding-table textarea {
+    height: 100px;
+    resize: none;
+    text-align: left;
+  }
+  
+  .complementary-heading {
+    background-color: #f0f0f0;
+    font-weight: bold;
+    width: 180px;
+  }
+  
+  .complementary-cell {
+    width: 180px;
+    vertical-align: top;
+  }
+  
+  /* Responsive adaptations */
+  @media (max-width: 768px) {
+    .admitting-data-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    
+    .vitamin-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    
+    .date-field {
+      margin-left: 25px;
+    }
+    
+    .feeding-table {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+  }

@@ -1,0 +1,71 @@
+.checkup-container {
+    padding: 20px;
+    background: #f4f4f4;
+    border-radius: 10px;
+  }
+  
+  .search-bar {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .table-container {
+    overflow-x: auto;
+  }
+  
+  .checkup-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+  }
+  
+  .checkup-table th, .checkup-table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+  
+  .checkup-table th {
+    background: #007bff;
+    color: white;
+  }
+  .expanded-row {
+    background: #f9f9f9;
+  }
+  
+  .details-box {
+    padding: 10px;
+    background: #eef2ff;
+    border-left: 4px solid #007bff;
+    border-radius: 5px;
+    margin-top: 5px;
+  }  
+  .view-more {
+    padding: 5px 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  
+  .view-more:hover {
+    background: #0056b3;
+  }
+  .add-notes {
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .add-notes:hover {
+    background: #0056b3;
+  }
+  

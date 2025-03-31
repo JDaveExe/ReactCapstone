@@ -1,0 +1,294 @@
+/* Font Import */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap');
+
+* {
+  font-family: 'Tahoma', sans-serif; /* Default font */
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Light background color for the entire page */
+ion-content {
+  --background: #ffffff; /* Soft light gray */
+}
+
+/* General Section Styling */
+.homepage-container,
+.ehr-section,
+.ehr-devices,
+.ehr-smart {
+  background-color: #ffffff;
+  padding: 40px 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+}
+
+/* Shadow effect */
+.ehr-section,
+.ehr-devices,
+.ehr-smart {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Hero Section */
+.homepage-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 80px;
+  background-color: #ffffff;
+  min-height: 70vh;
+}
+
+.text-content {
+  max-width: 600px;
+}
+
+.text-content h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.text-content p {
+  font-size: 1.2rem;
+  font-weight: 400;
+  margin-bottom: 20px;
+}
+
+.image-container {
+  text-align: center;
+}
+
+.image-container img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Buttons */
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.primary-button {
+  background-color: #1A1248;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.secondary-button {
+  background-color: #ffffff;
+  color: #1A1248;
+  border: 2px solid #1A1248;
+  padding: 12px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.primary-button:hover,
+.secondary-button:hover {
+  opacity: 0.8;
+}
+
+/* EHR Section */
+.ehr-section {
+  text-align: center;
+}
+
+.ehr-section h2 {
+  font-size: 1.8rem;
+  margin-bottom: 30px;
+}
+
+.features {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 40px;
+  text-align: center;
+}
+
+.feature {
+  max-width: 250px;
+  text-align: center;
+}
+
+.feature img {
+  width: 80px;
+  height: auto;
+  margin-bottom: 10px;
+}
+
+.feature h3 {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.feature p {
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+
+.feature a {
+  font-weight: bold;
+  text-decoration: none;
+  color: #1A1248;
+}
+
+/* Devices Section */
+.ehr-devices {
+  text-align: center;
+}
+
+.ehr-devices h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.ehr-devices p {
+  font-size: 16px;
+  margin-bottom: 20px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.devices-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.devices-image img {
+  max-width: 100%;
+  height: auto;
+  max-height: 300px;
+}
+
+/* Smart Healthcare Management Section */
+.ehr-smart {
+  background-color: #1A1248;
+  padding: 50px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 8px;
+}
+
+.ehr-content {
+  max-width: 100%;
+  max-height: 100%;
+  height: 300px;
+}
+
+.ehr-content h1 {
+  font-size: 38px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.ehr-content p {
+  font-size: 30px;
+  margin-bottom: 20px;
+}
+
+.ehr-content button {
+  background-color: #88d67e;
+  color: black;
+  border: none;
+  padding: 12px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.ehr-icons {
+  display: flex;
+  gap: 60px;
+  text-align: center;
+}
+
+.ehr-icons div {
+  text-align: center;
+}
+
+.ehr-icons img {
+  width: 200px;
+  height: auto;
+}
+
+.ehr-icons p {
+  margin-top: 10px;
+  font-size: 30px;
+}
+
+/* Footer */
+.footer {
+  background-color: #f5f5f5;
+  padding: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: start;
+  color: #333;
+}
+
+.footer .column {
+  flex: 1;
+  min-width: 200px;
+  margin: 10px;
+}
+
+.footer h3 {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.footer a {
+  text-decoration: none;
+  color: #007bff;
+  display: block;
+  margin: 5px 0;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
+
+.footer .social-icons {
+  display: flex;
+  gap: 10px;
+}
+
+.footer .social-icons img {
+  width: 24px;
+  height: 24px;
+}
+
+/* Google Play image */
+.google-play img {
+  width: 150px;
+  height: auto;
+  display: block;
+  margin-top: 10px;
+}
+
+/* Copyright */
+.footer-bottom {
+  margin-top: 20px;
+  font-size: 14px;
+  text-align: center;
+}

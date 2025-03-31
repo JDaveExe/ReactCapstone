@@ -1,0 +1,70 @@
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background: #1A1248;
+  border-bottom: 2px solid gray;
+}
+
+.topbar-title {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.back-btn {
+  background-color: #fff;
+  color: black;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.back-btn:hover {
+  background-color: #2980b9;
+}
+.profile-container {
+  position: relative;
+}
+
+.profile-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.profile-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: white;
+  border-radius: 8px; /* Added rounded corners */
+  border: 1px solid gray;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  min-width: 120px; /* Adjusted width */
+}
+
+.logout-btn {
+  width: 100%;
+  background: rgb(255, 50, 50); /* Changed color for a better look */
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px; /* Rounded corners */
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.logout-btn:hover {
+  background: rgb(200, 30, 30); /* Darker shade on hover */
+}

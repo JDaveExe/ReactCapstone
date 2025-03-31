@@ -1,0 +1,75 @@
+.immunisation-history-container {
+    padding: 20px;
+    background-color: #e0e0e0;
+    min-height: 100%;
+    width: 100%;
+  }
+  
+  .immunisation-history-container h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #000;
+    font-weight: bold;
+  }
+  
+  .immunisation-table {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .table-header {
+    display: flex;
+    background-color: #fff;
+    font-weight: bold;
+    border-bottom: 2px solid #e0e0e0;
+  }
+  
+  .header-cell {
+    flex: 1;
+    padding: 12px 16px;
+    font-size: 16px;
+    color: #666;
+    text-align: left;
+  }
+  
+  .table-row {
+    display: flex;
+    background-color: #fff;
+    border-bottom: 1px solid #e0e0e0;
+    min-height: 50px;
+  }
+  
+  .row-cell {
+    flex: 1;
+    padding: 12px 16px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .empty-row {
+    background-color: #fff;
+  }
+  
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .table-header, .table-row {
+      font-size: 14px;
+    }
+    
+    .header-cell, .row-cell {
+      padding: 10px;
+    }
+  }
+  
+
+  .table-header .header-cell:nth-child(2) {
+    text-transform: uppercase;
+  }
+
+  .footer {
+    margin-top: 500px;
+  }

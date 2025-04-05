@@ -1,5 +1,5 @@
 .about-us-last {
-    background-color:#1A1248;
+    background-color:#343434;
     text-align: center;
     padding: 3rem 1rem;
   }
@@ -22,7 +22,7 @@
   
   /* Stats Section */
   .stats-section {
-    background-color: #1A1248;
+    background-color: #ffffff;
     text-align: center;
     padding: 3rem 1rem;
   }
@@ -30,7 +30,7 @@
   .stats-section h2 {
     font-size: 2rem;
     font-weight: bold;
-    color: #fff;
+    color: #343434;
     margin-bottom: 1rem;
   }
   

@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/Login.css";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "../styles/Login.css"; // Keep using your custom CSS file
 import logoImage from '../images/maybunga.png';
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // Store patient name and logged in state
   const [patientName, setPatientName] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
@@ -38,6 +38,7 @@ const Login = () => {
 
   return (
     <div className="login-container">
+      {/* Left Panel */}
       <div className="login-left-panel">
         <div className="login-header">
           Login or Use a QR code
@@ -46,11 +47,12 @@ const Login = () => {
           <img 
             src={logoImage} 
             alt="Maybunga Health Center Logo" 
-            className="logo-image"
+            className="logo-image img-fluid"
           />
         </div>
       </div>
       
+      {/* Right Panel */}
       <div className="login-right-panel">
         <div className="login-form-container">
           {isLoggedIn ? (
@@ -73,7 +75,9 @@ const Login = () => {
             </div>
           ) : (
             <>
-              <div className="qr-placeholder"></div>
+              <div className="qr-placeholder">
+                <span className="text-muted">QR Code</span>
+              </div>
               
               <div className="login-form">
                 <div className="form-group">
@@ -81,6 +85,7 @@ const Login = () => {
                   <input
                     type="email"
                     id="email"
+                    className="form-control"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -91,6 +96,7 @@ const Login = () => {
                   <input
                     type="password"
                     id="password"
+                    className="form-control"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
@@ -101,7 +107,7 @@ const Login = () => {
                 </button>
                 
                 <div className="register-link">
-                  <a href="/register">Registered instead</a>
+                  <a href="/register">Register instead</a>
                 </div>
               </div>
             </>

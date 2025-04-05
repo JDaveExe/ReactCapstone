@@ -1,71 +1,61 @@
 .sidebar {
     width: 250px;
-    background-color: #0a1130;
-    color: white;
-    padding: 15px 0px;
-    height: 95vh;
-    display: flex;
-    flex-direction: column;
-    padding-bottom: 30px;
-    gap: 40px;
-}
-
-.sidebar h2 {
+    min-height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1030;
+    transition: all 0.3s ease;
+    overflow-y: auto;
+  }
+  
+  .sidebar h2 {
+    font-size: 1.2rem;
+    color: #fff;
     text-align: center;
-    font-size: 18px;
-    margin-bottom: 10px;
-    color: #f1f1f1;
+    margin: 1rem 0;
     font-weight: bold;
-    font-size: 16px;
-    padding: 16px 16px; /* Increased height */
-    gap: 30px;
-}
-
-.sidebar ul {
-    list-style: none;
+    border-bottom: 1px solid rgb(255, 255, 255);
+  }
+  
+  .sidebar .nav-link {
+    padding: 0.75rem 1rem;
+    color: rgba(255, 255, 255, 0.8) !important;
+    border-radius: 0;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .sidebar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff !important;
+  }
+  
+  .sidebar .submenu {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Keep some of your original styling for compatibility */
+  .sidebar ul {
+    list-style-type: none;
     padding: 0;
     margin: 0;
-    gap: 30px;
-}
-
-.sidebar li {
-    padding: 16px 16px; /* Increased height */
-    cursor: pointer;
-    transition: background 0.3s;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    gap: 30px;
-    padding-top: 20px;
-}
-
-.sidebar li:hover {
-    background: #162447;
-}
-
-.menu-item {
-    font-weight: bold;
-    background: #0a1130;
-    padding: 16px 16px; /* Bigger button */
-}
-
-.menu-item.open {
-    background: #162447;
-}
-
-.submenu {
-    background: #162447;
-    padding-left: 10px;
-}
-
-.submenu li {
-    padding: 14px 16px; /* Increased height */
-    font-size: 15px;
-    transition: background 0.3s;
-    gap: 30px;
-    display: flex
-}
-
-.submenu li:hover {
-    background: #1f3b73;
-}
+  }
+  
+  .sidebar li {
+    margin-bottom: 0.25rem;
+  }
+  
+  /* Mobile view */
+  @media (max-width: 767.98px) {
+    .sidebar {
+      left: -250px;
+    }
+    
+    .sidebar.show {
+      left: 0;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+  }

@@ -1,26 +1,53 @@
 .dashboard-container {
-  display: flex;
-  height: 100vh;
+  min-height: 100vh;
+  width: 100%;
+  background-color: #f8f9fa;
+  overflow-x: hidden;
+  position: relative;
 }
 
 .dashboard-content {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  transition: margin-left 0.3s ease;
 }
 
-.grid-layout {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 15px; /* Increased gap for better spacing */
-  padding: 20px;
+.dashboard-card {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  border-radius: 0.5rem;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
 .grid-box {
-  background: white;
-  border: 2px solid gray;
-  border-radius: 10px; /* Added rounded corners */
-  min-height: 345px; /* Increased height for better structure */
-  padding: 15px; /* Added padding for inner content */
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Added shadow for better UI */
+  display: none; /* Hide the original grid boxes */
+}
+
+/* Overlay that covers the main content when sidebar is open on mobile */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1025;
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+  .dashboard-content {
+    margin-left: 250px; /* Match sidebar width */
+  }
+}
+
+/* For very small screens */
+@media (max-width: 576px) {
+  .dashboard-card {
+    margin-bottom: 1rem;
+  }
 }

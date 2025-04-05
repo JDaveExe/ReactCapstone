@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap-icons/font/bootstrap-icons.css'; // Use Bootstrap Icons instead of Font Awesome
+
 import Homepage from "./components/Homepage";
 import RegistrationForm from "./components/Registration";
 import Dashboard from "./components/dashboard";
@@ -64,7 +65,6 @@ function App() {
 
   return (
     <div>
-      <Header />
       {page === "home" && <Homepage />}
       {page === "register" && <RegistrationForm />}
       {page === "dashboard" && <Dashboard />}
@@ -78,7 +78,6 @@ function App() {
       {page === "contact" && <ContactPage />}
       {page === "checkup-records" && <CheckupRecords />}
       {page === "admitting-data" && <AdmittingData />}
-      <Footer />
     </div>
   );
 }

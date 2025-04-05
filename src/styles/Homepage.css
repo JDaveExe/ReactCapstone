@@ -1,294 +1,528 @@
-/* Font Import */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap');
-
-* {
-  font-family: 'Tahoma', sans-serif; /* Default font */
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-/* Light background color for the entire page */
-ion-content {
-  --background: #ffffff; /* Soft light gray */
-}
-
-/* General Section Styling */
-.homepage-container,
-.ehr-section,
-.ehr-devices,
-.ehr-smart {
-  background-color: #ffffff;
-  padding: 40px 20px;
-  border-radius: 8px;
-  margin-bottom: 30px;
-}
-
-/* Shadow effect */
-.ehr-section,
-.ehr-devices,
-.ehr-smart {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-/* Hero Section */
-.homepage-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 80px;
-  background-color: #ffffff;
-  min-height: 70vh;
-}
-
-.text-content {
-  max-width: 600px;
-}
-
-.text-content h1 {
-  font-size: 3rem;
-  font-weight: 700;
-  margin-bottom: 10px;
-}
-
-.text-content p {
-  font-size: 1.2rem;
-  font-weight: 400;
-  margin-bottom: 20px;
-}
-
-.image-container {
-  text-align: center;
-}
-
-.image-container img {
+/* Homepage.css */
+.homepage {
+  font-family: 'Arial', sans-serif;
   max-width: 100%;
-  height: auto;
-  border-radius: 10px;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Buttons */
-.button-group {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.primary-button {
-  background-color: #1A1248;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  font-size: 16px;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-.secondary-button {
-  background-color: #ffffff;
-  color: #1A1248;
-  border: 2px solid #1A1248;
-  padding: 12px 20px;
-  font-size: 16px;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-.primary-button:hover,
-.secondary-button:hover {
-  opacity: 0.8;
-}
-
-/* EHR Section */
-.ehr-section {
-  text-align: center;
-}
-
-.ehr-section h2 {
-  font-size: 1.8rem;
-  margin-bottom: 30px;
-}
-
-.features {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 40px;
-  text-align: center;
-}
-
-.feature {
-  max-width: 250px;
-  text-align: center;
-}
-
-.feature img {
-  width: 80px;
-  height: auto;
-  margin-bottom: 10px;
-}
-
-.feature h3 {
-  font-size: 1.2rem;
-  margin-bottom: 10px;
-}
-
-.feature p {
-  font-size: 1rem;
-  margin-bottom: 10px;
-}
-
-.feature a {
-  font-weight: bold;
-  text-decoration: none;
-  color: #1A1248;
-}
-
-/* Devices Section */
-.ehr-devices {
-  text-align: center;
-}
-
-.ehr-devices h2 {
-  font-size: 24px;
-  margin-bottom: 10px;
-}
-
-.ehr-devices p {
-  font-size: 16px;
-  margin-bottom: 20px;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.devices-image {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 20px;
-}
-
-.devices-image img {
-  max-width: 100%;
-  height: auto;
-  max-height: 300px;
-}
-
-/* Smart Healthcare Management Section */
-.ehr-smart {
-  background-color: #1A1248;
-  padding: 50px;
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: 8px;
-}
-
-.ehr-content {
-  max-width: 100%;
-  max-height: 100%;
-  height: 300px;
-}
-
-.ehr-content h1 {
-  font-size: 38px;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
-
-.ehr-content p {
-  font-size: 30px;
-  margin-bottom: 20px;
-}
-
-.ehr-content button {
-  background-color: #88d67e;
-  color: black;
-  border: none;
-  padding: 12px 20px;
-  font-size: 16px;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-.ehr-icons {
-  display: flex;
-  gap: 60px;
-  text-align: center;
-}
-
-.ehr-icons div {
-  text-align: center;
-}
-
-.ehr-icons img {
-  width: 200px;
-  height: auto;
-}
-
-.ehr-icons p {
-  margin-top: 10px;
-  font-size: 30px;
-}
-
-/* Footer */
-.footer {
-  background-color: #f5f5f5;
-  padding: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: start;
+  overflow-x: hidden;
   color: #333;
 }
 
-.footer .column {
-  flex: 1;
-  min-width: 200px;
-  margin: 10px;
+/* Navigation Bar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background-color: transparent;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  color: white;
 }
 
-.footer h3 {
-  font-size: 16px;
+.navbar-brand a {
+  font-size: 1.4rem;
   font-weight: bold;
-  margin-bottom: 10px;
-}
-
-.footer a {
+  color: white;
   text-decoration: none;
-  color: #007bff;
-  display: block;
-  margin: 5px 0;
 }
 
-.footer a:hover {
+.navbar-links {
+  display: flex;
+  gap: 25px;
+}
+
+.navbar-links a {
+  color: white;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  transition: opacity 0.3s;
+}
+
+.navbar-links a:hover,
+.navbar-links a.active {
+  opacity: 0.8;
+}
+
+/* Hero Section */
+.hero-section {
+  height: 100vh;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-align: center;
+  position: relative;
+  padding-bottom: 150px;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 150px;
+}
+
+.hero-content h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  font-weight: bold;
+  line-height: 1.2;
+}
+
+.hero-content p {
+  font-size: 1.2rem;
+  font-style: italic;
+}
+
+/* Feature Boxes */
+.feature-boxes {
+  display: flex;
+  position: absolute;
+  bottom: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 1200px;
+  z-index: 3;
+  gap: 20px;
+}
+
+.feature-box {
+  flex: 1;
+  background-color: rgba(139, 69, 19, 0.7);
+  border-radius: 20px;
+  padding: 40px 25px;
+  text-align: center;
+  color: white;
+  backdrop-filter: blur(5px);
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.feature-box:hover {
+  transform: translateY(-5px);
+}
+
+.feature-box.darker {
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.feature-box h3 {
+  font-size: 1.3rem;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.feature-box p {
+  font-size: 1rem;
+  opacity: 0.9;
+  line-height: 1.5;
+}
+
+/* Smart Healthcare Section */
+.smart-healthcare-section {
+  display: flex;
+  padding: 120px 10% 60px;
+  background-color: white;
+  margin-top: 80px;
+  align-items: center;
+  gap: 60px;
+}
+
+.section-text {
+  flex: 1;
+}
+
+.section-text h2 {
+  font-size: 2rem;
+  margin-bottom: 30px;
+  font-weight: bold;
+  color: #222;
+}
+
+.features-icons {
+  display: flex;
+  gap: 50px;
+  margin-top: 40px;
+}
+
+.feature-icon {
+  text-align: center;
+  flex: 1;
+}
+
+.feature-icon img {
+  width: 70px;
+  height: 70px;
+  margin-bottom: 15px;
+}
+
+.feature-icon p {
+  font-weight: 500;
+  font-size: 1.1rem;
+}
+
+.devices-container {
+  flex: 1;
+  text-align: center;
+  position: relative;
+  margin-top: 0;
+}
+
+.devices-container img {
+  max-width: 100%;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.devices-text {
+  margin-top: 30px;
+}
+
+.devices-text h3 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  color: #333;
+  line-height: 1.4;
+}
+
+/* Developers Section */
+.developers-section {
+  background-color: #a67c52;
+  color: white;
+  padding: 80px 10%;
+  text-align: center;
+}
+
+.developers-section h2 {
+  font-size: 2.2rem;
+  margin-bottom: 20px;
+}
+
+.developers-section > p {
+  margin-bottom: 50px;
+  font-size: 1.1rem;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.developers-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.developer-card {
+  background-color: white;
+  border-radius: 15px;
+  padding: 40px 30px;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.developer-card:hover {
+  transform: translateY(-10px);
+}
+
+.developer-card img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin-bottom: 20px;
+  object-fit: cover;
+}
+
+.developer-card p {
+  color: #333;
+  margin-bottom: 20px;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.social-links {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.social-links img {
+  width: 25px;
+  height: 25px;
+  transition: opacity 0.3s ease;
+}
+
+.social-links img:hover {
+  opacity: 0.7;
+}
+
+/* Footer Styles */
+footer {
+  background-color: #fff;
+  color: #333;
+  font-family: 'Arial', sans-serif;
+}
+
+footer .max-w-6xl {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 5%;
+}
+
+footer .flex {
+  display: flex;
+}
+
+footer .flex-col {
+  flex-direction: column;
+}
+
+footer .md\:flex-row {
+  flex-direction: row;
+}
+
+footer .justify-between {
+  justify-content: space-between;
+}
+
+footer .mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+footer .md\:mb-0 {
+  margin-bottom: 0;
+}
+
+footer .px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+footer .py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+footer .text-xl {
+  font-size: 1.25rem;
+}
+
+footer .font-bold {
+  font-weight: bold;
+}
+
+footer .mb-4 {
+  margin-bottom: 1rem;
+}
+
+footer .space-x-4 {
+  gap: 1rem;
+}
+
+footer .space-y-2 > * + * {
+  margin-top: 0.5rem;
+}
+
+footer a {
+  color: #333;
+  text-decoration: none;
+}
+
+footer a.hover\:underline:hover {
   text-decoration: underline;
 }
 
-.footer .social-icons {
-  display: flex;
-  gap: 10px;
+footer .border-t {
+  border-top-width: 1px;
+  border-top-style: solid;
 }
 
-.footer .social-icons img {
-  width: 24px;
-  height: 24px;
+footer .border-gray-300 {
+  border-color: #e5e7eb;
 }
 
-/* Google Play image */
-.google-play img {
-  width: 150px;
-  height: auto;
-  display: block;
-  margin-top: 10px;
+footer .py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 
-/* Copyright */
-.footer-bottom {
-  margin-top: 20px;
-  font-size: 14px;
+footer .text-center {
   text-align: center;
+}
+
+footer ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .feature-box {
+    padding: 35px 20px;
+    min-height: 200px;
+  }
+  
+  .smart-healthcare-section {
+    gap: 40px;
+  }
+  
+  .developers-container {
+    gap: 30px;
+  }
+}
+
+@media (max-width: 992px) {
+  .developers-container,
+  .footer-links {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .smart-healthcare-section {
+    flex-direction: column;
+    padding-top: 100px;
+    gap: 50px;
+  }
+  
+  .section-text {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  
+  .features-icons {
+    justify-content: center;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .feature-boxes {
+    flex-direction: column;
+    bottom: -250px;
+    gap: 15px;
+    width: 80%;
+  }
+  
+  .feature-box {
+    min-height: 160px;
+    padding: 30px 20px;
+  }
+  
+  .smart-healthcare-section {
+    margin-top: 270px;
+  }
+  
+  .devices-container img {
+    max-width: 80%;
+  }
+  
+  footer .md\:flex-row {
+    flex-direction: column;
+  }
+  
+  footer > div > div {
+    margin-bottom: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px 20px;
+  }
+  
+  .navbar-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+  }
+  
+  .hero-content h1 {
+    font-size: 2.2rem;
+  }
+  
+  .hero-content p {
+    font-size: 1rem;
+  }
+  
+  .feature-box h3 {
+    font-size: 1.1rem;
+  }
+  
+  .feature-box p {
+    font-size: 0.9rem;
+  }
+  
+  .developers-container,
+  .footer-links {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  
+  .developer-card {
+    max-width: 350px;
+    margin: 0 auto;
+  }
+  
+  .footer-column {
+    text-align: center;
+  }
+  
+  .footer-links {
+    gap: 30px;
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-section {
+    padding-bottom: 180px;
+  }
+  
+  .feature-boxes {
+    bottom: -300px;
+    width: 90%;
+  }
+  
+  .smart-healthcare-section {
+    margin-top: 320px;
+    padding-top: 120px;
+  }
+  
+  .features-icons {
+    flex-direction: column;
+    gap: 30px;
+  }
+  
+  .devices-container img {
+    max-width: 100%;
+  }
+  
+  footer .flex-col {
+    align-items: center;
+    text-align: center;
+  }
 }

@@ -1,7 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap-icons/font/bootstrap-icons.css'; // Use Bootstrap Icons instead of Font Awesome
-
+import 'bootstrap-icons/font/bootstrap-icons.css'; 
 import Homepage from "./components/Homepage";
 import RegistrationForm from "./components/Registration";
 import Dashboard from "./components/dashboard";
@@ -15,9 +14,12 @@ import AboutUs from "./components/AboutUs";
 import ContactPage from "./components/Contact";
 import CheckupRecords from "./components/CheckupRecords";
 import AdmittingData from "./components/AdmittingData";
+import Sidebar from "./components/sidebar";
+import Topbar from "./components/topbar";
 
 function App() {
-  let page = "home"; // Default page
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  let page = "home";
 
   if (window.location.pathname === "/register") {
     page = "register";
@@ -45,7 +47,12 @@ function App() {
     page = "admitting-data";
   }
 
-  // Handle browser back button
+  // Add function to check if sidebar should be shown
+  const shouldShowSidebar = () => {
+    const noSidebarPages = ['home', 'login', 'register', 'about-us', 'contact'];
+    return !noSidebarPages.includes(page);
+  };
+
   useEffect(() => {
     const handleBackNavigation = (event) => {
       event.preventDefault();
@@ -59,25 +66,44 @@ function App() {
     window.onpopstate = handleBackNavigation;
 
     return () => {
-      window.onpopstate = null; // Cleanup when unmounting
+      window.onpopstate = null;
     };
   }, []);
 
   return (
-    <div>
-      {page === "home" && <Homepage />}
-      {page === "register" && <RegistrationForm />}
-      {page === "dashboard" && <Dashboard />}
-      {page === "login" && <Login />}
-      {page === "patient-profile" && <PatientProfile />}
-      {page === "immunisation-history" && <ImmunisationH />}
-      {page === "referral" && <Referral />}
-      {page === "notification" && <Notification />}
-      {page === "med-history" && <TreatmentRecord />}
-      {page === "about-us" && <AboutUs />}
-      {page === "contact" && <ContactPage />}
-      {page === "checkup-records" && <CheckupRecords />}
-      {page === "admitting-data" && <AdmittingData />}
+    <div className="container-fluid">
+      <div className="row">
+        {shouldShowSidebar() && (
+          <div className="col-md-2 p-0">
+            <Sidebar 
+              isOpen={isSidebarOpen} 
+              closeSidebar={() => setIsSidebarOpen(false)} 
+            />
+          </div>
+        )}
+
+        {/* Main Area - adjust column width based on sidebar presence */}
+        <div className={`${shouldShowSidebar() ? 'col-md-10' : 'col-12'} p-0`}>
+          {shouldShowSidebar() && (
+            <Topbar toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+          )}
+          <div className="p-3">
+            {page === "home" && <Homepage />}
+            {page === "register" && <RegistrationForm />}
+            {page === "dashboard" && <Dashboard />}
+            {page === "login" && <Login />}
+            {page === "patient-profile" && <PatientProfile />}
+            {page === "immunisation-history" && <ImmunisationH />}
+            {page === "referral" && <Referral />}
+            {page === "notification" && <Notification />}
+            {page === "med-history" && <TreatmentRecord />}
+            {page === "about-us" && <AboutUs />}
+            {page === "contact" && <ContactPage />}
+            {page === "checkup-records" && <CheckupRecords />}
+            {page === "admitting-data" && <AdmittingData />}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,16 +1,18 @@
 /* Login styling with Bootstrap integration */
 .login-container {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  background: linear-gradient(to right, #9A705E, #343434);
   width: 100%;
   font-family: Arial, sans-serif;
-  background-color: rgba(255, 255, 255, 0.1); /* Using the exact background color specified */
+  background-color: rgb(255, 255, 255); /* Using the exact background color specified */
+  color: #ffffff; /* White font color for contrast */
 }
 
 /* Left Panel */
 .login-left-panel {
   width: 50%;
-  background-color: #343434; /* Using the exact background color specified */
+  background-color: #9A705E; /* Using the exact background color specified */
   display: flex;
   flex-direction: column;
   padding: 40px 20px;
@@ -44,7 +46,7 @@
 /* Right Panel */
 .login-right-panel {
   width: 50%;
-  background-color: #e6e6e6;
+  background-color: #ffffff;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -138,20 +140,20 @@
 
 .welcome-heading {
   font-size: 2rem;
-  color: #191144;
+  color: #ffffff; /* White font color for better contrast */
   margin-bottom: 10px;
 }
 
 .patient-name {
   font-size: 1.5rem;
-  color: #191144;
+  color: #ffffff; /* White font color for better contrast */
   margin-bottom: 20px;
 }
 
 .welcome-message {
   margin-bottom: 30px;
   line-height: 1.5;
-  color: #444;
+  color: #dcdcdc; /* Light gray for better visibility */
 }
 
 .logout-button {

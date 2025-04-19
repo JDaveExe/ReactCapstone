@@ -7,6 +7,14 @@
   box-sizing: border-box;
 }
 
+/* Remove gradient background from the overall body */
+body {
+  background: none; /* Remove gradient */
+  margin: 0;
+  font-family: Arial, sans-serif;
+  color: #ffffff; /* White font color for contrast */
+}
+
 .button-group {
   display: flex;
   gap: 10px;

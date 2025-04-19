@@ -1,0 +1,63 @@
+/* Asettings.css */
+.settings-card {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    max-width: 800px; /* Reduce container width */
+    margin: 0 auto; /* Center align the container */
+    color: #000; /* Set text color to black */
+}
+
+.settings-card .card-header {
+    font-weight: 600;
+    padding: 1rem 1.25rem;
+    color: #000; /* Set text color to black */
+}
+
+.settings-card .btn-outline-primary {
+    transition: all 0.2s;
+    text-align: left;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.25rem;
+    color: #000; /* Set text color to black */
+    border-color: #000; /* Adjust border color */
+}
+
+.settings-card .btn-outline-primary:hover {
+    background-color: #000; /* Adjust hover background color */
+    color: white; /* Ensure text is visible on hover */
+}
+
+.settings-card .accordion-button:not(.collapsed)::after {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='white'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}
+
+/* Dark mode support */
+.dark-mode .settings-card {
+    background-color: #2c3e50;
+    border-color: #34495e;
+}
+
+.dark-mode .settings-card .card-header {
+    background-color: #1a252f;
+}
+
+.dark-mode .btn-outline-primary {
+    border-color: #7f8c8d;
+    color: #ecf0f1;
+}
+
+.dark-mode .btn-outline-primary:hover {
+    background-color: #2980b9;
+}
+
+/* Update header text color to black */
+.container-fluid h1 {
+    color: #000; /* Set text color to black */
+}
+
+/* Update header text color to black and ensure specificity */
+.container-fluid > h1,
+.container-fluid h1 {
+    color: #000 !important;
+}

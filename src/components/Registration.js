@@ -1,172 +1,409 @@
-import React, { useState, useEffect } from "react";
-import "../styles/Registration.css";
+import React, { useState } from 'react';
+import { Form, Button, Container, Row, Col, Card } from 'react-bootstrap';
+import DatePicker from 'react-datepicker';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'react-datepicker/dist/react-datepicker.css';
+import '../styles/Registration.css';
 
-const PatientProfile = () => {
-  const [street, setStreet] = useState("");
-  const [barangay, setBarangay] = useState("");
-  const [birthMonth, setBirthMonth] = useState("");
-  const [birthDay, setBirthDay] = useState("");
-  const [birthYear, setBirthYear] = useState("");
-  const [age, setAge] = useState("");
+const Registration = () => {
+  // State for form fields
+  const [formData, setFormData] = useState({
+    firstName: '',
+    middleName: '',
+    lastName: '',
+    suffix: '',
+    email: '',
+    password: '',
+    houseNo: '',
+    street: '',
+    barangay: '',
+    city: 'Pasig',
+    region: 'Metro Manila',
+    contactNumber: '',
+    philHealthNumber: '',
+    membershipStatus: '',
+    dateOfBirth: null,
+    age: '',
+    gender: '',
+    civilStatus: ''
+  });
 
-  const barangayOptions = {
-    "Street 1": ["Barangay A", "Barangay B"],
-    "Street 2": ["Barangay C", "Barangay D"],
-  };
+  // Suffix options
+  const suffixOptions = ['', 'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];
 
-  const birthPlaceOptions = [
-    "Manila", "Quezon City", "Cebu", "Davao", "Pasig", "Makati", "Other"
+  // Streets in Pasig
+  const pasigStreets = [
+    'Amang Rodriguez Avenue',
+    'C. Raymundo Avenue',
+    'Ortigas Avenue',
+    'Shaw Boulevard',
+    'E. Rodriguez Jr. Avenue (C-5)',
+    'Marcos Highway',
+    'Julia Vargas Avenue',
+    'F. Legaspi Bridge',
+    'San Guillermo Street',
+    'Dr. Sixto Antonio Avenue'
   ];
 
-  const handleStreetChange = (e) => {
-    setStreet(e.target.value);
-    setBarangay("");
+  // Barangays mapped to streets
+  const streetToBarangay = {
+    'Amang Rodriguez Avenue': ['Manggahan', 'Rosario', 'Dela Paz'],
+    'C. Raymundo Avenue': ['Caniogan', 'Pineda', 'Rosario'],
+    'Ortigas Avenue': ['San Antonio', 'Ugong', 'Kapitolyo'],
+    'Shaw Boulevard': ['Kapitolyo', 'Oranbo', 'Bagong Ilog'],
+    'E. Rodriguez Jr. Avenue (C-5)': ['Ugong', 'Bagong Ilog', 'Pinagbuhatan'],
+    'Marcos Highway': ['Maybunga', 'Manggahan', 'Santolan'],
+    'Julia Vargas Avenue': ['San Antonio', 'Oranbo', 'Ugong'],
+    'F. Legaspi Bridge': ['San Joaquin', 'Kalawaan', 'Malinao'],
+    'San Guillermo Street': ['San Jose', 'Pineda', 'Palatiw'],
+    'Dr. Sixto Antonio Avenue': ['Kapasigan', 'Bagong Ilog', 'Caniogan']
   };
 
-  useEffect(() => {
-    if (birthMonth && birthDay && birthYear) {
-      const birthDate = new Date(
-        parseInt(birthYear),
-        parseInt(birthMonth) - 1,
-        parseInt(birthDay)
-      );
-      
+  // Get available barangays based on selected street
+  const getAvailableBarangays = () => {
+    if (formData.street) {
+      return streetToBarangay[formData.street] || [];
+    }
+    return [];
+  };
+
+  // Handle input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+    if (name === 'street') {
+      // Reset barangay when street changes
+      setFormData({
+        ...formData,
+        street: value,
+        barangay: ''
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
+  };
+
+  // Handle date change
+  const handleDateChange = (date) => {
+    setFormData({
+      ...formData,
+      dateOfBirth: date
+    });
+    
+    // Calculate age if date is selected
+    if (date) {
       const today = new Date();
-      let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+      let age = today.getFullYear() - date.getFullYear();
+      const monthDiff = today.getMonth() - date.getMonth();
       
-      if (
-        today.getMonth() < birthDate.getMonth() || 
-        (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())
-      ) {
-        calculatedAge--;
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
+        age--;
       }
       
-      setAge(calculatedAge.toString());
-    } else {
-      setAge("");
+      setFormData(prev => ({
+        ...prev,
+        dateOfBirth: date,
+        age: age.toString()
+      }));
     }
-  }, [birthMonth, birthDay, birthYear]);
-  
+  };
+
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log('Form submitted:', formData);
+    // Add your form submission logic here
+  };
+
   return (
-    <div className="patient-profile">
-      <h2>Patient Registration</h2>
+    <Container className="mt-5 mb-5" style={{ backgroundImage: 'url(/images/homepage.webp)', backgroundSize: 'cover', backgroundPosition: 'center', padding: '20px', borderRadius: '10px' }}>
+      <Card className="registration-card" style={{ boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)', borderRadius: '10px', overflow: 'hidden' }}>
+        <Card.Body>
+          <h2 className="text-center mb-4" style={{ fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#333' }}>Registration</h2>
+          <Form onSubmit={handleSubmit}>
+            <Row className="mb-3">
+              <Col md={3}>
+                <Form.Group controlId="firstName">
+                  <Form.Control
+                    type="text"
+                    placeholder="First Name"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="middleName">
+                  <Form.Control
+                    type="text"
+                    placeholder="Middle Name"
+                    name="middleName"
+                    value={formData.middleName}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="lastName">
+                  <Form.Control
+                    type="text"
+                    placeholder="Last Name"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="suffix">
+                  <Form.Select
+                    name="suffix"
+                    value={formData.suffix}
+                    onChange={handleChange}
+                  >
+                    <option value="" disabled>Suffix</option>
+                    {suffixOptions.map((suffix, index) => (
+                      <option key={index} value={suffix}>
+                        {suffix || 'None'}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
 
-      <div className="form-row">
-        <div className="form-group"><label>Last Name</label><input type="text" /></div>
-        <div className="form-group"><label>First Name</label><input type="text" /></div>
-        <div className="form-group small-input"><label>Middle Initial</label><input type="text" /></div>
-        <div className="form-group small-input"><label>Suffix</label><input type="text" /></div>
-      </div>
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group controlId="email">
+                  <Form.Control
+                    type="email"
+                    placeholder="Email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group controlId="password">
+                  <Form.Control
+                    type="password"
+                    placeholder="Password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
 
-      <div className="form-row">
-        <div className="form-group"><label>House No.</label><input type="text" /></div>
-        <div className="form-group">
-          <label>Street</label>
-          <select value={street} onChange={handleStreetChange}>
-            <option value="">Select Street</option>
-            {Object.keys(barangayOptions).map((street) => (
-              <option key={street} value={street}>{street}</option>
-            ))}
-          </select>
-        </div>
-        <div className="form-group">
-          <label>Barangay</label>
-          <select value={barangay} onChange={(e) => setBarangay(e.target.value)} disabled={!street}>
-            <option value="">Select Barangay</option>
-            {street && barangayOptions[street]?.map((brgy) => (
-              <option key={brgy} value={brgy}>{brgy}</option>
-            ))}
-          </select>
-        </div>
-        <div className="form-group small-input"><label>Municipality</label><input type="text" value="Pasig" readOnly /></div>
-        <div className="form-group small-input"><label>Province</label><input type="text" value="Metro Manila" readOnly /></div>
-      </div>
+            <Row className="mb-3">
+              <Col md={2}>
+                <Form.Group controlId="houseNo">
+                  <Form.Control
+                    type="text"
+                    placeholder="House No."
+                    name="houseNo"
+                    value={formData.houseNo}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="street">
+                  <Form.Select
+                    name="street"
+                    value={formData.street}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="" disabled>Street</option>
+                    {pasigStreets.map((street, index) => (
+                      <option key={index} value={street}>{street}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="barangay">
+                  <Form.Select
+                    name="barangay"
+                    value={formData.barangay}
+                    onChange={handleChange}
+                    disabled={!formData.street}
+                    required
+                  >
+                    <option value="" disabled>Barangay</option>
+                    {getAvailableBarangays().map((barangay, index) => (
+                      <option key={index} value={barangay}>{barangay}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={2}>
+                <Form.Group controlId="city">
+                  <Form.Control
+                    type="text"
+                    placeholder="City"
+                    name="city"
+                    value={formData.city}
+                    readOnly
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={2}>
+                <Form.Group controlId="region">
+                  <Form.Control
+                    type="text"
+                    placeholder="Region"
+                    name="region"
+                    value={formData.region}
+                    readOnly
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
 
-      <div className="form-row">
-        <div className="form-group">
-          <label>Gender</label>
-          <select>
-            <option>Male</option>
-            <option>Female</option>
-            <option>Other</option>
-          </select>
-        </div>
-        <div className="form-group">
-          <label>Civil Status</label>
-          <select>
-            <option>Single</option>
-            <option>Married</option>
-            <option>Widowed</option>
-            <option>Divorced</option>
-          </select>
-        </div>
-      </div>
+            <Row className="mb-3">
+              <Col md={4}>
+                <Form.Group controlId="contactNumber">
+                  <Form.Control
+                    type="text"
+                    placeholder="Contact Number"
+                    name="contactNumber"
+                    value={formData.contactNumber}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group controlId="philHealthNumber">
+                  <Form.Control
+                    type="text"
+                    placeholder="PhilHealth Number"
+                    name="philHealthNumber"
+                    value={formData.philHealthNumber}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group controlId="membershipStatus">
+                  <Row>
+                    <Col xs={6}>
+                      <div className="d-flex align-items-center">
+                        <Form.Check
+                          type="radio"
+                          id="member"
+                          name="membershipStatus"
+                          value="member"
+                          checked={formData.membershipStatus === 'member'}
+                          onChange={handleChange}
+                          label="Member:"
+                        />
+                      </div>
+                    </Col>
+                    <Col xs={6}>
+                      <div className="d-flex align-items-center">
+                        <Form.Check
+                          type="radio"
+                          id="nonmember"
+                          name="membershipStatus"
+                          value="nonmember"
+                          checked={formData.membershipStatus === 'nonmember'}
+                          onChange={handleChange}
+                          label="Non Member:"
+                        />
+                      </div>
+                    </Col>
+                  </Row>
+                </Form.Group>
+              </Col>
+            </Row>
 
-      <div className="form-row">
-        <div className="form-group">
-          <label>Date of Birth</label>
-          <select value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)}>
-            <option value="">Month</option>
-            {[...Array(12)].map((_, i) => (
-              <option key={i + 1} value={i + 1}>{i + 1}</option>
-            ))}
-          </select>
-        </div>
-        <div className="form-group">
-          <label>Day</label>
-          <select value={birthDay} onChange={(e) => setBirthDay(e.target.value)}>
-            <option value="">Day</option>
-            {[...Array(31)].map((_, i) => (
-              <option key={i + 1} value={i + 1}>{i + 1}</option>
-            ))}
-          </select>
-        </div>
-        <div className="form-group">
-          <label>Year</label>
-          <select value={birthYear} onChange={(e) => setBirthYear(e.target.value)}>
-            <option value="">Year</option>
-            {[...Array(new Date().getFullYear() - 1899)].map((_, i) => (
-              <option key={i + 1900} value={i + 1900}>{i + 1900}</option>
-            ))}
-          </select>
-        </div>
-        <div className="form-group small-input">
-          <label>Age</label>
-          <input type="text" value={age} readOnly />
-        </div>
-        <div className="form-group">
-          <label>Place of Birth</label>
-          <select>
-            <option value="">Select Place of Birth</option>
-            {birthPlaceOptions.map((place) => (
-              <option key={place} value={place}>{place}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+            <Row className="mb-3">
+              <Col md={3}>
+                <Form.Group controlId="dateOfBirth">
+                  <DatePicker
+                    selected={formData.dateOfBirth}
+                    onChange={handleDateChange}
+                    className="form-control"
+                    placeholderText="Date Of Birth"
+                    dateFormat="MM/dd/yyyy"
+                    showYearDropdown
+                    scrollableYearDropdown
+                    yearDropdownItemNumber={100}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="age">
+                  <Form.Control
+                    type="text"
+                    placeholder="Age"
+                    name="age"
+                    value={formData.age}
+                    onChange={handleChange}
+                    readOnly
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="gender">
+                  <Form.Select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="" disabled>Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="civilStatus">
+                  <Form.Select
+                    name="civilStatus"
+                    value={formData.civilStatus}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="" disabled>Civil Status</option>
+                    <option value="single">Single</option>
+                    <option value="married">Married</option>
+                    <option value="divorced">Divorced</option>
+                    <option value="widowed">Widowed</option>
+                    <option value="separated">Separated</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
 
-      <div className="form-row">
-        <div className="form-group"><label>Contact Number</label><input type="text" /></div>
-        <div className="form-group"><label>Philhealth Number</label><input type="text" /></div>
-        <div className="form-group small-input">
-          <label>Member</label>
-          <input type="checkbox" />
-        </div>
-        <div className="form-group small-input">
-          <label>Non-Member</label>
-          <input type="checkbox" />
-        </div>
-      </div>
-
-      {/* Register Button and Login Instead Link */}
-      <div className="form-actions">
-        <button className="register-button">Register</button>
-        <p className="login-instead">
-          Already have an account? <a href="/login">Login Instead</a>
-        </p>
-      </div>
-    </div>
+            <div className="d-flex justify-content-center mt-4">
+              <Button variant="primary" type="submit" className="register-btn" style={{ backgroundColor: '#007bff', borderColor: '#007bff', padding: '10px 20px', fontSize: '16px', borderRadius: '5px' }}>
+                Register
+              </Button>
+            </div>
+            <div className="text-center mt-3">
+              <a href="/login" className="login-link" style={{ color: '#007bff', textDecoration: 'none', fontWeight: 'bold' }}>Login Instead</a>
+            </div>
+          </Form>
+        </Card.Body>
+      </Card>
+    </Container>
   );
 };
 
-export default PatientProfile;
+export default Registration;

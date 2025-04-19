@@ -1,187 +1,255 @@
 .admitting-data-container {
-    width: 100%;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-  }
-  
-  .admitting-data-card {
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 900px;
-    padding: 24px;
-  }
-  
-  .admitting-data-title {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 20px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
-  }
-  
+  width: 100%;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  color: #333;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  border-left: 5px solid #343434; /* Change blue border to #343434 */
+}
+
+.admitting-data-card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 1000px;
+  padding: 30px;
+}
+
+.admitting-data-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 25px;
+  color: #2c3e50;
+  text-align: center;
+  border-bottom: 2px solid #343434; /* Change blue underline to #343434 */
+}
+
+.admitting-data-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 50px; /* Increase spacing between boxes */
+}
+
+.admitting-data-right {
+  grid-column: span 2; /* Extend the right-side boxes */
+}
+
+.form-section {
+  margin-bottom: 40px; /* Increase spacing between sections */
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border-left: 4px solid #343434; /* Update color */
+}
+
+.form-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+}
+
+.form-section h3::before {
+  content: "•";
+  color: #343434; /* Update color */
+  margin-right: 8px;
+}
+
+.radio-group,
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.radio-option,
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.radio-group .radio-option {
+  border-left: 3px solid #343434; /* Change blue indicator to #343434 */
+}
+
+.checkbox-group .checkbox-option {
+  border-left: 3px solid #343434; /* Change blue indicator to #343434 */
+}
+
+.radio-option:hover,
+.checkbox-option:hover {
+  background: #f0f7ff;
+}
+
+.option-label {
+  font-size: 14px;
+  flex-grow: 1;
+  margin-left: 10px;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #343434; /* Update color */
+}
+
+.inline-text-input {
+  width: 150px;
+  margin-left: 15px;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border 0.2s ease;
+}
+
+.inline-text-input:focus {
+  outline: none;
+  border-color: #343434; /* Update color */
+  box-shadow: 0 0 0 2px rgba(52, 52, 52, 0.2); /* Update color */
+}
+
+.vitamin-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.date-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-field span {
+  font-size: 14px;
+  color: #555;
+}
+
+.date-field input {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.tt-number {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+}
+
+.tt-number span {
+  font-size: 14px;
+  color: #555;
+}
+
+.tt-number input {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 60px;
+  text-align: center;
+}
+
+.feeding-table-section {
+  margin-top: 30px;
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.feeding-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 15px;
+}
+
+.feeding-table th {
+  background-color: #343434; /* Update color */
+  color: white;
+  font-weight: 500;
+  padding: 12px;
+  text-align: center;
+}
+
+.feeding-table td {
+  border: 1px solid #e0e0e0;
+  padding: 12px;
+  text-align: center;
+  background: white;
+}
+
+.feeding-table input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.feeding-table input:focus {
+  border-color: #343434; /* Update color */
+  box-shadow: 0 0 0 2px rgba(52, 52, 52, 0.2); /* Update color */
+  outline: none;
+}
+
+.feeding-table textarea {
+  width: 100%;
+  height: 100px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.complementary-heading {
+  background-color: #2980b9;
+}
+
+.complementary-cell {
+  background: #f0f7ff;
+}
+
+/* Responsive adaptations */
+@media (max-width: 768px) {
   .admitting-data-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-  }
-  
-  .form-section {
-    margin-bottom: 20px;
-  }
-  
-  .form-section h3 {
-    font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
-  
-  .radio-group,
-  .checkbox-group {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .radio-option,
-  .checkbox-option {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-right: 30px;
-  }
-  
-  .option-label {
-    font-size: 16px;
-  }
-  
-  .long-label {
-    flex-grow: 1;
-    margin-right: 10px;
-  }
-  
-  .inline-text-input {
-    width: 120px;
-    margin-left: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 4px 8px;
+      grid-template-columns: 1fr;
+      gap: 20px;
   }
   
   .vitamin-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    align-items: center;
-  }
-  
-  .date-field {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .date-field span {
-    margin-right: 4px;
-  }
-  
-  .date-field input {
-    padding: 4px 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  
-  .tt-number {
-    margin-top: 5px;
-    margin-left: 25px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  .tt-number input {
-    flex-grow: 1;
-    padding: 4px 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  
-  .parent-section {
-    padding-left: 10px;
-  }
-  
-  .feeding-table-section {
-    margin-top: 30px;
-  }
-  
-  .feeding-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-  }
-  
-  .feeding-table th, 
-  .feeding-table td {
-    border: 1px solid #ddd;
-    padding: 12px;
-    text-align: center;
-  }
-  
-  .feeding-table th {
-    background-color: #f5f5f5;
-    font-weight: 600;
-    font-size: 14px;
-  }
-  
-  .feeding-table input,
-  .feeding-table textarea {
-    width: 100%;
-    border: none;
-    padding: 4px;
-    font-size: 14px;
-    text-align: center;
-    background: transparent;
-  }
-  
-  .feeding-table textarea {
-    height: 100px;
-    resize: none;
-    text-align: left;
-  }
-  
-  .complementary-heading {
-    background-color: #f0f0f0;
-    font-weight: bold;
-    width: 180px;
-  }
-  
-  .complementary-cell {
-    width: 180px;
-    vertical-align: top;
-  }
-  
-  /* Responsive adaptations */
-  @media (max-width: 768px) {
-    .admitting-data-grid {
-      grid-template-columns: 1fr;
-      gap: 20px;
-    }
-    
-    .vitamin-row {
       flex-direction: column;
       align-items: flex-start;
       gap: 8px;
-    }
-    
-    .date-field {
-      margin-left: 25px;
-    }
-    
-    .feeding-table {
+  }
+  
+  .date-field {
+      width: 100%;
+      justify-content: space-between;
+  }
+  
+  .feeding-table {
       display: block;
       overflow-x: auto;
-      white-space: nowrap;
-    }
   }
+}

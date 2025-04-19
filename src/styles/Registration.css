@@ -1,100 +1,104 @@
-/* Patient Profile Styles */
-.patient-profile {
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  max-width: 900px;
-  margin: auto;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  padding: 30px;
-  padding-bottom: 30px;
+/* Registration.css */
+
+/* Update background gradient to left-to-right */
+body {
+  background: linear-gradient(to right, #9A705E, #343434);
+  color: #ffffff; /* White font color for contrast */
 }
 
-h2 {
-  font-size: 28px;
-  font-weight: bold;
-  margin-bottom: 20px;
+.registration-card {
+  background-color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: none;
+  border-radius: 10px;
+  max-width: fit-content;
 }
 
-label {
-  font-weight: bold;
-  display: block;
-  margin-top: 10px;
-  font-size: 14px;
-}
-
-select, input {
-  width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  border: 1px solid #ccc;
+.form-control, .form-select {
+  padding: 10px 15px;
   border-radius: 5px;
-  font-size: 14px;
+  border: 1px solid #ced4da;
+  margin-bottom: 0;
+  background-color: #f9f9f9;
 }
 
-input[readonly] {
-  background-color: #f4f4f4;
+.form-control:focus, .form-select:focus {
+  border-color: #9A705E;
+  box-shadow: 0 0 0 0.2rem rgba(154, 112, 94, 0.25);
 }
 
-.patient-profile select:disabled {
-  background-color: #e0e0e0;
+.react-datepicker-wrapper {
+  width: 100%;
 }
 
-/* Layout Styling */
-.form-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 15px;
-  margin-bottom: 10px;
-}
-
-.form-group {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.small-input {
-  max-width: 150px;
-}
-
-.center-text {
-  text-align: center;
-  font-weight: bold;
-}
-
-.register-button {
-  width: 20%;
-  padding: 10px;
-  background-color: #007bff;
-  color: white;
+.register-btn {
+  background-color: #9A705E;
   border: none;
   border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.3s ease;
+  padding: 10px 30px;
+  transition: all 0.3s ease;
+  color: #ffffff;
 }
 
-.register-button:hover {
-  background-color: #0056b3;
+.register-btn:hover {
+  background-color: #7e5a4d;
+  transform: translateY(-2px);
 }
 
-.login-instead {
-  text-align: center;
-  margin-top: 10px;
-}
-
-.login-instead a {
-  color: #007bff;
+.login-link {
+  color: #9A705E;
   text-decoration: none;
-  font-weight: bold;
+  font-weight: 500;
 }
 
-.login-instead a:hover {
+.login-link:hover {
   text-decoration: underline;
 }
 
-.footer {
-  margin-top: 300px;
+/* Radio button styling */
+.form-check {
+  margin-right: 10px;
+}
+
+.form-check-input:checked {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.form-check-label {
+  cursor: pointer;
+}
+
+/* Calendar styling */
+.react-datepicker {
+  font-family: inherit;
+  border-radius: 5px;
+  border: 1px solid #ced4da;
+  background-color: #f9f9f9;
+}
+
+.react-datepicker__header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #ced4da;
+}
+
+.react-datepicker__day--selected {
+  background-color: #9A705E;
+}
+
+/* Make form responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+  
+  .row {
+    margin-right: -5px;
+    margin-left: -5px;
+  }
+  
+  .col-md-2, .col-md-3, .col-md-4, .col-md-6 {
+    padding-right: 5px;
+    padding-left: 5px;
+  }
 }

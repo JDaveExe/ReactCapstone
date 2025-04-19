@@ -10,6 +10,24 @@
     touch-action: pan-y pinch-zoom;
 }
 
+.sidebar.collapsed {
+    width: 60px;
+}
+
+.sidebar.collapsed .nav-link {
+    text-align: center;
+    padding: 0.75rem 0.5rem;
+}
+
+.sidebar.collapsed .nav-link i {
+    margin-right: 0 !important;
+    font-size: 1.2rem;
+}
+
+.sidebar.collapsed .submenu {
+    display: none;
+}
+
 .sidebar h2 {
     font-size: 1.2rem;
     color: #fff;
@@ -25,6 +43,7 @@
     border-radius: 0;
     transition: all 0.2s ease;
     cursor: pointer;
+    white-space: nowrap;
 }
 
 .sidebar .nav-link:hover {
@@ -38,15 +57,20 @@
     margin-bottom: 0.5rem;
 }
 
-/* Keep some of your original styling for compatibility */
-.sidebar ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
+.collapse-toggle {
+    right: -15px;
+    top: 20px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
 }
 
-.sidebar li {
-    margin-bottom: 0.25rem;
+.collapse-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Mobile view */
@@ -73,5 +97,9 @@
 
     .sidebar button {
         -webkit-tap-highlight-color: transparent;
+    }
+    
+    .collapse-toggle {
+        display: none;
     }
 }

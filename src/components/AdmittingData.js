@@ -29,6 +29,7 @@ const AdmittingData = () => {
     }
   });
 
+  
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     

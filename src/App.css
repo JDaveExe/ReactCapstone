@@ -22,3 +22,132 @@ footer {
   margin-top: 40px; /* Adjust as needed */
   padding-top: 10px; /* Adds extra separation */
 }
+/* App.css */
+.app-wrapper {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+}
+
+.sidebar-container {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 100;
+}
+
+.main-content {
+  margin-left: 250px;
+  transition: margin-left 0.3s ease;
+  width: calc(100% - 250px);
+  flex: 1;
+}
+
+.main-content.sidebar-collapsed {
+  margin-left: 60px;
+  width: calc(100% - 60px);
+}
+
+.main-content.full-width {
+  margin-left: 0;
+  width: 100%;
+}
+
+.content-area {
+  padding: 20px;
+  min-height: calc(100vh - 60px); /* Adjust based on your topbar height */
+  margin-top: 60px; /* Height of your topbar */
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .main-content {
+      margin-left: 0;
+      width: 100%;
+  }
+  
+  .main-content.sidebar-collapsed {
+      margin-left: 0;
+      width: 100%;
+  }
+  
+  .sidebar-container {
+      z-index: 1000; /* Ensure sidebar appears above content on mobile */
+  }
+}
+
+/* Transition effects for smoother sidebar operations */
+.sidebar-transition {
+  transition: all 0.3s ease;
+}
+
+/* Existing styles */
+.app-wrapper {
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar-container {
+  flex: 0 0 auto;
+  height: 100%;
+}
+
+.main-content {
+  flex: 1;
+  transition: margin-left 0.3s ease;
+  margin-left: 250px;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content.full-width {
+  margin-left: 0;
+}
+
+.main-content.sidebar-collapsed {
+  margin-left: 60px;
+}
+
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* New admin-specific styles */
+.admin-app {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.admin-main-content {
+  margin-left: 250px;
+  transition: margin-left 0.3s ease;
+  width: calc(100% - 250px);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-main-content.sidebar-collapsed {
+  margin-left: 60px;
+  width: calc(100% - 60px);
+}
+
+.admin-content-area {
+  padding-top: 60px;
+  flex: 1;
+  overflow-y: auto;
+  background-color: #f5f5f5;
+}
+
+@media (max-width: 767.98px) {
+  .main-content {
+    margin-left: 0 !important;
+  }
+  
+  .admin-main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}

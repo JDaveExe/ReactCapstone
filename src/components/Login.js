@@ -9,64 +9,86 @@ const Login = () => {
     const [password, setPassword] = useState("");
     const [patientName, setPatientName] = useState("");
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [loginError, setLoginError] = useState(""); // State for login error message
+    const [loginError, setLoginError] = useState("");
     const navigate = useNavigate();
+
+    // Sample user data - in a real app, this would come from an API
+    const users = [
+        { 
+            email: "admin@example.com", 
+            password: "admin123", 
+            role: "admin",
+            name: "Admin User"
+        },
+        { 
+            email: "patient@example.com", 
+            password: "patient123", 
+            role: "patient", 
+            name: "John Doe",
+            patientId: "PAT12345"
+        }
+    ];
 
     const handleLogin = async () => {
         setLoginError(""); // Clear any previous error messages
 
-        try {
-            const response = await fetch('http://localhost:3001/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, password }),
-            });
+        // Find user with matching credentials
+        const user = users.find((u) => u.email === email && u.password === password);
 
-            const data = await response.json();
-
-            if (response.ok) {
-                // Login successful
-                console.log('Login successful:', data);
-                localStorage.setItem("userId", data.userId); // Store user ID (or a token if you implement JWT later)
-                // For now, let's just set isLoggedIn to true. You'll likely want more robust state management.
-                setIsLoggedIn(true);
-
-                // You'll need to determine the user's role from the back-end response
-                // For this basic example, let's assume the back-end sends a 'role' property
-                const userRole = localStorage.getItem("userRole"); // You might need to fetch this from the back-end
-
-                if (userRole === "admin") {
-                    navigate("/dashboard");
-                } else {
-                    // For patients, update welcome message
-                    // You might need to fetch the patient's name from the back-end
-                    // based on the userId. For now, we'll keep the dummy patient name logic.
-                    const users = [
-                        { email: "admin@example.com", password: "admin123", role: "admin" },
-                        { email: "patient@example.com", password: "patient123", role: "patient", name: "John Doe" }
-                    ];
-                    const user = users.find((u) => u.email === email);
-                    if (user && user.role === "patient") {
-                        setPatientName(user.name);
-                    }
-                    setIsLoggedIn(true);
-                }
-            } else {
-                // Login failed
-                setLoginError(data.message || "Invalid email or password!");
-                console.error("Login failed:", data);
+        if (user) {
+            // Store user data in localStorage
+            localStorage.setItem("isAuthenticated", "true");
+            localStorage.setItem("userRole", user.role);
+            localStorage.setItem("userEmail", user.email);
+            localStorage.setItem("userName", user.name);
+            
+            if (user.role === "patient") {
+                localStorage.setItem("patientId", user.patientId || "");
+                localStorage.setItem("patientName", user.name);
+                setPatientName(user.name);
             }
-        } catch (error) {
-            setLoginError("An error occurred during login.");
-            console.error("Login error:", error);
+
+            setIsLoggedIn(true);
+
+            // Redirect based on role
+            if (user.role === "admin") {
+                navigate("/admin/dashboard");
+            } else {
+                navigate("/dashboard"); // Patient dashboard
+            }
+        } else {
+            setLoginError("Invalid email or password!");
+            console.error("Login failed: Invalid credentials");
         }
+    };
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            handleLogin();
+        }
+    };
+
+    const handleLogout = () => {
+        // Clear all auth-related localStorage items
+        localStorage.removeItem("isAuthenticated");
+        localStorage.removeItem("userRole");
+        localStorage.removeItem("userEmail");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("patientId");
+        localStorage.removeItem("patientName");
+        
+        setIsLoggedIn(false);
+        setPatientName("");
+        setEmail("");
+        setPassword("");
+        
+        // Redirect to login page
+        navigate("/login");
     };
 
     return (
         <div className="login-container">
-            {/* Left Panel (unchanged) */}
+            {/* Left Panel */}
             <div className="login-left-panel">
                 <div className="login-header">
                     Login or Use a QR code
@@ -87,17 +109,9 @@ const Login = () => {
                         <div className="welcome-container">
                             <h2 className="welcome-heading">Welcome</h2>
                             <h3 className="patient-name">{patientName}</h3>
-                            <p className="welcome-message">
-                                Your information has been received by our staff.
-                                Please wait to be called.
-                            </p>
                             <button
                                 className="logout-button"
-                                onClick={() => {
-                                    setIsLoggedIn(false);
-                                    setPatientName("");
-                                    localStorage.removeItem("userId"); // Clear user ID on logout
-                                }}
+                                onClick={handleLogout}
                             >
                                 LOGOUT
                             </button>
@@ -109,7 +123,7 @@ const Login = () => {
                             </div>
 
                             <div className="login-form">
-                                {loginError && <div className="alert alert-danger">{loginError}</div>} {/* Display error message */}
+                                {loginError && <div className="alert alert-danger">{loginError}</div>}
                                 <div className="form-group">
                                     <label htmlFor="email">Email</label>
                                     <input
@@ -118,6 +132,8 @@ const Login = () => {
                                         className="form-control"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
+                                        onKeyPress={handleKeyPress}
+                                        placeholder="Enter your email"
                                     />
                                 </div>
 
@@ -129,6 +145,8 @@ const Login = () => {
                                         className="form-control"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
+                                        onKeyPress={handleKeyPress}
+                                        placeholder="Enter your password"
                                     />
                                 </div>
 

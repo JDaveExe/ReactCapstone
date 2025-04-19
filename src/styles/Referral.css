@@ -6,83 +6,87 @@
     background-color: #ffffff;
     border-radius: 5px;
     box-shadow: 0 0 10px rgb(255, 255, 255);
-  }
-  
-  .referral-header {
+    color: #333; /* Darker text color for better contrast */
+}
+
+.referral-header {
     text-align: center;
     font-size: 24px;
     font-weight: bold;
     margin-bottom: 20px;
-  }
-  
-  .patient-info {
+    color: #444; /* Slightly darker header color */
+}
+
+.patient-info {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-  }
-  
-  .input-group {
+}
+
+.input-group {
     display: flex;
     flex-direction: column;
     flex: 1;
     min-width: 200px;
-  }
-  
-  .input-group input[type="date"] {
+}
+
+.input-group input[type="date"] {
     width: 100%;
     max-width: 200px; /* Adjust to match other input sizes */
 }
 
-  .input-group label {
+.input-group label {
     font-weight: bold;
-  }
-  
-  .input-group input {
+    color: #555; /* Improve label visibility */
+}
+
+.input-group input {
     padding: 5px;
     border: 1px solid #000;
     border-radius: 3px;
-  }
-  
-  .section-title {
+}
+
+.section-title {
     text-align: center;
     font-weight: bold;
     margin-top: 20px;
-  }
-  
-  .lab-sections {
+}
+
+.lab-sections {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
-  }
-  
-  .lab-category {
+}
+
+.lab-category {
     background: white;
     padding: 10px;
     border-radius: 5px;
     flex: 1;
     min-width: 200px;
     border: 1px solid #000;
-  }
-  
-  .lab-category h3 {
+}
+
+.lab-category h3 {
     font-size: 16px;
     font-weight: bold;
     margin-bottom: 5px;
-  }
-  
-  .print-button {
+    color: #444; /* Improve section title visibility */
+}
+
+.print-button {
     display: block;
     width: 100px;
     margin: 20px auto;
     padding: 10px;
-    background-color: #007bff;
-    color: white;
+    background-color: #343434; /* Update button color */
+    color: #fff; /* Ensure text is visible */
     border: none;
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px;
-  }
-  
-  .print-button:hover {
-    background-color: #0056b3;
-  }
+}
+
+.print-button:hover {
+    background-color: #1f1f1f; /* Darker hover color */
+}

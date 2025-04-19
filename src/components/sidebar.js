@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import "../styles/sidebar.css";
 
-const Sidebar = ({ isOpen, closeSidebar }) => {
+const Sidebar = ({ isOpen, closeSidebar, isCollapsed, toggleCollapse }) => {
   const [isMedRecordOpen, setMedRecordOpen] = useState(false);
 
-  // Add event listener for handling clicks outside sidebar on mobile
   useEffect(() => {
     const handleClickOutside = (event) => {
       const sidebar = document.querySelector('.sidebar');
@@ -13,14 +12,14 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, closeSidebar]);
 
-  // Function to handle navigation using window.location.pathname
   const handleNavigation = (path) => {
     window.location.pathname = path;
-    // Close sidebar after navigation on mobile
     if (window.innerWidth < 768) {
       closeSidebar();
     }
@@ -28,25 +27,35 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
 
   return (
     <>
-      {/* Add overlay for mobile */}
       {isOpen && <div className="sidebar-overlay" onClick={closeSidebar}></div>}
-      <div className={`sidebar bg-dark text-light ${isOpen ? 'show' : ''}`}>
+      <div className={`sidebar bg-dark text-light ${isOpen ? 'show' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
         <div className="p-3">
-          {/* Add close button visible only on mobile */}
           <button 
             className="btn btn-sm btn-close btn-close-white float-end d-md-none" 
             onClick={closeSidebar}
             aria-label="Close sidebar"
           ></button>
           
-          <h2 className="text-center py-3">Maybunga Health Center</h2>
+          {!isCollapsed && (
+            <h2 className="text-center py-3">Maybunga Health Center</h2>
+          )}
+          
+          <button 
+            className="collapse-toggle btn btn-dark btn-sm position-absolute" 
+            onClick={toggleCollapse}
+          >
+            <i className={`bi bi-chevron-${isCollapsed ? 'right' : 'left'}`}></i>
+          </button>
+          
           <ul className="nav flex-column">
             <li className="nav-item">
               <button 
                 className="nav-link text-start text-light w-100" 
                 onClick={() => handleNavigation("/dashboard")}
+                title="Dashboard"
               >
-                <i className="bi bi-speedometer2 me-2"></i> Dashboard
+                <i className="bi bi-speedometer2 me-2"></i>
+                {!isCollapsed && "Dashboard"}
               </button>
             </li>
             
@@ -54,22 +63,30 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
               <button 
                 className="nav-link text-start text-light w-100" 
                 onClick={() => handleNavigation("/patient-profile")}
+                title="Patient Profile"
               >
-                <i className="bi bi-person me-2"></i> Patient Profile
+                <i className="bi bi-person me-2"></i>
+                {!isCollapsed && "Patient Profile"}
               </button>
             </li>
             
             <li className="nav-item">
               <button 
                 className={`nav-link text-start text-light w-100 d-flex justify-content-between align-items-center`}
-                onClick={() => setMedRecordOpen(!isMedRecordOpen)}
+                onClick={() => !isCollapsed && setMedRecordOpen(!isMedRecordOpen)}
+                title="Med Record Summary"
               >
-                <span><i className="bi bi-file-medical me-2"></i> Med Record Summary</span>
-                <i className={`bi bi-chevron-${isMedRecordOpen ? 'up' : 'down'}`}></i>
+                <span>
+                  <i className="bi bi-file-medical me-2"></i>
+                  {!isCollapsed && "Med Record Summary"}
+                </span>
+                {!isCollapsed && (
+                  <i className={`bi bi-chevron-${isMedRecordOpen ? 'up' : 'down'}`}></i>
+                )}
               </button>
             </li>
             
-            {isMedRecordOpen && (
+            {!isCollapsed && isMedRecordOpen && (
               <li className="nav-item submenu">
                 <ul className="nav flex-column ms-3">
                   <li className="nav-item">
@@ -112,17 +129,10 @@ const Sidebar = ({ isOpen, closeSidebar }) => {
               <button 
                 className="nav-link text-start text-light w-100" 
                 onClick={() => handleNavigation("/notification")}
+                title="Notification"
               >
-                <i className="bi bi-bell me-2"></i> Notification
-              </button>
-            </li>
-            
-            <li className="nav-item">
-              <button 
-                className="nav-link text-start text-light w-100" 
-                onClick={() => handleNavigation("/referral")}
-              >
-                <i className="bi bi-arrow-left-right me-2"></i> Referral
+                <i className="bi bi-bell me-2"></i>
+                {!isCollapsed && "Notification"}
               </button>
             </li>
           </ul>

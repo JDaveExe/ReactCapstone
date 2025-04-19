@@ -1,0 +1,62 @@
+.topbar {
+    height: 60px;
+    box-shadow: 0 2px 4px rgb(255, 255, 255);
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1020;
+    padding: 0 15px;
+  }
+  
+  .avatar {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .avatar i {
+    font-size: 16px;
+  }
+  
+  .navbar-brand {
+    font-weight: 600;
+  }
+  
+  .navbar-toggler {
+    padding: 0.25rem 0.5rem;
+    font-size: 1rem;
+  }
+  
+  .dropdown-menu {
+    border-radius: 0.25rem;
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    padding: 0.5rem 0;
+  }
+  
+  .dropdown-item {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .dropdown-item:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .dropdown-header {
+    font-size: 0.8rem;
+    color: #6c757d;
+  }
+  
+  @media (min-width: 768px) {
+    .topbar {
+      left: 250px;
+    }
+    
+    body.sidebar-collapsed .topbar {
+      left: 60px;
+    }
+  }

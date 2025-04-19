@@ -2,9 +2,8 @@ import React, { useState } from "react";
 import "../styles/topbar.css";
 import userIcon from "../images/user.png";
 
-const Topbar = ({ toggleSidebar }) => {
+const TopbarAdmin = ({ toggleSidebar }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const handleLogout = () => {
     window.location.href = "/"; // Redirect to homepage
@@ -12,11 +11,6 @@ const Topbar = ({ toggleSidebar }) => {
 
   const goBack = () => {
     window.history.back(); // Navigate back
-  };
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    document.body.classList.toggle("dark-mode", !isDarkMode);
   };
 
   return (
@@ -45,33 +39,24 @@ const Topbar = ({ toggleSidebar }) => {
           </button>
         </div>
         <h2 className="topbar-title m-0 d-none d-md-block">Maybunga Health Center</h2>
-        <div className="d-flex align-items-center">
+        <div className="profile-container">
           <button 
-            className="btn btn-sm btn-outline-secondary me-2" 
-            onClick={toggleDarkMode}
+            className="profile-btn btn btn-sm d-flex align-items-center" 
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            aria-expanded={isDropdownOpen}
           >
-            {isDarkMode ? <i className="bi bi-sun"></i> : <i className="bi bi-moon"></i>} Dark Mode
+            <img src={userIcon} alt="Profile" className="profile-icon rounded-circle me-2" width="30" height="30" />
+            <span className="d-none d-md-inline">Admin</span>
           </button>
-          <div className="profile-container">
-            <button 
-              className="profile-btn btn btn-sm d-flex align-items-center" 
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              aria-expanded={isDropdownOpen}
-            >
-              <img src={userIcon} alt="Profile" className="profile-icon rounded-circle me-2" width="30" height="30" />
-              <span className="d-none d-md-inline">Admin</span>
-            </button>
-            {isDropdownOpen && (
-              <div className="dropdown-menu show">
-                <button className="dropdown-item logout-btn" onClick={handleLogout}>Log Out</button>
-              </div>
-            )}
-          </div>
+          {isDropdownOpen && (
+            <div className="dropdown-menu show">
+              <button className="dropdown-item logout-btn" onClick={handleLogout}>Log Out</button>
+            </div>
+          )}
         </div>
       </div>
     </header>
-    
   );
 };
 
-export default Topbar;
+export default TopbarAdmin;

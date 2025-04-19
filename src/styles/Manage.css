@@ -1,0 +1,248 @@
+.manage-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    color: #000; /* Set text color to black */
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    color: #000; /* Set text color to black */
+  }
+  
+  .new-patient-btn {
+    background-color: #0066cc;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  
+  .search-filter {
+    display: flex;
+    margin-bottom: 20px;
+    gap: 10px;
+  }
+  
+  .search-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .filter-dropdown {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-width: 150px;
+  }
+  
+  .patients-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  
+  .patient-card {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .patient-info {
+    padding: 15px;
+  }
+  
+  .patient-info h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #000; /* Set text color to black */
+  }
+  
+  .patient-details {
+    font-size: 14px;
+    color: #000; /* Set text color to black */
+  }
+  
+  .patient-details p {
+    margin: 5px 0;
+    display: flex;
+    align-items: center;
+  }
+  
+  .icon {
+    margin-right: 5px;
+  }
+  
+  .patient-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid #eee;
+  }
+  
+  .patient-actions button {
+    padding: 8px;
+    border: none;
+    background-color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .patient-actions button:not(:last-child) {
+    border-right: 1px solid #eee;
+  }
+  
+  .patient-actions button:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .edit-btn, .view-btn, .export-btn {
+    font-size: 14px;
+  }
+  
+  /* Modal Styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modal {
+    background-color: white;
+    padding: 20px;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 500px;
+  }
+  
+  .modal h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #000; /* Set text color to black */
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #000; /* Set text color to black */
+  }
+  
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  
+  .cancel-btn {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .save-btn {
+    background-color: #0066cc;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 900px) {
+    .patients-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .patients-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .search-filter {
+      flex-direction: column;
+    }
+  }
+  /* Basic modal styling */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    width: 80%;
+    max-width: 500px;
+  }
+  
+  /* Form styling */
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  input, select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  button {
+    padding: 8px 16px;
+    cursor: pointer;
+  }
+  
+  /* Patient cards */
+  .patient-card {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+  }

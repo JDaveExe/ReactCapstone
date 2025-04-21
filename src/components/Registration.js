@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Form, Button, Container, Row, Col, Card } from 'react-bootstrap';
 import DatePicker from 'react-datepicker';
+import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-datepicker/dist/react-datepicker.css';
 import '../styles/Registration.css';
-
 const Registration = () => {
   // State for form fields
   const [formData, setFormData] = useState({
@@ -112,10 +112,16 @@ const Registration = () => {
   };
 
   // Handle form submission
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Form submitted:', formData);
-    // Add your form submission logic here
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/register', formData);
+      alert(response.data.message);
+    } catch (error) {
+      console.error('Error during registration:', error);
+      alert('Registration failed. Please try again.');
+    }
   };
 
   return (

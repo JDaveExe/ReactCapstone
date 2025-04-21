@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from 'axios';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../styles/Login.css";
 import logoImage from '../images/maybunga.png';
@@ -10,42 +11,37 @@ const Login = () => {
     const [patientName, setPatientName] = useState("");
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [loginError, setLoginError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
-    // Sample user data - in a real app, this would come from an API
-    const users = [
-        { 
-            email: "admin@example.com", 
-            password: "admin123", 
-            role: "admin",
-            name: "Admin User"
-        },
-        { 
-            email: "patient@example.com", 
-            password: "patient123", 
-            role: "patient", 
-            name: "John Doe",
-            patientId: "PAT12345"
-        }
-    ];
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    };
 
     const handleLogin = async () => {
         setLoginError(""); // Clear any previous error messages
 
-        // Find user with matching credentials
-        const user = users.find((u) => u.email === email && u.password === password);
+        try {
+            const response = await axios.post('http://localhost:5000/api/login', { email, password });
+            const { user } = response.data;
 
-        if (user) {
+            console.log("Login response:", user);
+
             // Store user data in localStorage
             localStorage.setItem("isAuthenticated", "true");
             localStorage.setItem("userRole", user.role);
             localStorage.setItem("userEmail", user.email);
             localStorage.setItem("userName", user.name);
-            
-            if (user.role === "patient") {
-                localStorage.setItem("patientId", user.patientId || "");
+
+            // Store firstName directly if available
+            if (user.firstName) {
+                localStorage.setItem("firstName", user.firstName);
+            }
+
+            if (user.role === "patient" || user.role === "member") {
+                localStorage.setItem("patientId", user.id);
                 localStorage.setItem("patientName", user.name);
-                setPatientName(user.name);
+                setPatientName(user.firstName || user.name.split(' ')[0]);
             }
 
             setIsLoggedIn(true);
@@ -56,9 +52,15 @@ const Login = () => {
             } else {
                 navigate("/dashboard"); // Patient dashboard
             }
-        } else {
-            setLoginError("Invalid email or password!");
-            console.error("Login failed: Invalid credentials");
+        } catch (error) {
+            if (error.response && error.response.status === 404) {
+                setLoginError("User not found. Please register first.");
+            } else if (error.response && error.response.status === 401) {
+                setLoginError("Invalid credentials. Please try again.");
+            } else {
+                setLoginError("An error occurred. Please try again later.");
+            }
+            console.error("Login failed:", error);
         }
     };
 
@@ -76,6 +78,7 @@ const Login = () => {
         localStorage.removeItem("userName");
         localStorage.removeItem("patientId");
         localStorage.removeItem("patientName");
+        localStorage.removeItem("firstName");
         
         setIsLoggedIn(false);
         setPatientName("");
@@ -139,15 +142,24 @@ const Login = () => {
 
                                 <div className="form-group">
                                     <label htmlFor="password">Password</label>
-                                    <input
-                                        type="password"
-                                        id="password"
-                                        className="form-control"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        onKeyPress={handleKeyPress}
-                                        placeholder="Enter your password"
-                                    />
+                                    <div className="password-container">
+                                        <input
+                                            type={showPassword ? "text" : "password"}
+                                            id="password"
+                                            className="form-control"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            onKeyPress={handleKeyPress}
+                                            placeholder="Enter your password"
+                                        />
+                                        <span
+                                            className="password-toggle"
+                                            onClick={togglePasswordVisibility}
+                                            style={{ cursor: "pointer", marginLeft: "10px" }}
+                                        >
+                                            {showPassword ? "👁️" : "🙈"}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <button className="login-button" onClick={handleLogin}>

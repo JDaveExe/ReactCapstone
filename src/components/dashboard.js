@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from 'axios';
 import Sidebar from "./sidebar";
 import Topbar from "./topbar";
 import "../styles/dashboard.css";
@@ -8,25 +9,49 @@ const PatientDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [recentActivities, setRecentActivities] = useState([]);
-  const [patientName, setPatientName] = useState("Name of Patient");
+  const [patientName, setPatientName] = useState("Loading...");
   const navigate = useNavigate();
   
   useEffect(() => {
     // Check if user is logged in as patient
     const userRole = localStorage.getItem("userRole");
-    const storedPatientName = localStorage.getItem("patientName");
+    const userEmail = localStorage.getItem("userEmail");
+    const storedName = localStorage.getItem("firstName"); // Try getting from localStorage first
     
-    if (!userRole || userRole !== "patient") {
-      // Redirect to login if not logged in as patient
+    console.log("Current user role:", userRole);
+    console.log("Current user email:", userEmail);
+
+    // Accept both 'patient' and 'member' roles
+    if (!userRole || (userRole !== "patient" && userRole !== "member")) {
+      console.log("User not authenticated as patient. Redirecting to login.");
       navigate("/login");
       return;
     }
-    
-    // Set patient name from localStorage
-    if (storedPatientName) {
-      setPatientName(storedPatientName);
+
+    // If we already have the first name in localStorage, use it
+    if (storedName) {
+      console.log("Using stored first name:", storedName);
+      setPatientName(storedName);
+    } 
+    // Otherwise fetch it from backend
+    else if (userEmail) {
+      console.log("Fetching patient name for email:", userEmail);
+      axios.post('http://localhost:5000/api/get-patient-name', { email: userEmail })
+        .then(response => {
+          console.log("Response from backend:", response.data);
+          if (response.data && response.data.firstName) {
+            const firstName = response.data.firstName;
+            setPatientName(firstName);
+            // Store it for future use
+            localStorage.setItem("firstName", firstName);
+          }
+        })
+        .catch(error => {
+          console.error("Error fetching patient name:", error);
+          setPatientName("Unknown Patient");
+        });
     }
-    
+
     // Get recent activities from localStorage or set defaults
     const storedActivities = localStorage.getItem("recentActivities");
     if (storedActivities) {

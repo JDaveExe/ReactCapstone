@@ -19,7 +19,6 @@ import Sidebar from "./components/sidebar";
 import Topbar from "./components/topbar";
 import Manage from "./components/Manage";
 import Asettings from "./components/Asettings";
-
 // Correct import paths for admin components
 import DashboardAdm from "./components/DashboardAdm";
 import SidebarAdmin from "./components/SidebarAdmin";

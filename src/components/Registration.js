@@ -5,6 +5,7 @@ import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-datepicker/dist/react-datepicker.css';
 import '../styles/Registration.css';
+
 const Registration = () => {
   // State for form fields
   const [formData, setFormData] = useState({
@@ -27,6 +28,10 @@ const Registration = () => {
     gender: '',
     civilStatus: ''
   });
+
+  // State for registration messages
+  const [registrationMessage, setRegistrationMessage] = useState('');
+  const [registrationError, setRegistrationError] = useState('');
 
   // Suffix options
   const suffixOptions = ['', 'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];
@@ -59,7 +64,7 @@ const Registration = () => {
     'Dr. Sixto Antonio Avenue': ['Kapasigan', 'Bagong Ilog', 'Caniogan']
   };
 
-  // Get available barangays based on selected street
+  // Return available barangays based on selected street
   const getAvailableBarangays = () => {
     if (formData.street) {
       return streetToBarangay[formData.street] || [];
@@ -67,10 +72,9 @@ const Registration = () => {
     return [];
   };
 
-  // Handle input changes
+  // Handle input changes and update formData
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
     if (name === 'street') {
       // Reset barangay when street changes
       setFormData({
@@ -86,49 +90,93 @@ const Registration = () => {
     }
   };
 
-  // Handle date change
+  // Handle the change of the date and calculate age
   const handleDateChange = (date) => {
-    setFormData({
-      ...formData,
-      dateOfBirth: date
-    });
-    
-    // Calculate age if date is selected
+    const today = new Date();
+    let computedAge = '';
     if (date) {
-      const today = new Date();
-      let age = today.getFullYear() - date.getFullYear();
+      computedAge = today.getFullYear() - date.getFullYear();
       const monthDiff = today.getMonth() - date.getMonth();
-      
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
-        age--;
+        computedAge--;
       }
-      
-      setFormData(prev => ({
-        ...prev,
-        dateOfBirth: date,
-        age: age.toString()
-      }));
+      computedAge = computedAge.toString();
     }
+    setFormData((prev) => ({
+      ...prev,
+      dateOfBirth: date,
+      age: computedAge
+    }));
   };
 
   // Handle form submission
   const handleSubmit = async (event) => {
     event.preventDefault();
-
+    setRegistrationMessage('');
+    setRegistrationError('');
     try {
-      const response = await axios.post('http://localhost:5000/api/register', formData);
-      alert(response.data.message);
+      const response = await axios.post('http://localhost:5000/api/register', formData);      
+      // Use returned message or fallback to a default success message
+      setRegistrationMessage(response.data.message || 'Registration successful!');
+      // Optionally, you can reset the form here:
+      setFormData({
+        firstName: '',
+        middleName: '',
+        lastName: '',
+        suffix: '',
+        email: '',
+        password: '',
+        houseNo: '',
+        street: '',
+        barangay: '',
+        city: 'Pasig',
+        region: 'Metro Manila',
+        contactNumber: '',
+        philHealthNumber: '',
+        membershipStatus: '',
+        dateOfBirth: null,
+        age: '',
+        gender: '',
+        civilStatus: ''
+      });
     } catch (error) {
       console.error('Error during registration:', error);
-      alert('Registration failed. Please try again.');
+      if (error.response && error.response.data && error.response.data.message) {
+        setRegistrationError(error.response.data.message);
+      } else {
+        setRegistrationError('Registration failed. Please try again.');
+      }
     }
   };
 
   return (
-    <Container className="mt-5 mb-5" style={{ backgroundImage: 'url(/images/homepage.webp)', backgroundSize: 'cover', backgroundPosition: 'center', padding: '20px', borderRadius: '10px' }}>
-      <Card className="registration-card" style={{ boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)', borderRadius: '10px', overflow: 'hidden' }}>
+    <Container
+      className="mt-5 mb-5"
+      style={{
+        backgroundImage: 'url(/images/homepage.webp)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        padding: '20px',
+        borderRadius: '10px'
+      }}
+    >
+      <Card
+        className="registration-card"
+        style={{
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+          borderRadius: '10px',
+          overflow: 'hidden'
+        }}
+      >
         <Card.Body>
-          <h2 className="text-center mb-4" style={{ fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#333' }}>Registration</h2>
+          <h2
+            className="text-center mb-4"
+            style={{ fontFamily: 'Arial, sans-serif', fontWeight: 'bold', color: '#333' }}
+          >
+            Registration
+          </h2>
+          {registrationMessage && <div className="alert alert-success">{registrationMessage}</div>}
+          {registrationError && <div className="alert alert-danger">{registrationError}</div>}
           <Form onSubmit={handleSubmit}>
             <Row className="mb-3">
               <Col md={3}>
@@ -168,15 +216,13 @@ const Registration = () => {
               </Col>
               <Col md={3}>
                 <Form.Group controlId="suffix">
-                  <Form.Select
-                    name="suffix"
-                    value={formData.suffix}
-                    onChange={handleChange}
-                  >
-                    <option value="" disabled>Suffix</option>
-                    {suffixOptions.map((suffix, index) => (
-                      <option key={index} value={suffix}>
-                        {suffix || 'None'}
+                  <Form.Select name="suffix" value={formData.suffix} onChange={handleChange}>
+                    <option value="" disabled>
+                      Suffix
+                    </option>
+                    {suffixOptions.map((option, idx) => (
+                      <option key={idx} value={option}>
+                        {option || 'None'}
                       </option>
                     ))}
                   </Form.Select>
@@ -225,15 +271,14 @@ const Registration = () => {
               </Col>
               <Col md={3}>
                 <Form.Group controlId="street">
-                  <Form.Select
-                    name="street"
-                    value={formData.street}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="" disabled>Street</option>
-                    {pasigStreets.map((street, index) => (
-                      <option key={index} value={street}>{street}</option>
+                  <Form.Select name="street" value={formData.street} onChange={handleChange} required>
+                    <option value="" disabled>
+                      Street
+                    </option>
+                    {pasigStreets.map((street, idx) => (
+                      <option key={idx} value={street}>
+                        {street}
+                      </option>
                     ))}
                   </Form.Select>
                 </Form.Group>
@@ -247,33 +292,25 @@ const Registration = () => {
                     disabled={!formData.street}
                     required
                   >
-                    <option value="" disabled>Barangay</option>
-                    {getAvailableBarangays().map((barangay, index) => (
-                      <option key={index} value={barangay}>{barangay}</option>
+                    <option value="" disabled>
+                      Barangay
+                    </option>
+                    {getAvailableBarangays().map((barangay, idx) => (
+                      <option key={idx} value={barangay}>
+                        {barangay}
+                      </option>
                     ))}
                   </Form.Select>
                 </Form.Group>
               </Col>
               <Col md={2}>
                 <Form.Group controlId="city">
-                  <Form.Control
-                    type="text"
-                    placeholder="City"
-                    name="city"
-                    value={formData.city}
-                    readOnly
-                  />
+                  <Form.Control type="text" placeholder="City" name="city" value={formData.city} readOnly />
                 </Form.Group>
               </Col>
               <Col md={2}>
                 <Form.Group controlId="region">
-                  <Form.Control
-                    type="text"
-                    placeholder="Region"
-                    name="region"
-                    value={formData.region}
-                    readOnly
-                  />
+                  <Form.Control type="text" placeholder="Region" name="region" value={formData.region} readOnly />
                 </Form.Group>
               </Col>
             </Row>
@@ -314,7 +351,7 @@ const Registration = () => {
                           value="member"
                           checked={formData.membershipStatus === 'member'}
                           onChange={handleChange}
-                          label="Member:"
+                          label="Member"
                         />
                       </div>
                     </Col>
@@ -327,7 +364,7 @@ const Registration = () => {
                           value="nonmember"
                           checked={formData.membershipStatus === 'nonmember'}
                           onChange={handleChange}
-                          label="Non Member:"
+                          label="Non Member"
                         />
                       </div>
                     </Col>
@@ -358,20 +395,16 @@ const Registration = () => {
                     placeholder="Age"
                     name="age"
                     value={formData.age}
-                    onChange={handleChange}
                     readOnly
                   />
                 </Form.Group>
               </Col>
               <Col md={3}>
                 <Form.Group controlId="gender">
-                  <Form.Select
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="" disabled>Gender</option>
+                  <Form.Select name="gender" value={formData.gender} onChange={handleChange} required>
+                    <option value="" disabled>
+                      Gender
+                    </option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
                     <option value="other">Other</option>
@@ -380,13 +413,10 @@ const Registration = () => {
               </Col>
               <Col md={3}>
                 <Form.Group controlId="civilStatus">
-                  <Form.Select
-                    name="civilStatus"
-                    value={formData.civilStatus}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="" disabled>Civil Status</option>
+                  <Form.Select name="civilStatus" value={formData.civilStatus} onChange={handleChange} required>
+                    <option value="" disabled>
+                      Civil Status
+                    </option>
                     <option value="single">Single</option>
                     <option value="married">Married</option>
                     <option value="divorced">Divorced</option>
@@ -398,12 +428,29 @@ const Registration = () => {
             </Row>
 
             <div className="d-flex justify-content-center mt-4">
-              <Button variant="primary" type="submit" className="register-btn" style={{ backgroundColor: '#007bff', borderColor: '#007bff', padding: '10px 20px', fontSize: '16px', borderRadius: '5px' }}>
+              <Button
+                variant="primary"
+                type="submit"
+                className="register-btn"
+                style={{
+                  backgroundColor: '#007bff',
+                  borderColor: '#007bff',
+                  padding: '10px 20px',
+                  fontSize: '16px',
+                  borderRadius: '5px'
+                }}
+              >
                 Register
               </Button>
             </div>
             <div className="text-center mt-3">
-              <a href="/login" className="login-link" style={{ color: '#007bff', textDecoration: 'none', fontWeight: 'bold' }}>Login Instead</a>
+              <a
+                href="/login"
+                className="login-link"
+                style={{ color: '#007bff', textDecoration: 'none', fontWeight: 'bold' }}
+              >
+                Login Instead
+              </a>
             </div>
           </Form>
         </Card.Body>

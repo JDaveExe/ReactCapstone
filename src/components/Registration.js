@@ -109,16 +109,31 @@ const Registration = () => {
     }));
   };
 
-  // Handle form submission
+  // Handle form submission with improved error handling
   const handleSubmit = async (event) => {
     event.preventDefault();
     setRegistrationMessage('');
     setRegistrationError('');
+    
+    // Basic client-side validation
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
+      setRegistrationError('Please fill in all required fields');
+      return;
+    }
+    
     try {
-      const response = await axios.post('http://localhost:5000/api/register', formData);      
-      // Use returned message or fallback to a default success message
+      console.log('Submitting form data:', formData);
+      
+      // Format dateOfBirth for backend
+      const formattedData = {
+        ...formData,
+        dateOfBirth: formData.dateOfBirth ? formData.dateOfBirth.toISOString() : null
+      };
+      
+      const response = await axios.post('http://localhost:5000/api/register', formattedData);
+      console.log('Backend response:', response.data);
+      
       setRegistrationMessage(response.data.message || 'Registration successful!');
-      // Optionally, you can reset the form here:
       setFormData({
         firstName: '',
         middleName: '',
@@ -141,9 +156,26 @@ const Registration = () => {
       });
     } catch (error) {
       console.error('Error during registration:', error);
-      if (error.response && error.response.data && error.response.data.message) {
-        setRegistrationError(error.response.data.message);
+      
+      // Improved error handling to catch all possible error response formats
+      if (error.response) {
+        const errorData = error.response.data;
+        console.error('Backend error response:', errorData);
+        
+        if (errorData.error) {
+          setRegistrationError(errorData.error);
+        } else if (errorData.message) {
+          setRegistrationError(errorData.message);
+        } else if (errorData.details) {
+          setRegistrationError(errorData.details);
+        } else {
+          setRegistrationError(`Registration failed (${error.response.status})`);
+        }
+      } else if (error.request) {
+        console.error('No response received:', error.request);
+        setRegistrationError('Server did not respond. Please check your connection.');
       } else {
+        console.error('Error setting up request:', error.message);
         setRegistrationError('Registration failed. Please try again.');
       }
     }

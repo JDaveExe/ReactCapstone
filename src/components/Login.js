@@ -12,6 +12,7 @@ const Login = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [loginError, setLoginError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
     const navigate = useNavigate();
 
     const togglePasswordVisibility = () => {
@@ -38,6 +39,10 @@ const Login = () => {
                 localStorage.setItem("firstName", user.firstName);
             }
 
+            // Check if user is admin
+            const isAdminUser = user.role === "admin";
+            setIsAdmin(isAdminUser);
+
             if (user.role === "patient" || user.role === "member") {
                 localStorage.setItem("patientId", user.id);
                 localStorage.setItem("patientName", user.name);
@@ -47,10 +52,12 @@ const Login = () => {
             setIsLoggedIn(true);
 
             // Redirect based on role
-            if (user.role === "admin") {
+            if (isAdminUser) {
+                console.log("Redirecting to admin dashboard");
                 navigate("/admin/dashboard");
             } else {
-                navigate("/dashboard"); // Patient dashboard
+                console.log("Redirecting to patient dashboard");
+                navigate("/dashboard");
             }
         } catch (error) {
             if (error.response && error.response.status === 404) {
@@ -81,6 +88,7 @@ const Login = () => {
         localStorage.removeItem("firstName");
         
         setIsLoggedIn(false);
+        setIsAdmin(false);
         setPatientName("");
         setEmail("");
         setPassword("");
@@ -111,7 +119,9 @@ const Login = () => {
                     {isLoggedIn ? (
                         <div className="welcome-container">
                             <h2 className="welcome-heading">Welcome</h2>
-                            <h3 className="patient-name">{patientName}</h3>
+                            <h3 className="patient-name">
+                                {isAdmin ? "Admin" : patientName}
+                            </h3>
                             <button
                                 className="logout-button"
                                 onClick={handleLogout}

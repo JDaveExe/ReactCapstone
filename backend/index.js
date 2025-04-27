@@ -13,13 +13,13 @@ app.get('/', (req, res) => {
   res.json({ message: 'Server is running' });
 });
 
-// MySQL connection setup
+// MySQL connection setup with better error handling
 const db = mysql.createConnection({
   host: '127.0.0.1',
   user: 'root',
   password: '',
   database: 'project1',
-  port: 3306,
+  port: 3307,  // Note: This should match your MySQL port
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
@@ -29,20 +29,97 @@ const db = mysql.createConnection({
 db.connect((err) => {
   if (err) {
     console.error('Error connecting to MySQL:', err.message);
+    console.error('Error code:', err.code);
     console.error('Please check:');
-    console.error('1. Is MySQL running? Run XAMPP/MySQL service');
+    console.error('1. Is MySQL running on port 3307? Run XAMPP/MySQL service');
     console.error('2. Are credentials correct?');
-    console.error('3. Does database exist?');
+    console.error('3. Does database "project1" exist?');
     return;
   }
   console.log('✓ MySQL Connected');
+  
+  // Once connected, verify that the users table exists
+  db.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      firstName VARCHAR(100) NOT NULL,
+      middleName VARCHAR(100),
+      lastName VARCHAR(100) NOT NULL,
+      suffix VARCHAR(10),
+      email VARCHAR(100) NOT NULL UNIQUE,
+      password VARCHAR(255) NOT NULL,
+      houseNo VARCHAR(50),
+      street VARCHAR(100),
+      barangay VARCHAR(100),
+      city VARCHAR(50),
+      region VARCHAR(50),
+      contactNumber VARCHAR(20),
+      philHealthNumber VARCHAR(50),
+      membershipStatus VARCHAR(20),
+      dateOfBirth DATE,
+      age INT,
+      gender VARCHAR(10),
+      civilStatus VARCHAR(20),
+      createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `, (err, result) => {
+    if (err) {
+      console.error('Error creating users table:', err);
+      return;
+    }
+    console.log('✓ Users table ready');
+    
+    // Create default admin user if it doesn't exist
+    createDefaultAdmin();
+  });
 });
+
+// Function to create default admin user
+const createDefaultAdmin = () => {
+  const adminUser = {
+    firstName: 'Admin',
+    lastName: 'User',
+    email: 'admin@example.com',
+    password: 'adminpassword', // In production, use a hashed password
+    membershipStatus: 'admin'
+  };
+
+  db.query('SELECT id FROM users WHERE email = ?', [adminUser.email], (err, results) => {
+    if (err) {
+      console.error('Error checking admin user:', err);
+      return;
+    }
+
+    if (results.length === 0) {
+      // Admin doesn't exist, create it
+      db.query(
+        'INSERT INTO users (firstName, lastName, email, password, membershipStatus) VALUES (?, ?, ?, ?, ?)',
+        [adminUser.firstName, adminUser.lastName, adminUser.email, adminUser.password, adminUser.membershipStatus],
+        (err, result) => {
+          if (err) {
+            console.error('Error creating admin user:', err);
+            return;
+          }
+          console.log('✓ Default admin user created');
+          console.log('   Email: admin@example.com');
+          console.log('   Password: adminpassword');
+        }
+      );
+    } else {
+      console.log('✓ Admin user already exists');
+    }
+  });
+};
 
 // Add error handler
 db.on('error', (err) => {
   console.error('Database error:', err);
   if (err.code === 'PROTOCOL_CONNECTION_LOST') {
     console.error('Database connection was closed.');
+    // Try to reconnect
+    setTimeout(() => {
+      db.connect();
+    }, 2000);
   }
   if (err.code === 'ER_CON_COUNT_ERROR') {
     console.error('Database has too many connections.');
@@ -78,11 +155,20 @@ app.get('/api/status', (req, res) => {
 
 app.get('/api/database-test', async (req, res) => {
   try {
-    const [results] = await db.promise().query('SHOW TABLES');
-    res.json({
-      status: 'success',
-      tables: results.map(r => Object.values(r)[0]),
-      message: 'Database connection working'
+    db.query('SHOW TABLES', (err, results) => {
+      if (err) {
+        return res.status(500).json({
+          status: 'error',
+          message: err.message,
+          code: err.code
+        });
+      }
+      
+      res.json({
+        status: 'success',
+        tables: results.map(r => Object.values(r)[0]),
+        message: 'Database connection working'
+      });
     });
   } catch (err) {
     res.status(500).json({
@@ -93,8 +179,41 @@ app.get('/api/database-test', async (req, res) => {
   }
 });
 
-// Enhanced registration endpoint with validation
+// Admin creation endpoint (you may want to secure this in production)
+app.post('/api/create-admin', (req, res) => {
+  const adminUser = {
+    firstName: 'Admin',
+    lastName: 'User',
+    email: 'admin@example.com',
+    password: 'adminpassword', // In production, use a hashed password
+    membershipStatus: 'admin'
+  };
+
+  db.query('SELECT id FROM users WHERE email = ?', [adminUser.email], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (results.length > 0) {
+      return res.status(200).json({ message: 'Admin account already exists' });
+    }
+
+    db.query(
+      'INSERT INTO users (firstName, lastName, email, password, membershipStatus) VALUES (?, ?, ?, ?, ?)',
+      [adminUser.firstName, adminUser.lastName, adminUser.email, adminUser.password, adminUser.membershipStatus],
+      (err, result) => {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        res.status(201).json({ message: 'Admin account created successfully' });
+      }
+    );
+  });
+});
+
+// Enhanced registration endpoint with validation and logging
 app.post('/api/register', (req, res) => {
+  console.log('==== Registration Process Started ====');
   const {
     firstName,
     middleName,
@@ -116,8 +235,14 @@ app.post('/api/register', (req, res) => {
     civilStatus
   } = req.body;
 
+  console.log('Incoming registration payload:', JSON.stringify({
+    ...req.body,
+    password: '********' // Mask password in logs
+  }));
+
   // Validate required fields
   if (!firstName || !lastName || !email || !password) {
+    console.log('Missing required fields');
     return res.status(400).json({ 
       error: 'Missing required fields',
       details: 'First name, last name, email and password are required'
@@ -126,20 +251,46 @@ app.post('/api/register', (req, res) => {
 
   // Validate email format
   if (!validateEmail(email)) {
+    console.log('Invalid email format:', email);
     return res.status(400).json({ 
       error: 'Invalid email format'
     });
   }
 
-  // Check for existing email
-  db.query('SELECT id FROM users WHERE email = ?', [email], (err, results) => {
+  // Check for existing email with improved error handling
+  db.query('SELECT id FROM users WHERE email = ?', [email.toLowerCase()], (err, results) => {
     if (err) {
       console.error('Error checking existing user:', err);
-      return res.status(500).json({ error: 'Database error', details: err.message });
+      return res.status(500).json({ 
+        error: 'Database error during email check', 
+        details: err.message 
+      });
     }
 
+    console.log('Duplicate email check results:', results);
+
     if (results.length > 0) {
+      console.log('Email already registered:', email);
       return res.status(409).json({ error: 'Email already registered' });
+    }
+
+    // Parse date properly
+    let formattedDate = null;
+    if (dateOfBirth) {
+      try {
+        // Try to handle both ISO string and date object formats
+        formattedDate = new Date(dateOfBirth);
+        if (isNaN(formattedDate.getTime())) {
+          console.log('Invalid date format received:', dateOfBirth);
+          formattedDate = null;
+        } else {
+          formattedDate = formattedDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+          console.log('Formatted date:', formattedDate);
+        }
+      } catch (e) {
+        console.error('Error parsing date:', e);
+        formattedDate = null;
+      }
     }
 
     const query = `INSERT INTO users (
@@ -154,7 +305,7 @@ app.post('/api/register', (req, res) => {
       lastName,
       suffix || '',
       email.toLowerCase(),
-      password,
+      password, // In a production environment, this should be hashed
       houseNo || '',
       street || '',
       barangay || '',
@@ -162,16 +313,31 @@ app.post('/api/register', (req, res) => {
       region || '',
       contactNumber || '',
       philHealthNumber || '',
-      membershipStatus || 'member',
-      dateOfBirth || null,
+      membershipStatus || '',
+      formattedDate, // Use properly formatted date
       age || null,
       gender || '',
       civilStatus || ''
     ];
 
+    console.log('Executing user insertion with values:', values.map((val, i) => 
+      i === 5 ? '********' : val)); // Mask password in logs
+
     db.query(query, values, (err, result) => {
       if (err) {
         console.error('Error inserting user:', err);
+        console.error('SQL Error Code:', err.code);
+        console.error('SQL Error Number:', err.errno);
+        console.error('SQL State:', err.sqlState);
+        
+        // Handle specific SQL errors
+        if (err.code === 'ER_DUP_ENTRY') {
+          return res.status(409).json({ 
+            error: 'Email already registered',
+            details: 'This email address is already in use'
+          });
+        }
+        
         return res.status(500).json({ 
           error: 'Failed to register user',
           details: err.message 
@@ -179,6 +345,9 @@ app.post('/api/register', (req, res) => {
       }
       
       console.log('User registered successfully:', email);
+      console.log('User ID:', result.insertId);
+      console.log('==== Registration Process Completed ====');
+      
       res.status(201).json({ 
         message: 'User registered successfully!',
         userId: result.insertId
@@ -187,7 +356,7 @@ app.post('/api/register', (req, res) => {
   });
 });
 
-// Enhanced login endpoint with better error handling
+// Enhanced login endpoint with better admin handling
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
   
@@ -219,8 +388,16 @@ app.post('/api/login', (req, res) => {
 
     console.log('Login successful for user:', email);
 
-    const role = user.membershipStatus?.toLowerCase() === 'member' ? 'patient' : 
-                user.membershipStatus?.toLowerCase() === 'nonmember' ? 'patient' : 'admin';
+    // Improved role determination logic
+    let role;
+    if (user.membershipStatus?.toLowerCase() === 'admin') {
+      role = 'admin';
+    } else if (user.membershipStatus?.toLowerCase() === 'member' || 
+               user.membershipStatus?.toLowerCase() === 'nonmember') {
+      role = 'patient';
+    } else {
+      role = 'patient'; // Default role
+    }
 
     res.status(200).json({
       message: 'Login successful',
@@ -276,5 +453,6 @@ app.listen(port, () => {
   console.log('4. POST http://localhost:5000/api/register');
   console.log('5. POST http://localhost:5000/api/login');
   console.log('6. POST http://localhost:5000/api/get-patient-name');
+  console.log('7. POST http://localhost:5000/api/create-admin');
   console.log('=================================');
 });

@@ -14,7 +14,7 @@ const PatientProfile = () => {
     "Street 1": ["Barangay A", "Barangay B"],
     "Street 2": ["Barangay C", "Barangay D"],
   };
-
+  
   // Sample places of birth (can be updated with actual data)
   const birthPlaceOptions = [
     "Manila", 

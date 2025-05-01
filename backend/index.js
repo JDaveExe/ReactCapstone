@@ -19,7 +19,7 @@ const db = mysql.createConnection({
   user: 'root',
   password: '',
   database: 'project1',
-  port: 3307,  // Note: This should match your MySQL port
+  port: 3306,  // Note: This should match your MySQL port
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0

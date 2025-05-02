@@ -1,231 +1,119 @@
-/* Login styling with Bootstrap integration */
-.login-container {
-  display: flex;
+.login-wrapper {
   height: 100vh;
-  background: linear-gradient(to right, #9A705E, #343434);
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url('../images/home.jpg');
+  background-size: cover;
+  background-position: center;
   font-family: Arial, sans-serif;
-  background-color: rgb(255, 255, 255); /* Using the exact background color specified */
-  color: #ffffff; /* White font color for contrast */
 }
 
-/* Left Panel */
-.login-left-panel {
-  width: 50%;
-  background-color: #9A705E; /* Using the exact background color specified */
-  display: flex;
-  flex-direction: column;
-  padding: 40px 20px;
-  color: white;
-  text-align: center;
-}
-
-.login-header {
-  margin-top: 40px;
-  font-size: 1.4rem;
-  font-weight: 500;
-}
-
-.login-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-grow: 1;
-  padding: 20px;
-}
-
-.logo-image {
-  width: 250px;
-  height: 250px;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-/* Right Panel */
-.login-right-panel {
-  width: 50%;
-  background-color: #ffffff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-}
-
-.login-form-container {
+.login-card {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 2rem;
   width: 100%;
-  max-width: 350px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 15px;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
-.qr-placeholder {
-  width: 150px;
-  height: 150px;
-  background: white;
-  border: 1px solid #ddd;
-  margin-bottom: 30px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.login-logo {
+  width: 60px;
+  height: 60px;
 }
 
 .login-form {
-  width: 100%;
-  text-align: center;
+  padding: 1rem 0;
 }
 
-.form-group {
-  margin-bottom: 15px;
-  width: 100%;
-}
-
-.form-group label {
-  display: block;
+.login-form label {
   font-weight: 500;
-  margin-bottom: 5px;
-  text-align: left;
+  margin-bottom: 0.25rem;
+  color: #333;
 }
 
-.form-group input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
+.form-control {
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
   border-radius: 4px;
-  font-size: 16px;
+  margin-bottom: 0.5rem;
 }
 
-.login-button, .logout-button {
-  width: 100%;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 12px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  margin-top: 20px;
-  margin-bottom: 10px;
-  transition: background-color 0.2s;
-}
-
-.login-button:hover, .logout-button:hover {
-  background-color: #0056b3;
-}
-
-.register-link {
-  text-align: center;
-  margin-top: 10px;
-}
-
-.register-link a {
-  color: #007bff;
-  text-decoration: none;
-}
-
-.register-link a:hover {
-  text-decoration: underline;
-}
-
-/* Welcome Screen Styles */
-.welcome-container {
-  text-align: center;
-  padding: 20px;
-  width: 100%;
-}
-
-.welcome-heading {
-  font-size: 2rem;
-  color: #ffffff; /* White font color for better contrast */
-  margin-bottom: 10px;
-}
-
-.patient-name {
-  font-size: 1.5rem;
-  color: #ffffff; /* White font color for better contrast */
-  margin-bottom: 20px;
-}
-
-.welcome-message {
-  margin-bottom: 30px;
-  line-height: 1.5;
-  color: #dcdcdc; /* Light gray for better visibility */
-}
-
-.logout-button {
-  background-color: #dc3545;
-}
-
-.logout-button:hover {
-  background-color: #c82333;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .login-container {
-    flex-direction: column;
-  }
-  
-  .login-left-panel,
-  .login-right-panel {
-    width: 100%;
-    padding: 20px 15px;
-  }
-  
-  .login-left-panel {
-    height: auto;
-    min-height: 200px;
-  }
-  
-  .login-header {
-    margin-top: 10px;
-    margin-bottom: 10px;
-  }
-  
-  .login-icon {
-    padding: 10px;
-  }
-  
-  .logo-image {
-    width: 120px;
-    height: 120px;
-  }
-  
-  .login-right-panel {
-    height: auto;
-    padding-top: 30px;
-    padding-bottom: 30px;
-  }
-
-  .login-form-container {
-    padding: 10px;
-  }
-  
-  .qr-placeholder {
-    width: 120px;
-    height: 120px;
-    margin-bottom: 20px;
-  }
-}
-
-/* Bootstrap overrides and integrations */
 .form-control:focus {
-  border-color: #191144;
-  box-shadow: 0 0 0 0.2rem rgba(25, 17, 68, 0.25);
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  border-color: #86b7fe;
+}
+
+/* Password toggle icon styling */
+.password-input-container {
+  position: relative;
+}
+
+.password-toggle-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #6c757d;
+  transition: all 0.3s ease;
+}
+
+.password-toggle-icon:hover {
+  color: #0d6efd;
+}
+
+/* Blinking effect when toggling */
+.password-toggle-icon.visible {
+  animation: blink 0.5s;
+}
+
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.3; }
+  100% { opacity: 1; }
 }
 
 .btn-primary {
-  background-color: #007bff;
-  border-color: #007bff;
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
+  padding: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .btn-primary:hover {
-  background-color: #0056b3;
-  border-color: #0056b3;
+  background-color: #0b5ed7;
+  border-color: #0a58ca;
+}
+
+.forgot-password {
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+.welcome-container {
+  padding: 1rem 0;
+}
+
+.welcome-container h2 {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.welcome-container h3 {
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+  color: #666;
 }
 
 .btn-danger {
@@ -234,12 +122,28 @@
 }
 
 .btn-danger:hover {
-  background-color: #c82333;
-  border-color: #bd2130;
+  background-color: #bb2d3b;
+  border-color: #b02a37;
 }
 
-.card {
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+.form-check-label {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.register-link a {
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+.register-link a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  .login-card {
+    max-width: 90%;
+    padding: 1.5rem;
+  }
 }

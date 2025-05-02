@@ -1,69 +1,85 @@
-/* Patient Profile Styles */
-.patient-profile {
+/* PatientProfile.css */
+
+.patient-profile-container {
+  background: linear-gradient(to right, #9A705E, #343434);
   padding: 20px;
-  font-family: Arial, sans-serif;
-  max-width: 900px;
-  margin: auto;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  padding: 30px;
-  padding-bottom: 30px;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-h2 {
-  font-size: 28px;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
-
-label {
-  font-weight: bold;
-  display: block;
-  margin-top: 10px;
-  font-size: 14px;
-}
-
-select, input {
+.patient-profile-card {
+  background-color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
   width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 14px;
+  max-width: 1200px;
+  margin: 20px auto;
 }
 
-input[readonly] {
-  background-color: #f4f4f4;
+.patient-profile-card .card-body {
+  padding: 30px;
 }
 
-.patient-profile select:disabled {
-  background-color: #e0e0e0;
-}
-
-/* Layout Styling */
-.form-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 15px;
-  margin-bottom: 10px;
-}
-
-.form-group {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.small-input {
-  max-width: 150px;
-}
-
-.center-text {
-  text-align: center;
+.patient-profile-card h2 {
+  color: #333;
   font-weight: bold;
+  text-align: center;
+  margin-bottom: 30px;
 }
 
-.footer {
-  margin-top: 300px;
+.form-control, .form-select {
+  padding: 10px 15px;
+  border-radius: 5px;
+  border: 1px solid #ced4da;
+  background-color: #f9f9f9;
+  margin-bottom: 0;
+}
+
+.form-control:disabled, .form-control[readonly],
+.form-select:disabled, .form-select[readonly] {
+  background-color: #e9ecef;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.form-label {
+  font-weight: 500;
+  margin-bottom: 5px;
+  color: #495057;
+}
+
+/* Make form responsive */
+@media (max-width: 768px) {
+  .patient-profile-card .card-body {
+    padding: 15px;
+  }
+  
+  .row {
+    margin-right: -5px;
+    margin-left: -5px;
+  }
+  
+  .col-md-2, .col-md-3, .col-md-4, .col-md-6 {
+    padding-right: 5px;
+    padding-left: 5px;
+    margin-bottom: 10px;
+  }
+  
+  .form-control, .form-select {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+}
+
+/* Override bootstrap styles to match the registration form */
+.form-control:focus, .form-select:focus {
+  border-color: #9A705E;
+  box-shadow: 0 0 0 0.2rem rgba(154, 112, 94, 0.25);
+}
+
+/* Add some space between form rows */
+.form-row + .form-row {
+  margin-top: 15px;
 }

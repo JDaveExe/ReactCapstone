@@ -115,7 +115,6 @@ const Registration = () => {
     setRegistrationMessage('');
     setRegistrationError('');
     
-    // Basic client-side validation
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
       setRegistrationError('Please fill in all required fields');
       return;
@@ -124,44 +123,35 @@ const Registration = () => {
     try {
       console.log('Submitting form data:', formData);
       
-      // Format dateOfBirth for backend
+      // Format dateOfBirth as YYYY-MM-DD
       const formattedData = {
         ...formData,
-        dateOfBirth: formData.dateOfBirth ? formData.dateOfBirth.toISOString() : null
+        dateOfBirth: formData.dateOfBirth ? 
+          formData.dateOfBirth.toISOString().split('T')[0] : 
+          null
       };
       
       const response = await axios.post('http://localhost:5000/api/register', formattedData);
       console.log('Backend response:', response.data);
       
-      setRegistrationMessage(response.data.message || 'Registration successful!');
-      setFormData({
-        firstName: '',
-        middleName: '',
-        lastName: '',
-        suffix: '',
-        email: '',
-        password: '',
-        houseNo: '',
-        street: '',
-        barangay: '',
-        city: 'Pasig',
-        region: 'Metro Manila',
-        contactNumber: '',
-        philHealthNumber: '',
-        membershipStatus: '',
-        dateOfBirth: null,
-        age: '',
-        gender: '',
-        civilStatus: ''
-      });
-    } catch (error) {
-      console.error('Error during registration:', error);
+      // Store user data in localStorage
+      localStorage.setItem("user", JSON.stringify({
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName
+      }));
       
+      setRegistrationMessage('Registration successful! Redirecting to profile...');
+      
+      // Redirect to profile after 2 seconds
+      setTimeout(() => {
+        window.location.href = '/patient-profile';
+      }, 2000);
+      
+    } catch (error) {
       // Improved error handling to catch all possible error response formats
       if (error.response) {
         const errorData = error.response.data;
-        console.error('Backend error response:', errorData);
-        
         if (errorData.error) {
           setRegistrationError(errorData.error);
         } else if (errorData.message) {
@@ -172,10 +162,8 @@ const Registration = () => {
           setRegistrationError(`Registration failed (${error.response.status})`);
         }
       } else if (error.request) {
-        console.error('No response received:', error.request);
         setRegistrationError('Server did not respond. Please check your connection.');
       } else {
-        console.error('Error setting up request:', error.message);
         setRegistrationError('Registration failed. Please try again.');
       }
     }

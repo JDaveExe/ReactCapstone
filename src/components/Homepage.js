@@ -31,8 +31,7 @@ const Homepage = () => {
         </div>
         <div className="navbar-links">
           <a href="/" className="active" onClick={handleNavigation("/")}>HOME</a>
-          <a href="/login" onClick={handleNavigation("/login")}>SIGN IN</a>
-          <a href="/register" onClick={handleNavigation("/register")}>SIGN UP</a>
+          <a href="/auth" onClick={handleNavigation("/auth")}>SIGN IN / SIGN UP</a>
           <a href="/services" onClick={handleNavigation("/services", true)}>SERVICES</a>
           <a href="/about-us" onClick={handleNavigation("/about-us")}>ABOUT US</a>
           <a href="/contact" onClick={handleNavigation("/contact")}>CONTACT US</a>

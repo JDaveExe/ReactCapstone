@@ -19,7 +19,7 @@ const db = mysql.createConnection({
   user: 'root',
   password: '',
   database: 'project1',
-  port: 3306,  // Note: This should match your MySQL port
+  port: 3307,  // Note: This should match your MySQL port
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
@@ -213,6 +213,10 @@ app.post('/api/create-admin', (req, res) => {
 
 // Enhanced registration endpoint with validation and logging
 app.post('/api/register', (req, res) => {
+  console.log('Registration payload received:', {
+    ...req.body,
+    password: '******' // Mask password in logs
+  });
   console.log('==== Registration Process Started ====');
   const {
     firstName,
@@ -404,8 +408,8 @@ app.post('/api/login', (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        name: `${user.firstName} ${user.lastName}`.trim(),
         firstName: user.firstName,
+        lastName: user.lastName,
         role: role
       }
     });
@@ -439,6 +443,50 @@ app.post('/api/get-patient-name', (req, res) => {
     const { firstName } = results[0];
     console.log('Found firstName:', firstName);
     res.status(200).json({ firstName });
+  });
+});
+
+// Add this endpoint to your index.js file, place it after your other API endpoints
+// and before the app.listen() section
+
+// Endpoint to get user details for patient profile
+app.post('/api/get-user-details', (req, res) => {
+  const { email } = req.body;
+  console.log('Fetching user details for email:', email);
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  const query = 'SELECT * FROM users WHERE LOWER(email) = LOWER(?)';
+
+  db.query(query, [email], (err, results) => {
+    if (err) {
+      console.error('Error querying the database:', err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    if (results.length === 0) {
+      console.log('No user found for email:', email);
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Get user data
+    const user = results[0];
+    
+    // Remove sensitive information (like password) before sending
+    delete user.password;
+    
+    console.log('Found user details for profile:', {
+      id: user.id,
+      email: user.email,
+      name: `${user.firstName} ${user.lastName}`.trim()
+    });
+
+    res.status(200).json({ 
+      message: 'User details retrieved successfully',
+      user: user
+    });
   });
 });
 

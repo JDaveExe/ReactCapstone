@@ -24,6 +24,7 @@ import DashboardAdm from "./components/DashboardAdm";
 import SidebarAdmin from "./components/SidebarAdmin";
 import TopbarAdmin from "./components/TopbarAdmin";
 import Reports from "./components/Reports";
+import AuthPage from "./components/AuthPage";
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -63,6 +64,8 @@ function App() {
       return { page: "admitting-data", isAdmin: false };
     } else if (path === "/manage") {
       return { page: "manage", isAdmin: false };
+    } else if (path === "/auth") {
+      return { page: "auth", isAdmin: false };
     } 
     // Handle admin paths
     else if (path === "/admin/dashboard") {
@@ -90,10 +93,11 @@ function App() {
   const page = pageInfo.page;
   const isAdminPage = pageInfo.isAdmin;
 
-  const shouldShowSidebar = () => {
-    const noSidebarPages = ['home', 'login', 'register', 'about-us', 'contact', 'dashboard'];
-    return !noSidebarPages.includes(page) && !isAdminPage;
-  };
+// In App.js, modify the shouldShowSidebar function:
+const shouldShowSidebar = () => {
+  const noSidebarPages = ['home', 'login', 'register', 'about-us', 'contact', 'dashboard', 'auth'];
+  return !noSidebarPages.includes(page) && !isAdminPage;
+};
 
   const toggleSidebarCollapse = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -191,7 +195,7 @@ function App() {
       )}
 
       <div className={`main-content ${!shouldShowSidebar() ? 'full-width' : ''} ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-        {shouldShowSidebar() && page !== "dashboard" && (
+        {shouldShowSidebar() && page !== "dashboard" && page !== "auth" && (
           <Topbar 
             toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
             isSidebarCollapsed={isSidebarCollapsed}
@@ -200,8 +204,8 @@ function App() {
         )}
         <div className="content-area">
           {page === "home" && <Homepage />}
+          {page === "auth" && <AuthPage />}
           {page === "register" && <RegistrationForm />}
-          {page === "dashboard" && <Dashboard />}
           {page === "login" && <Login />}
           {page === "patient-profile" && <PatientProfile />}
           {page === "immunisation-history" && <ImmunisationH />}

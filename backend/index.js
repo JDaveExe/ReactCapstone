@@ -19,7 +19,7 @@ const db = mysql.createConnection({
   user: 'root',
   password: '',
   database: 'project1',
-  port: 3307,  // Note: This should match your MySQL port
+  port: 3306,  // Note: This should match your MySQL port
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
@@ -31,7 +31,7 @@ db.connect((err) => {
     console.error('Error connecting to MySQL:', err.message);
     console.error('Error code:', err.code);
     console.error('Please check:');
-    console.error('1. Is MySQL running on port 3307? Run XAMPP/MySQL service');
+    console.error('1. Is MySQL running on port 3306? Run XAMPP/MySQL service');
     console.error('2. Are credentials correct?');
     console.error('3. Does database "project1" exist?');
     return;

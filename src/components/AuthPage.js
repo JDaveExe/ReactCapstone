@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Form, Button, Container, Row, Col, Card, Nav } from 'react-bootstrap';
 import DatePicker from 'react-datepicker';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
+import { QRCodeCanvas as QRCode } from 'qrcode.react';
+import { QrReader } from 'react-qr-reader';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -19,7 +21,10 @@ const AuthPage = () => {
   const [loginError, setLoginError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-
+  const [isQrLogin, setIsQrLogin] = useState(false);
+  const [qrData, setQrData] = useState("");
+  const [showQrScanner, setShowQrScanner] = useState(false);
+  
   // ===== REGISTRATION STATE =====
   const [formData, setFormData] = useState({
     firstName: '',
@@ -45,6 +50,9 @@ const AuthPage = () => {
   const [registrationError, setRegistrationError] = useState('');
   const [regPasswordStrength, setRegPasswordStrength] = useState("");
   const [showRegPassword, setShowRegPassword] = useState(false);
+  const [showQrCode, setShowQrCode] = useState(false);
+  const [registrationComplete, setRegistrationComplete] = useState(false);
+  const [userQrValue, setUserQrValue] = useState("");
 
   // ===== REGISTRATION DATA =====
   const suffixOptions = ['', 'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];
@@ -71,7 +79,7 @@ const AuthPage = () => {
     'F. Legaspi Bridge': ['San Joaquin', 'Kalawaan', 'Malinao'],
     'San Guillermo Street': ['San Jose', 'Pineda', 'Palatiw'],
     'Dr. Sixto Antonio Avenue': ['Kapasigan', 'Bagong Ilog', 'Caniogan']
-  };
+  }
 
   // ===== PASSWORD STRENGTH CHECKER =====
   // Modified to be less punishing
@@ -123,6 +131,16 @@ const AuthPage = () => {
     setShowRegPassword(!showRegPassword);
   };
 
+  const toggleQrLogin = () => {
+    setIsQrLogin(!isQrLogin);
+    if (!isQrLogin) {
+      setShowQrScanner(true);
+    } else {
+      setShowQrScanner(false);
+    }
+    setLoginError("");
+  };
+
   const handleLogin = async () => {
     setLoginError(""); // Clear any previous error messages
 
@@ -170,10 +188,60 @@ const AuthPage = () => {
       console.error("Login failed:", error);
     }
   };
+  
+  const handleQrLogin = async (scannedQrData) => {
+    try {
+      // Parse the QR data to get email and password
+      const qrDataObj = JSON.parse(scannedQrData);
+      
+      if (!qrDataObj.email || !qrDataObj.authToken) {
+        setLoginError("Invalid QR code format");
+        return;
+      }
+      
+      // Use the email and token from QR code for login
+      const response = await axios.post('http://localhost:5000/api/login', { 
+        email: qrDataObj.email, 
+        password: qrDataObj.authToken 
+      });
+      
+      const { user } = response.data;
+      
+      console.log("QR Login response:", user);
+      
+      // Store user data in localStorage
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("userRole", user.role);
+      localStorage.setItem("userEmail", user.email);
+      localStorage.setItem("userName", user.name);
+      
+      if (user.firstName) {
+        localStorage.setItem("firstName", user.firstName);
+      }
+      
+      const isAdminUser = user.role === "admin";
+      
+      if (user.role === "patient" || user.role === "member") {
+        localStorage.setItem("patientId", user.id);
+        localStorage.setItem("patientName", user.name);
+      }
+      
+      // Redirect based on role
+      if (isAdminUser) {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
+      
+    } catch (error) {
+      console.error("QR Login failed:", error);
+      setLoginError("QR code login failed. Please try again or use password login.");
+    }
+  };
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
-      if (activeTab === 'login') {
+      if (activeTab === 'login' && !isQrLogin) {
         handleLogin();
       } else {
         handleSubmit(e);
@@ -224,6 +292,15 @@ const AuthPage = () => {
     }));
   };
 
+  // Generate a unique token for QR code
+  const generateQrToken = () => {
+    // In a real application, this should be a secure, properly generated token
+    // This is just a simple example
+    const randomString = Math.random().toString(36).substring(2, 15);
+    const timestamp = new Date().getTime().toString(36);
+    return randomString + timestamp;
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setRegistrationMessage('');
@@ -237,16 +314,37 @@ const AuthPage = () => {
     try {
       console.log('Submitting form data:', formData);
       
+      // Generate QR token
+      const qrToken = generateQrToken();
+      
       // Format dateOfBirth as YYYY-MM-DD
       const formattedData = {
         ...formData,
         dateOfBirth: formData.dateOfBirth ? 
           formData.dateOfBirth.toISOString().split('T')[0] : 
-          null
+          null,
+        // Store the original password in a variable
+        originalPassword: formData.password
       };
+      
+      // In a real application, we'd store the QR token in the database
+      // For now, we'll just use the original password as the token
       
       const response = await axios.post('http://localhost:5000/api/register', formattedData);
       console.log('Backend response:', response.data);
+      
+      // Create QR code data
+      const qrData = JSON.stringify({
+        email: formData.email,
+        authToken: formData.password, // In a real app, use a different secure token
+        name: `${formData.firstName} ${formData.lastName}`.trim()
+      });
+      
+      setUserQrValue(qrData);
+      setRegistrationComplete(true);
+      setShowQrCode(true);
+      
+      setRegistrationMessage('Registration successful! Your QR code is ready below.');
       
       // Store user data in localStorage
       localStorage.setItem("user", JSON.stringify({
@@ -254,13 +352,6 @@ const AuthPage = () => {
         firstName: formData.firstName,
         lastName: formData.lastName
       }));
-      
-      setRegistrationMessage('Registration successful! Redirecting to profile...');
-      
-      // Redirect to profile after 2 seconds
-      setTimeout(() => {
-        window.location.href = '/patient-profile';
-      }, 2000);
       
     } catch (error) {
       // Improved error handling to catch all possible error response formats
@@ -283,6 +374,98 @@ const AuthPage = () => {
     }
   };
 
+  // Download QR code as image
+  const downloadQRCode = () => {
+    const canvas = document.getElementById("user-qr-code");
+    if (canvas) {
+      const pngUrl = canvas
+        .toDataURL("image/png")
+        .replace("image/png", "image/octet-stream");
+      
+      const downloadLink = document.createElement("a");
+      downloadLink.href = pngUrl;
+      downloadLink.download = `maybunga_health_qr_${formData.firstName}_${formData.lastName}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    }
+  };
+
+  // Print QR code
+  const printQRCode = () => {
+    const printWindow = window.open('', '_blank');
+    
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Maybunga Health Center - Your QR Code</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              text-align: center;
+              padding: 20px;
+            }
+            .qr-container {
+              margin: 0 auto;
+              max-width: 400px;
+              padding: 20px;
+              border: 1px solid #ccc;
+              border-radius: 5px;
+            }
+            .header {
+              margin-bottom: 20px;
+            }
+            .user-info {
+              margin: 20px 0;
+              text-align: left;
+            }
+            .instructions {
+              margin-top: 20px;
+              font-size: 14px;
+              color: #555;
+              text-align: left;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="qr-container">
+            <div class="header">
+              <h2>Maybunga Health Center</h2>
+              <h3>Quick Login QR Code</h3>
+            </div>
+            
+            <div>
+              <img src="${document.getElementById('user-qr-code').toDataURL()}" alt="Your QR Code" style="width: 200px; height: 200px;">
+            </div>
+            
+            <div class="user-info">
+              <p><strong>Name:</strong> ${formData.firstName} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName} ${formData.suffix || ''}</p>
+              <p><strong>Email:</strong> ${formData.email}</p>
+              <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+            </div>
+            
+            <div class="instructions">
+              <p><strong>Instructions:</strong></p>
+              <ol>
+                <p>1. Keep this QR code safe and private</p>
+                <p>2. Use this QR code to quickly log in to the Maybunga Health Center system</p>
+                <p>3. If you lose this QR code, please contact the administrator</p>
+              </ol>
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+            }
+          </script>
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+  };
+
   // Toggle between login and registration forms
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -290,6 +473,8 @@ const AuthPage = () => {
     setLoginError('');
     setRegistrationError('');
     setRegistrationMessage('');
+    setIsQrLogin(false);
+    setShowQrScanner(false);
   };
 
   // Password strength indicator UI component
@@ -344,62 +529,100 @@ const AuthPage = () => {
       <div className="login-form">
         {loginError && <div className="alert alert-danger">{loginError}</div>}
         
-        <div className="form-group mb-3">
-          <label htmlFor="username">Username</label>
-          <input
-            type="email"
-            id="username"
-            className="form-control form-control-lg"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Username"
-          />
-        </div>
+        {!isQrLogin ? (
+          // Regular login form
+          <>
+            <div className="form-group mb-3">
+              <label htmlFor="username">Username</label>
+              <input
+                type="email"
+                id="username"
+                className="form-control form-control-lg"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Username"
+              />
+            </div>
 
-        <div className="form-group mb-3">
-          <label htmlFor="password">Password</label>
-          <div className="password-input-container">
-            <input
-              type={showPassword ? "text" : "password"}
-              id="password"
-              className="form-control form-control-lg"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Password"
-            />
-            <span 
-              className="password-toggle-icon"
-              onClick={togglePasswordVisibility}
+            <div className="form-group mb-3">
+              <label htmlFor="password">Password</label>
+              <div className="password-input-container">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  className="form-control form-control-lg"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Password"
+                />
+                <span 
+                  className="password-toggle-icon"
+                  onClick={togglePasswordVisibility}
+                >
+                  {showPassword ? 
+                    <i className="bi bi-eye-fill"></i> : 
+                    <i className="bi bi-eye-slash-fill"></i>
+                  }
+                </span>
+              </div>
+            </div>
+
+            <div className="form-check mb-3">
+              <input
+                type="checkbox"
+                className="form-check-input"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              <label className="form-check-label" htmlFor="rememberMe">
+                Remember me
+              </label>
+            </div>
+
+            <button 
+              className="btn btn-primary w-100 btn-lg mb-3" 
+              onClick={handleLogin}
             >
-              {showPassword ? 
-                <i className="bi bi-eye-fill"></i> : 
-                <i className="bi bi-eye-slash-fill"></i>
-              }
-            </span>
+              Log In
+            </button>
+          </>
+        ) : (
+          // QR Code login form
+          <div className="qr-scanner-container text-center">
+            <h4 className="mb-3">Scan Your QR Code to Login</h4>
+            
+            {showQrScanner && (
+              <div className="qr-reader-wrapper mb-3">
+                <QrReader
+                  constraints={{ facingMode: 'environment' }}
+                  onResult={(result) => {
+                    if (result) {
+                      setQrData(result.text);
+                      handleQrLogin(result.text);
+                      setShowQrScanner(false);
+                    }
+                  }}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            )}
+            
+            <div className="text-center">
+              <p className="text-muted">
+                Position your QR code within the camera frame
+              </p>
+            </div>
           </div>
-          {/* Password strength indicator removed from login form */}
-        </div>
-
-        <div className="form-check mb-3">
-          <input
-            type="checkbox"
-            className="form-check-input"
-            id="rememberMe"
-            checked={rememberMe}
-            onChange={(e) => setRememberMe(e.target.checked)}
-          />
-          <label className="form-check-label" htmlFor="rememberMe">
-            Remember me
-          </label>
-        </div>
-
+        )}
+        
         <button 
-          className="btn btn-primary w-100 btn-lg" 
-          onClick={handleLogin}
+          className="btn btn-outline-secondary w-100" 
+          onClick={toggleQrLogin}
         >
-          Log In
+          {isQrLogin ? "Login with Password" : "Login with QR Code"}
         </button>
 
         <div className="text-center mt-3">
@@ -417,186 +640,220 @@ const AuthPage = () => {
         {registrationMessage && <div className="alert alert-success">{registrationMessage}</div>}
         {registrationError && <div className="alert alert-danger">{registrationError}</div>}
         
-        <Form onSubmit={handleSubmit}>
-          <Row className="mb-3">
-            <Col md={3}>
-              <Form.Group controlId="firstName">
-                <Form.Control
-                  type="text"
-                  placeholder="First Name"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-            </Col>
-            <Col md={3}>
-              <Form.Group controlId="middleName">
-                <Form.Control
-                  type="text"
-                  placeholder="Middle Name"
-                  name="middleName"
-                  value={formData.middleName}
-                  onChange={handleChange}
-                />
-              </Form.Group>
-            </Col>
-            <Col md={3}>
-              <Form.Group controlId="lastName">
-                <Form.Control
-                  type="text"
-                  placeholder="Last Name"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-            </Col>
-            <Col md={3}>
-              <Form.Group controlId="suffix">
-                <Form.Select name="suffix" value={formData.suffix} onChange={handleChange}>
-                  <option value="" disabled>
-                    Suffix
-                  </option>
-                  {suffixOptions.map((option, idx) => (
-                    <option key={idx} value={option}>
-                      {option || 'None'}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </Col>
-          </Row>
-
-          <Row className="mb-3">
-            <Col md={6}>
-              <Form.Group controlId="email">
-                <Form.Control
-                  type="email"
-                  placeholder="Email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-            </Col>
-            <Col md={6}>
-              <Form.Group controlId="password">
-                <div className="position-relative">
+        {showQrCode && registrationComplete ? (
+          <div className="qr-code-container text-center">
+            <h4 className="mb-3">Your QR Code for Quick Login</h4>
+            <div className="mb-3">
+              <QRCode 
+                id="user-qr-code"
+                value={userQrValue} 
+                size={200}
+                level="H"
+                includeMargin={true}
+                className="mb-3"
+              />
+            </div>
+            <p className="text-muted mb-4">
+              Save this QR code to quickly log in to your account in the future.
+              You can download or print it for your convenience.
+            </p>
+            <div className="d-flex justify-content-center gap-3">
+              <Button variant="primary" onClick={downloadQRCode}>
+                <i className="bi bi-download me-2"></i>Download QR Code
+              </Button>
+              <Button variant="outline-primary" onClick={printQRCode}>
+                <i className="bi bi-printer me-2"></i>Print QR Code
+              </Button>
+            </div>
+            <div className="mt-4">
+              <Button variant="link" onClick={() => {
+                setShowQrCode(false);
+                setActiveTab('login');
+              }}>
+                Go to Login
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Form onSubmit={handleSubmit}>
+            <Row className="mb-3">
+              <Col md={3}>
+                <Form.Group controlId="firstName">
                   <Form.Control
-                    type={showRegPassword ? "text" : "password"}
-                    placeholder="Password"
-                    name="password"
-                    value={formData.password}
+                    type="text"
+                    placeholder="First Name"
+                    name="firstName"
+                    value={formData.firstName}
                     onChange={handleChange}
                     required
                   />
-                  <span 
-                    className="position-absolute top-50 end-0 translate-middle-y me-2"
-                    style={{ cursor: 'pointer' }}
-                    onClick={toggleRegPasswordVisibility}
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="middleName">
+                  <Form.Control
+                    type="text"
+                    placeholder="Middle Name"
+                    name="middleName"
+                    value={formData.middleName}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="lastName">
+                  <Form.Control
+                    type="text"
+                    placeholder="Last Name"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="suffix">
+                  <Form.Select name="suffix" value={formData.suffix} onChange={handleChange}>
+                    <option value="" disabled>
+                      Suffix
+                    </option>
+                    {suffixOptions.map((option, idx) => (
+                      <option key={idx} value={option}>
+                        {option || 'None'}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group controlId="email">
+                  <Form.Control
+                    type="email"
+                    placeholder="Email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group controlId="password">
+                  <div className="position-relative">
+                    <Form.Control
+                      type={showRegPassword ? "text" : "password"}
+                      placeholder="Password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                    />
+                    <span 
+                      className="position-absolute top-50 end-0 translate-middle-y me-2"
+                      style={{ cursor: 'pointer' }}
+                      onClick={toggleRegPasswordVisibility}
+                    >
+                      {showRegPassword ? 
+                        <i className="bi bi-eye-fill"></i> : 
+                        <i className="bi bi-eye-slash-fill"></i>
+                      }
+                    </span>
+                  </div>
+                  <PasswordStrengthIndicator strength={regPasswordStrength} />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row className="mb-3">
+              <Col md={2}>
+                <Form.Group controlId="houseNo">
+                  <Form.Control
+                    type="text"
+                    placeholder="House No."
+                    name="houseNo"
+                    value={formData.houseNo}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="street">
+                  <Form.Select name="street" value={formData.street} onChange={handleChange} required>
+                    <option value="" disabled>
+                      Street
+                    </option>
+                    {pasigStreets.map((street, idx) => (
+                      <option key={idx} value={street}>
+                        {street}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="barangay">
+                  <Form.Select
+                    name="barangay"
+                    value={formData.barangay}
+                    onChange={handleChange}
+                    disabled={!formData.street}
+                    required
                   >
-                    {showRegPassword ? 
-                      <i className="bi bi-eye-fill"></i> : 
-                      <i className="bi bi-eye-slash-fill"></i>
-                    }
-                  </span>
-                </div>
-                <PasswordStrengthIndicator strength={regPasswordStrength} />
-              </Form.Group>
-            </Col>
-          </Row>
-
-          <Row className="mb-3">
-            <Col md={2}>
-              <Form.Group controlId="houseNo">
-                <Form.Control
-                  type="text"
-                  placeholder="House No."
-                  name="houseNo"
-                  value={formData.houseNo}
-                  onChange={handleChange}
-                />
-              </Form.Group>
-            </Col>
-            <Col md={3}>
-              <Form.Group controlId="street">
-                <Form.Select name="street" value={formData.street} onChange={handleChange} required>
-                  <option value="" disabled>
-                    Street
-                  </option>
-                  {pasigStreets.map((street, idx) => (
-                    <option key={idx} value={street}>
-                      {street}
+                    <option value="" disabled>
+                      Barangay
                     </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </Col>
-            <Col md={3}>
-              <Form.Group controlId="barangay">
-                <Form.Select
-                  name="barangay"
-                  value={formData.barangay}
-                  onChange={handleChange}
-                  disabled={!formData.street}
-                  required
-                >
-                  <option value="" disabled>
-                    Barangay
-                  </option>
-                  {getAvailableBarangays().map((barangay, idx) => (
-                    <option key={idx} value={barangay}>
-                      {barangay}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </Col>
-            <Col md={2}>
-              <Form.Group controlId="city">
-                <Form.Control type="text" placeholder="City" name="city" value={formData.city} readOnly />
-              </Form.Group>
-            </Col>
-            <Col md={2}>
-              <Form.Group controlId="region">
-                <Form.Control type="text" placeholder="Region" name="region" value={formData.region} readOnly />
-              </Form.Group>
-            </Col>
-          </Row>
+                    {getAvailableBarangays().map((barangay, idx) => (
+                      <option key={idx} value={barangay}>
+                        {barangay}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={2}>
+                <Form.Group controlId="city">
+                  <Form.Control type="text" placeholder="City" name="city" value={formData.city} readOnly />
+                </Form.Group>
+              </Col>
+              <Col md={2}>
+                <Form.Group controlId="region">
+                  <Form.Control type="text" placeholder="Region" name="region" value={formData.region} readOnly />
+                </Form.Group>
+              </Col>
+            </Row>
 
-          <Row className="mb-3">
-            <Col md={4}>
-              <Form.Group controlId="contactNumber">
-                <Form.Control
-                  type="text"
-                  placeholder="Contact Number"
-                  name="contactNumber"
-                  value={formData.contactNumber}
-                  onChange={handleChange}
-                  required
-                />
-              </Form.Group>
-            </Col>
-            <Col md={4}>
-              <Form.Group controlId="philHealthNumber">
-                <Form.Control
-                  type="text"
-                  placeholder="PhilHealth Number"
-                  name="philHealthNumber"
-                  value={formData.philHealthNumber}
-                  onChange={handleChange}
-                />
-              </Form.Group>
-            </Col>
-            <Col md={4}>
-              <Form.Group controlId="membershipStatus">
-                <Row>
-                  <Col xs={6}>
-                    <div className="d-flex align-items-center">
+            <Row className="mb-3">
+              <Col md={4}>
+                <Form.Group controlId="contactNumber">
+                  <Form.Control
+                    type="text"
+                    placeholder="Contact Number"
+                    name="contactNumber"
+                    value={formData.contactNumber}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group controlId="philHealthNumber">
+                  <Form.Control
+                    type="text"
+                    placeholder="PhilHealth Number"
+                    name="philHealthNumber"
+                    value={formData.philHealthNumber}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group controlId="membershipStatus">
+                  <Row>
+                    <Col xs={6}>
                       <Form.Check
                         type="radio"
                         id="member"
@@ -605,11 +862,10 @@ const AuthPage = () => {
                         checked={formData.membershipStatus === 'member'}
                         onChange={handleChange}
                         label="Member"
+                        className="me-3"
                       />
-                    </div>
-                  </Col>
-                  <Col xs={6}>
-                    <div className="d-flex align-items-center">
+                    </Col>
+                    <Col xs={6}>
                       <Form.Check
                         type="radio"
                         id="nonmember"
@@ -617,119 +873,107 @@ const AuthPage = () => {
                         value="nonmember"
                         checked={formData.membershipStatus === 'nonmember'}
                         onChange={handleChange}
-                        label="Non Member"
+                        label="Non-Member"
                       />
-                    </div>
-                  </Col>
-                </Row>
-              </Form.Group>
-            </Col>
-          </Row>
+                    </Col>
+                  </Row>
+                </Form.Group>
+              </Col>
+            </Row>
 
-          <Row className="mb-3">
-            <Col md={3}>
-              <Form.Group controlId="dateOfBirth">
-                <DatePicker
-                  selected={formData.dateOfBirth}
-                  onChange={handleDateChange}
-                  className="form-control"
-                  placeholderText="Date Of Birth"
-                  dateFormat="MM/dd/yyyy"
-                  showYearDropdown
-                  scrollableYearDropdown
-                  yearDropdownItemNumber={100}
-                />
-              </Form.Group>
-            </Col>
-            <Col md={3}>
-              <Form.Group controlId="age">
-                <Form.Control
-                  type="text"
-                  placeholder="Age"
-                  name="age"
-                  value={formData.age}
-                  readOnly
-                />
-              </Form.Group>
-            </Col>
-            <Col md={3}>
-              <Form.Group controlId="gender">
-                <Form.Select name="gender" value={formData.gender} onChange={handleChange} required>
-                  <option value="" disabled>
-                    Gender
-                  </option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
-            <Col md={3}>
-              <Form.Group controlId="civilStatus">
-                <Form.Select name="civilStatus" value={formData.civilStatus} onChange={handleChange} required>
-                  <option value="" disabled>
-                    Civil Status
-                  </option>
-                  <option value="single">Single</option>
-                  <option value="married">Married</option>
-                  <option value="divorced">Divorced</option>
-                  <option value="widowed">Widowed</option>
-                  <option value="separated">Separated</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
-          </Row>
+            <Row className="mb-3">
+              <Col md={4}>
+                <Form.Group controlId="dateOfBirth">
+                  <DatePicker
+                    selected={formData.dateOfBirth}
+                    onChange={handleDateChange}
+                    dateFormat="MM/dd/yyyy"
+                    placeholderText="Date of Birth"
+                    className="form-control"
+                    maxDate={new Date()}
+                    showYearDropdown
+                    scrollableYearDropdown
+                    yearDropdownItemNumber={100}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={2}>
+                <Form.Group controlId="age">
+                  <Form.Control
+                    type="text"
+                    placeholder="Age"
+                    name="age"
+                    value={formData.age}
+                    readOnly
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="gender">
+                  <Form.Select name="gender" value={formData.gender} onChange={handleChange} required>
+                    <option value="" disabled>
+                      Gender
+                    </option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="civilStatus">
+                  <Form.Select name="civilStatus" value={formData.civilStatus} onChange={handleChange} required>
+                    <option value="" disabled>
+                      Civil Status
+                    </option>
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Divorced">Divorced</option>
+                    <option value="Widowed">Widowed</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
 
-          <div className="d-flex justify-content-center mt-4">
-            <Button
-              variant="primary"
-              type="submit"
-              className="register-btn"
-            >
-              Register
-            </Button>
-          </div>
-        </Form>
+            <div className="text-center mt-4">
+              <Button variant="primary" type="submit" className="w-100">
+                Register
+              </Button>
+            </div>
+          </Form>
+        )}
       </div>
     );
   };
 
   return (
-    <div className="auth-wrapper">
-      <div className="container">
-        <div className="auth-card">
-          <div className="text-center mb-4">
-            <img 
-              src={logoImage} 
-              alt="Maybunga Health Center Logo" 
-              className="auth-logo"
-            />
-            <h2 className="mt-3">Maybunga Health Center</h2>
-          </div>
-
-          <Nav className="auth-tabs mb-4" variant="tabs">
-            <Nav.Item>
-              <Nav.Link 
-                className={activeTab === 'login' ? 'active' : ''}
-                onClick={() => handleTabChange('login')}
-              >
-                Login
-              </Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link 
-                className={activeTab === 'register' ? 'active' : ''}
-                onClick={() => handleTabChange('register')}
-              >
-                Register
-              </Nav.Link>
-            </Nav.Item>
-          </Nav>
-          
-          <div className="auth-form-container">
-            {activeTab === 'login' ? renderLoginForm() : renderRegistrationForm()}
-          </div>
-        </div>
+    <div className="auth-container">
+      <div className="auth-card">
+        <img src={logoImage} alt="Maybunga Health Center" className="auth-logo" />
+        <h2 className="auth-title">Sign In</h2>
+        <p className="text-center mb-3" style={{color: '#888', fontSize: '1rem'}}>
+          Welcome to Maybunga Health Center's official portal.<br/>
+          Please log in or register to access your health records and services.
+        </p>
+        <Nav variant="tabs" className="mb-4">
+          <Nav.Item>
+            <Nav.Link 
+              active={activeTab === 'login'} 
+              onClick={() => handleTabChange('login')}
+            >
+              Login
+            </Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link 
+              active={activeTab === 'register'} 
+              onClick={() => handleTabChange('register')}
+            >
+              Register
+            </Nav.Link>
+          </Nav.Item>
+        </Nav>
+        {activeTab === 'login' ? renderLoginForm() : renderRegistrationForm()}
       </div>
     </div>
   );

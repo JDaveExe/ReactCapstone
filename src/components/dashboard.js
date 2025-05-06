@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios';
 import Sidebar from "./sidebar";
-import Topbar from "./topbar";
 import "../styles/dashboard.css";
 
 const PatientDashboard = () => {
@@ -10,6 +9,9 @@ const PatientDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [recentActivities, setRecentActivities] = useState([]);
   const [patientName, setPatientName] = useState("Loading...");
+  const [profile, setProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState("");
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -17,9 +19,12 @@ const PatientDashboard = () => {
     const userRole = localStorage.getItem("userRole");
     const userEmail = localStorage.getItem("userEmail");
     const storedName = localStorage.getItem("firstName"); // Try getting from localStorage first
+    const storedUserName = localStorage.getItem("userName"); // Backup name
     
     console.log("Current user role:", userRole);
     console.log("Current user email:", userEmail);
+    console.log("Stored firstName:", storedName);
+    console.log("Stored userName:", storedUserName);
 
     // Accept both 'patient' and 'member' roles
     if (!userRole || (userRole !== "patient" && userRole !== "member")) {
@@ -28,12 +33,22 @@ const PatientDashboard = () => {
       return;
     }
 
-    // If we already have the first name in localStorage, use it
+    // Set name priority: firstName > userName > fallback
     if (storedName) {
       console.log("Using stored first name:", storedName);
       setPatientName(storedName);
     } 
-    // Otherwise fetch it from backend
+    else if (storedUserName) {
+      console.log("Using stored user name:", storedUserName);
+      // Extract first name if possible
+      const nameParts = storedUserName.split(' ');
+      setPatientName(nameParts[0] || storedUserName);
+      // Also store firstName for future use
+      if (nameParts[0]) {
+        localStorage.setItem("firstName", nameParts[0]);
+      }
+    }
+    // If no name data in localStorage, fetch from backend
     else if (userEmail) {
       console.log("Fetching patient name for email:", userEmail);
       axios.post('http://localhost:5000/api/get-patient-name', { email: userEmail })
@@ -44,26 +59,83 @@ const PatientDashboard = () => {
             setPatientName(firstName);
             // Store it for future use
             localStorage.setItem("firstName", firstName);
+          } else if (response.data && response.data.name) {
+            // Fallback if firstName is not available in response
+            setPatientName(response.data.name);
+            localStorage.setItem("userName", response.data.name);
+            // Try to extract firstName from the full name
+            const nameParts = response.data.name.split(' ');
+            if (nameParts.length > 0) {
+              localStorage.setItem("firstName", nameParts[0]);
+            }
+          } else {
+            // Ultimate fallback
+            setPatientName("Patient");
           }
         })
         .catch(error => {
           console.error("Error fetching patient name:", error);
-          setPatientName("Unknown Patient");
+          // Use any available name from localStorage as fallback
+          if (storedUserName) {
+            setPatientName(storedUserName);
+          } else {
+            setPatientName("Patient");
+          }
         });
+    } else {
+      // If we have no way to get the name, use a default
+      setPatientName("Patient");
     }
 
-    // Get recent activities from localStorage or set defaults
+    // Fetch full patient profile from backend
+    const userObj = JSON.parse(localStorage.getItem("user"));
+    const profileEmail = userObj?.email || localStorage.getItem("userEmail");
+    if (profileEmail) {
+      setProfileLoading(true);
+      axios.post("http://localhost:5000/api/get-user-details", { email: profileEmail })
+        .then(res => {
+          if (res.data && res.data.user) {
+            setProfile(res.data.user);
+          } else {
+            setProfileError("Could not load profile info.");
+          }
+        })
+        .catch(() => setProfileError("Could not load profile info."))
+        .finally(() => setProfileLoading(false));
+    } else {
+      setProfileError("No user email found.");
+      setProfileLoading(false);
+    }
+
+    // IMPORTANT FIX: Always initialize default activities
+    const defaultActivities = [
+      { id: 1, name: "Patient Profile", path: "/patient-profile", icon: "person" },
+      { id: 2, name: "Immunization History", path: "/immunisation-history", icon: "shield" },
+      { id: 3, name: "Recent Checkup", path: "/checkup-records", icon: "clipboard-check" },
+      { id: 4, name: "Admitting Data", path: "/admitting-data", icon: "file-medical" }
+    ];
+    
+    // Get stored activities or use defaults
     const storedActivities = localStorage.getItem("recentActivities");
     if (storedActivities) {
-      setRecentActivities(JSON.parse(storedActivities));
+      try {
+        const parsedActivities = JSON.parse(storedActivities);
+        // Verify that the activities are properly formatted
+        if (Array.isArray(parsedActivities) && parsedActivities.length > 0) {
+          setRecentActivities(parsedActivities);
+        } else {
+          // If stored data is invalid, use defaults
+          setRecentActivities(defaultActivities);
+          localStorage.setItem("recentActivities", JSON.stringify(defaultActivities));
+        }
+      } catch (e) {
+        console.error("Error parsing stored activities:", e);
+        // If parsing fails, use defaults
+        setRecentActivities(defaultActivities);
+        localStorage.setItem("recentActivities", JSON.stringify(defaultActivities));
+      }
     } else {
-      // Set default activities for first-time login
-      const defaultActivities = [
-        { id: 1, name: "Patient Profile", path: "/patient-profile", icon: "person" },
-        { id: 2, name: "Immunization History", path: "/immunisation-history", icon: "shield" },
-        { id: 3, name: "Recent Checkup", path: "/checkup-records", icon: "clipboard-check" },
-        { id: 4, name: "Admitting Data", path: "/admitting-data", icon: "file-medical" }
-      ];
+      // Use defaults for first-time login
       setRecentActivities(defaultActivities);
       localStorage.setItem("recentActivities", JSON.stringify(defaultActivities));
     }
@@ -82,6 +154,7 @@ const PatientDashboard = () => {
   };
 
   const handleNavigation = (path) => {
+    console.log(`Navigating to path: ${path}`);
     // Update recent activities before navigating
     updateRecentActivities(path);
     // Navigate to the path
@@ -90,9 +163,13 @@ const PatientDashboard = () => {
   
   // Function to update recent activities
   const updateRecentActivities = (path) => {
+    console.log(`Updating recent activities for path: ${path}`);
     // Find the activity corresponding to this path
     const existingActivityIndex = recentActivities.findIndex(activity => activity.path === path);
     let updatedActivities = [...recentActivities];
+    
+    console.log(`Current activities:`, recentActivities);
+    console.log(`Activity index for path ${path}: ${existingActivityIndex}`);
     
     if (existingActivityIndex !== -1) {
       // If activity exists, remove it from its current position
@@ -100,9 +177,9 @@ const PatientDashboard = () => {
       updatedActivities.splice(existingActivityIndex, 1);
       // Add it to the beginning of the array
       updatedActivities.unshift(existingActivity);
+      console.log(`Moved existing activity to front:`, existingActivity);
     } else {
       // If it's a new activity, create an appropriate entry
-      // This would ideally use a map of paths to names and icons
       const pathSegments = path.split('/');
       const activityName = pathSegments[pathSegments.length - 1]
         .split('-')
@@ -116,12 +193,16 @@ const PatientDashboard = () => {
         icon: "folder" // Default icon
       };
       
+      console.log(`Created new activity:`, newActivity);
+      
       // Add new activity to beginning, ensure we keep only 4 items
       updatedActivities.unshift(newActivity);
     }
     
     // Keep only the 4 most recent activities
     updatedActivities = updatedActivities.slice(0, 4);
+    
+    console.log(`Updated activities:`, updatedActivities);
     
     // Update state and localStorage
     setRecentActivities(updatedActivities);
@@ -136,39 +217,41 @@ const PatientDashboard = () => {
         isCollapsed={sidebarCollapsed}
         toggleCollapse={toggleCollapse}
       />
-      <div className={`dashboard-content w-100 ${sidebarCollapsed ? 'collapsed' : ''}`}>
-        <Topbar toggleSidebar={toggleSidebar} />
-        <div className="container-fluid py-3">
-          <div className="row g-4">
-            {/* Patient Profile Card */}
-            <div className="col-12 col-md-5 col-lg-4">
-              <div className="card bg-secondary text-white h-100" style={{backgroundColor: "#a67c68 !important"}}>
-                <div className="card-body d-flex flex-column align-items-center justify-content-center text-center py-5">
-                  <div className="mb-3">
-                    <i className="bi bi-person-circle" style={{fontSize: "4rem"}}></i>
-                  </div>
-                  <h3 className="card-title">{patientName}</h3>
-                </div>
-              </div>
+      
+      <div className={`dashboard-content ${sidebarCollapsed ? 'content-with-collapsed-sidebar' : ''}`}>
+        <div className="container-fluid px-4 py-4">
+          {/* Welcome message section */}
+          <div className="welcome-section mb-4">
+            <div className="welcome-card">
+              <h5 className="mb-2">Welcome, {patientName}!</h5>
+              <p className="mb-0">This is your patient dashboard. Use the sidebar to navigate through your medical records, checkups, and more.</p>
             </div>
-            
-            {/* Recent Activities Card */}
-            <div className="col-12 col-md-7 col-lg-8">
-              <div className="card bg-secondary text-white h-100" style={{backgroundColor: "#a67c68 !important"}}>
+          </div>
+          
+          {/* Recent Activities Section */}
+          <div className="row justify-content-center">
+            <div className="col-12 col-md-8 col-lg-6">
+              <div className="card activities-card">
                 <div className="card-body">
                   <h5 className="card-title mb-4">Recent Activities</h5>
                   <div className="row g-3">
-                    {recentActivities.map(activity => (
-                      <div key={activity.id} className="col-12 col-md-6">
-                        <button 
-                          className="btn btn-light w-100 text-start py-3" 
-                          onClick={() => handleNavigation(activity.path)}
-                        >
-                          <i className={`bi bi-${activity.icon} me-2`}></i>
-                          {activity.name}
-                        </button>
+                    {recentActivities && recentActivities.length > 0 ? (
+                      recentActivities.map(activity => (
+                        <div key={activity.id} className="col-12 col-sm-6">
+                          <button 
+                            className="activity-btn"
+                            onClick={() => handleNavigation(activity.path)}
+                          >
+                            <i className={`bi bi-${activity.icon} me-2`}></i>
+                            <span>{activity.name}</span>
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="col-12 text-center">
+                        <p>No recent activities found.</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               </div>
@@ -180,7 +263,7 @@ const PatientDashboard = () => {
       {/* Sidebar overlay for mobile */}
       {sidebarOpen && (
         <div 
-          className="sidebar-overlay d-md-none" 
+          className="sidebar-overlay"
           onClick={closeSidebar}
         ></div>
       )}

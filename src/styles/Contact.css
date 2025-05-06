@@ -12,12 +12,27 @@
 .left-section {
   flex: 1;
   padding-right: 20px;
+  color: white;
+  background: rgba(30, 20, 72, 0.85); /* dark purple with opacity */
+  border-radius: 8px;
+  padding: 30px 25px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.15);
+}
+
+.left-section, .left-section * {
+  color: #fff !important;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+.left-section a {
+  color: #90cdf4 !important;
+  text-decoration: underline;
 }
 
 .contact-title {
   font-size: 28px;
   font-weight: bold;
-  color: #000;
+  color: #fff;
   margin-bottom: 20px;
 }
 
@@ -28,7 +43,7 @@
 .section-title {
   font-size: 22px;
   font-weight: bold;
-  color: #333;
+  color: #fff;
   margin-bottom: 15px;
   margin-top: 30px;
 }
@@ -36,7 +51,7 @@
 .section-text {
   font-size: 16px;
   line-height: 1.5;
-  color: #555;
+  color: #fff;
   margin-bottom: 10px;
 }
 
@@ -48,12 +63,13 @@
 
 .info-list li {
   font-size: 16px;
-  color: #555;
+  color: #fff;
   margin-bottom: 5px;
 }
 
 .contact-detail {
   margin-top: 15px;
+  color: #fff;
 }
 
 .contact-item {
@@ -69,12 +85,12 @@
 }
 
 .contact-item a {
-  color: #1a73e8;
+  color: #90cdf4;
   text-decoration: none;
 }
 
 .link-text {
-  color: #1a73e8;
+  color: #90cdf4;
   text-decoration: none;
 }
 
@@ -84,7 +100,7 @@
 }
 
 .quote-form {
-  background-color: #1A1248;
+  background-color: #c28181;
   padding: 30px; /* Increased padding from 25px to 30px */
   border-radius: 6px;
   color: white;

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css'; 
 import './App.css';
@@ -19,207 +20,110 @@ import Sidebar from "./components/sidebar";
 import Topbar from "./components/topbar";
 import Manage from "./components/Manage";
 import Asettings from "./components/Asettings";
-// Correct import paths for admin components
 import DashboardAdm from "./components/DashboardAdm";
 import SidebarAdmin from "./components/SidebarAdmin";
 import TopbarAdmin from "./components/TopbarAdmin";
 import Reports from "./components/Reports";
 import AuthPage from "./components/AuthPage";
+import PatientLayout from "./components/PatientLayout";
 
 function App() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
-  
-  // Function to determine the current page based on path
-  const determineCurrentPage = (path) => {
-    console.log("Determining page for path:", path);
-    
-    // Handle regular paths
-    if (path === "/") {
-      return { page: "home", isAdmin: false };
-    } else if (path === "/register") {
-      return { page: "register", isAdmin: false };
-    } else if (path === "/dashboard") {
-      return { page: "dashboard", isAdmin: false };
-    } else if (path === "/login") {
-      return { page: "login", isAdmin: false };
-    } else if (path === "/patient-profile") {
-      return { page: "patient-profile", isAdmin: false };
-    } else if (path === "/immunisation-history") { 
-      return { page: "immunisation-history", isAdmin: false };
-    } else if (path === "/referral") {
-      return { page: "referral", isAdmin: false };
-    } else if (path === "/notification") {
-      return { page: "notification", isAdmin: false };
-    } else if (path === "/med-history") {
-      return { page: "med-history", isAdmin: false };
-    } else if (path === "/about-us") {
-      return { page: "about-us", isAdmin: false };
-    } else if (path === "/contact") {
-      return { page: "contact", isAdmin: false };
-    } else if (path === "/checkup-records") {
-      return { page: "checkup-records", isAdmin: false };
-    } else if (path === "/admitting-data") {
-      return { page: "admitting-data", isAdmin: false };
-    } else if (path === "/manage") {
-      return { page: "manage", isAdmin: false };
-    } else if (path === "/auth") {
-      return { page: "auth", isAdmin: false };
-    } 
-    // Handle admin paths
-    else if (path === "/admin/dashboard") {
-      return { page: "admin-dashboard", isAdmin: true };
-    } else if (path === "/admin/manage-patient-data") {
-      return { page: "admin-manage-patient", isAdmin: true };
-    } else if (path === "/admin/settings") {
-      return { page: "admin-settings", isAdmin: true };
-    } else if (path === "/admin/appearance") {
-      return { page: "admin-appearance", isAdmin: true };
-    } else if (path === "/admin/report/generate") {
-      return { page: "admin-report-generate", isAdmin: true };
-    } else if (path === "/admin/referral") {
-      return { page: "admin-referral", isAdmin: true };
-    } else if (path.startsWith("/admin/")) {
-      return { page: "admin-other", isAdmin: true };
-    }
-    
-    // Default case
-    return { page: "home", isAdmin: false };
-  };
+  // Sidebar logic can be handled in each component if needed
+  return (
+    <Routes>
+      {/* Public/User Routes */}
+      <Route path="/" element={<Homepage />} />
+      <Route path="/auth" element={<AuthPage />} />
+      <Route path="/register" element={<RegistrationForm />} />
+      <Route path="/login" element={<Login />} />
 
-  // Get current page info based on path
-  const pageInfo = determineCurrentPage(currentPath);
-  const page = pageInfo.page;
-  const isAdminPage = pageInfo.isAdmin;
+      {/* Patient Routes with Sidebar/Topbar */}
+      <Route element={<PatientLayout />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/patient-profile" element={<PatientProfile />} />
+        <Route path="/immunisation-history" element={<ImmunisationH />} />
+        <Route path="/referral" element={<Referral />} />
+        <Route path="/notification" element={<Notification />} />
+        <Route path="/med-history" element={<TreatmentRecord />} />
+        <Route path="/checkup-records" element={<CheckupRecords />} />
+        <Route path="/admitting-data" element={<AdmittingData />} />
+        <Route path="/manage" element={<Manage />} />
+      </Route>
 
-// In App.js, modify the shouldShowSidebar function:
-const shouldShowSidebar = () => {
-  const noSidebarPages = ['home', 'login', 'register', 'about-us', 'contact', 'dashboard', 'auth'];
-  return !noSidebarPages.includes(page) && !isAdminPage;
-};
+      {/* About Us and Contact Us without Sidebar/Topbar */}
+      <Route path="/about-us" element={<AboutUs />} />
+      <Route path="/contact" element={<ContactPage />} />
 
-  const toggleSidebarCollapse = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
-
-  useEffect(() => {
-    // Listen for custom location change events from our navigation function
-    const handleLocationChange = (event) => {
-      if (event.detail && event.detail.path) {
-        console.log("Location change event received:", event.detail.path);
-        setCurrentPath(event.detail.path);
-      }
-    };
-    
-    window.addEventListener('locationChange', handleLocationChange);
-    
-    // Handle browser back/forward navigation with selective prompting
-    const handlePopState = () => {
-      const newPath = window.location.pathname;
-      const pagesThatShouldPrompt = [
-        '/patient-profile',
-        '/immunisation-history',
-        '/referral',
-        '/med-history',
-        '/checkup-records',
-        '/admitting-data',
-        '/admin/manage-patient-data',
-        '/admin/settings',
-        '/admin/appearance'
-      ];
-      
-      // Only show prompt for certain pages
-      if (pagesThatShouldPrompt.includes(currentPath)) {
-        const confirmBack = window.confirm("Are you sure you want to leave this page? Your changes may not be saved.");
-        if (!confirmBack) {
-          window.history.pushState(null, "", currentPath);
-          return;
-        }
-      }
-      
-      setCurrentPath(newPath);
-    };
-
-    // Initialize the history state
-    window.history.replaceState({ key: 'initial' }, '', window.location.pathname);
-    
-    window.addEventListener('popstate', handlePopState);
-
-    return () => {
-      window.removeEventListener('locationChange', handleLocationChange);
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [currentPath]);
-
-  console.log("Current page:", page, "isAdminPage:", isAdminPage);
-
-  // Render admin layout if it's an admin page
-  if (isAdminPage) {
-    return (
-      <div className="app-wrapper admin-app">
-        <SidebarAdmin
-          isOpen={isSidebarOpen}
-          closeSidebar={() => setIsSidebarOpen(false)}
-          isCollapsed={isSidebarCollapsed}
-          toggleCollapse={toggleSidebarCollapse}
-        />
-        <div className={`admin-main-content ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-          <TopbarAdmin toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
-          <div className="admin-content-area">
-            {page === "admin-dashboard" && <DashboardAdm />}
-            {page === "admin-manage-patient" && <Manage />}
-            {page === "admin-settings" && <Asettings />}
-            {page === "admin-report-generate" && <Reports />}
-            {page === "admin-appearance" && <div className="p-4">Appearance Settings Page</div>}
-            {page === "admin-referral" && <Referral />}
-            {page === "admin-other" && <div className="p-4">Other Admin Page Content</div>}
+      {/* Admin Routes */}
+      <Route path="/admin/dashboard" element={
+        <div className="app-wrapper admin-app">
+          <SidebarAdmin />
+          <div className="admin-main-content">
+            <TopbarAdmin />
+            <div className="admin-content-area">
+              <DashboardAdm />
+            </div>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  // Otherwise, render regular app layout
-  return (
-    <div className="app-wrapper">
-      {shouldShowSidebar() && (
-        <div className="sidebar-container">
-          <Sidebar 
-            isOpen={isSidebarOpen} 
-            closeSidebar={() => setIsSidebarOpen(false)}
-            isCollapsed={isSidebarCollapsed}
-            toggleCollapse={toggleSidebarCollapse}
-          />
+      } />
+      <Route path="/admin/manage-patient-data" element={
+        <div className="app-wrapper admin-app">
+          <SidebarAdmin />
+          <div className="admin-main-content">
+            <TopbarAdmin />
+            <div className="admin-content-area">
+              <Manage />
+            </div>
+          </div>
         </div>
-      )}
-
-      <div className={`main-content ${!shouldShowSidebar() ? 'full-width' : ''} ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-        {shouldShowSidebar() && page !== "dashboard" && page !== "auth" && (
-          <Topbar 
-            toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-            isSidebarCollapsed={isSidebarCollapsed}
-            toggleSidebarCollapse={toggleSidebarCollapse}
-          />
-        )}
-        <div className="content-area">
-          {page === "home" && <Homepage />}
-          {page === "auth" && <AuthPage />}
-          {page === "register" && <RegistrationForm />}
-          {page === "login" && <Login />}
-          {page === "patient-profile" && <PatientProfile />}
-          {page === "immunisation-history" && <ImmunisationH />}
-          {page === "referral" && <Referral />}
-          {page === "notification" && <Notification />}
-          {page === "med-history" && <TreatmentRecord />}
-          {page === "about-us" && <AboutUs />}
-          {page === "contact" && <ContactPage />}
-          {page === "checkup-records" && <CheckupRecords />}
-          {page === "admitting-data" && <AdmittingData />}
-          {page === "manage" && <Manage />}
+      } />
+      <Route path="/admin/settings" element={
+        <div className="app-wrapper admin-app">
+          <SidebarAdmin />
+          <div className="admin-main-content">
+            <TopbarAdmin />
+            <div className="admin-content-area">
+              <Asettings />
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      } />
+      <Route path="/admin/appearance" element={
+        <div className="app-wrapper admin-app">
+          <SidebarAdmin />
+          <div className="admin-main-content">
+            <TopbarAdmin />
+            <div className="admin-content-area">
+              <div className="p-4">Appearance Settings Page</div>
+            </div>
+          </div>
+        </div>
+      } />
+      <Route path="/admin/report/generate" element={
+        <div className="app-wrapper admin-app">
+          <SidebarAdmin />
+          <div className="admin-main-content">
+            <TopbarAdmin />
+            <div className="admin-content-area">
+              <Reports />
+            </div>
+          </div>
+        </div>
+      } />
+      <Route path="/admin/referral" element={
+        <div className="app-wrapper admin-app">
+          <SidebarAdmin />
+          <div className="admin-main-content">
+            <TopbarAdmin />
+            <div className="admin-content-area">
+              <Referral />
+            </div>
+          </div>
+        </div>
+      } />
+      {/* Fallback route */}
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   );
 }
 

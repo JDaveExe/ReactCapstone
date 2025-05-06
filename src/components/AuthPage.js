@@ -150,26 +150,35 @@ const AuthPage = () => {
 
       console.log("Login response:", user);
 
-      // Store user data in localStorage
+      // Store user data in localStorage consistently
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userRole", user.role);
       localStorage.setItem("userEmail", user.email);
-      localStorage.setItem("userName", user.name);
-
-      // Store firstName directly if available
+      
+      // Make sure we store the name consistently
       if (user.firstName) {
         localStorage.setItem("firstName", user.firstName);
+        localStorage.setItem("userName", `${user.firstName} ${user.lastName}`);
+      } else if (user.name) {
+        // If firstName is not available but name is, store the full name
+        localStorage.setItem("userName", user.name);
+        // Try to extract firstName from the full name
+        const nameParts = user.name.split(' ');
+        if (nameParts.length > 0) {
+          localStorage.setItem("firstName", nameParts[0]);
+        }
       }
 
-      // Check if user is admin
-      const isAdminUser = user.role === "admin";
-
+      // Store patient ID if available
       if (user.role === "patient" || user.role === "member") {
         localStorage.setItem("patientId", user.id);
-        localStorage.setItem("patientName", user.name);
+        if (!localStorage.getItem("patientName") && user.name) {
+          localStorage.setItem("patientName", user.name);
+        }
       }
 
       // Redirect based on role
+      const isAdminUser = user.role === "admin";
       if (isAdminUser) {
         console.log("Redirecting to admin dashboard");
         navigate("/admin/dashboard");
@@ -209,25 +218,41 @@ const AuthPage = () => {
       
       console.log("QR Login response:", user);
       
-      // Store user data in localStorage
+      // Store user data in localStorage with the same pattern as regular login
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userRole", user.role);
       localStorage.setItem("userEmail", user.email);
-      localStorage.setItem("userName", user.name);
       
+      // Store name data consistently
       if (user.firstName) {
         localStorage.setItem("firstName", user.firstName);
+        localStorage.setItem("userName", `${user.firstName} ${user.lastName}`);
+      } else if (user.name) {
+        localStorage.setItem("userName", user.name);
+        // Try to extract firstName from the full name
+        const nameParts = user.name.split(' ');
+        if (nameParts.length > 0) {
+          localStorage.setItem("firstName", nameParts[0]);
+        }
+      } else if (qrDataObj.name) {
+        // If the name is in the QR code
+        localStorage.setItem("userName", qrDataObj.name);
+        // Try to extract firstName from the QR code name
+        const nameParts = qrDataObj.name.split(' ');
+        if (nameParts.length > 0) {
+          localStorage.setItem("firstName", nameParts[0]);
+        }
       }
-      
-      const isAdminUser = user.role === "admin";
       
       if (user.role === "patient" || user.role === "member") {
         localStorage.setItem("patientId", user.id);
-        localStorage.setItem("patientName", user.name);
+        if (!localStorage.getItem("patientName") && user.name) {
+          localStorage.setItem("patientName", user.name);
+        }
       }
       
       // Redirect based on role
-      if (isAdminUser) {
+      if (user.role === "admin") {
         navigate("/admin/dashboard");
       } else {
         navigate("/dashboard");
@@ -947,35 +972,36 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <img src={logoImage} alt="Maybunga Health Center" className="auth-logo" />
-        <h2 className="auth-title">Sign In</h2>
-        <p className="text-center mb-3" style={{color: '#888', fontSize: '1rem'}}>
-          Welcome to Maybunga Health Center's official portal.<br/>
-          Please log in or register to access your health records and services.
-        </p>
-        <Nav variant="tabs" className="mb-4">
-          <Nav.Item>
-            <Nav.Link 
-              active={activeTab === 'login'} 
-              onClick={() => handleTabChange('login')}
-            >
-              Login
-            </Nav.Link>
-          </Nav.Item>
-          <Nav.Item>
-            <Nav.Link 
-              active={activeTab === 'register'} 
-              onClick={() => handleTabChange('register')}
-            >
-              Register
-            </Nav.Link>
-          </Nav.Item>
-        </Nav>
-        {activeTab === 'login' ? renderLoginForm() : renderRegistrationForm()}
-      </div>
-    </div>
+    <Container fluid className="auth-container">
+      <Row>
+        <Col lg={6} className="auth-left">
+          <div className="logo-container mb-4">
+            <img src={logoImage} alt="Maybunga Health Center Logo" className="logo-image" />
+            <h3>Maybunga Health Center</h3>
+          </div>
+          <div className="welcome-message">
+            <h1>Welcome to the Official Health Care System</h1>
+            <p className="subtitle">Register or log in to access your health records and services</p>
+          </div>
+        </Col>
+        <Col lg={6} className="auth-right">
+          <Card className="auth-card">
+            <Card.Body>
+              <Nav variant="tabs" className="auth-tabs mb-4" activeKey={activeTab} onSelect={handleTabChange}>
+                <Nav.Item>
+                  <Nav.Link eventKey="login">Login</Nav.Link>
+                </Nav.Item>
+                <Nav.Item>
+                  <Nav.Link eventKey="register">Register</Nav.Link>
+                </Nav.Item>
+              </Nav>
+
+              {activeTab === 'login' ? renderLoginForm() : renderRegistrationForm()}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
   );
 };
 

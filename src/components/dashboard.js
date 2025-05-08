@@ -227,39 +227,9 @@ const PatientDashboard = () => {
               <p className="mb-0">This is your patient dashboard. Use the sidebar to navigate through your medical records, checkups, and more.</p>
             </div>
           </div>
-          
-          {/* Recent Activities Section */}
-          <div className="row justify-content-center">
-            <div className="col-12 col-md-8 col-lg-6">
-              <div className="card activities-card">
-                <div className="card-body">
-                  <h5 className="card-title mb-4">Recent Activities</h5>
-                  <div className="row g-3">
-                    {recentActivities && recentActivities.length > 0 ? (
-                      recentActivities.map(activity => (
-                        <div key={activity.id} className="col-12 col-sm-6">
-                          <button 
-                            className="activity-btn"
-                            onClick={() => handleNavigation(activity.path)}
-                          >
-                            <i className={`bi bi-${activity.icon} me-2`}></i>
-                            <span>{activity.name}</span>
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="col-12 text-center">
-                        <p>No recent activities found.</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Tinanggal na ang Recent Activities section */}
         </div>
       </div>
-      
       {/* Sidebar overlay for mobile */}
       {sidebarOpen && (
         <div 

@@ -1,0 +1,198 @@
+/* DoctorLayout.css (Updated) */
+ 
+.doctor-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+  }
+ 
+  .top-bar {
+    height: 60px;
+    background-color: white;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1010;
+  }
+ 
+  .menu-toggle {
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: none;
+    color: #374151;
+  }
+ 
+  .hospital-name {
+    margin-left: 1rem;
+  }
+ 
+  .hospital-name h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+  }
+ 
+  .user-info {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+  }
+ 
+  .layout-container {
+    display: flex;
+    height: calc(100vh - 60px);
+    margin-top: 60px; /* Height of the top bar */
+  }
+ 
+  .sidebar {
+    width: 280px;
+    background-color: #343434;
+    color: white;
+    height: 100%;
+    overflow-y: auto;
+    transition: width 0.3s ease;
+    position: fixed;
+    left: 0;
+    top: 60px; /* Below the top bar */
+    bottom: 0;
+    z-index: 1000;
+    padding-top: 1rem;
+  }
+ 
+  .doctor-layout.collapsed .sidebar {
+    width: 70px;
+  }
+ 
+  .sidebar-toggle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #232323;
+    color: #b0b0b0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+ 
+  .sidebar-toggle:hover {
+    background-color: #2563eb;
+    color: white;
+  }
+ 
+  .sidebar-title {
+    padding: 0.5rem 1rem 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+  }
+ 
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 0.5rem;
+  }
+ 
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    color: #b0b0b0;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    margin-bottom: 0.5rem;
+  }
+ 
+  .nav-item i {
+    font-size: 1.25rem;
+    min-width: 24px;
+    text-align: center;
+  }
+ 
+  .nav-item:hover,
+  .nav-item.active {
+    background-color: #2563eb;
+    color: white;
+  }
+ 
+  .main-area {
+    flex: 1;
+    margin-left: 280px; /* Width of the sidebar */
+    transition: margin-left 0.3s ease;
+    overflow-y: auto;
+    background-color: #f9fafb;
+    min-height: calc(100vh - 60px);
+    padding-top: 60px; /* Added to account for the fixed top bar */
+  }
+ 
+  .doctor-layout.collapsed .main-area {
+    margin-left: 70px;
+  }
+ 
+  /* Responsive styles */
+  @media (max-width: 992px) {
+    .sidebar {
+      width: 240px;
+    }
+   
+    .doctor-layout.collapsed .sidebar {
+      width: 70px;
+    }
+   
+    .main-area {
+      margin-left: 240px;
+    }
+   
+    .doctor-layout.collapsed .main-area {
+      margin-left: 70px;
+    }
+  }
+ 
+  @media (max-width: 768px) {
+    .menu-toggle {
+      display: block;
+    }
+   
+    .sidebar {
+      transform: translateX(-100%);
+      width: 260px;
+    }
+   
+    .sidebar.mobile-open {
+      transform: translateX(0);
+    }
+   
+    .main-area {
+      margin-left: 0;
+    }
+   
+    .doctor-layout.collapsed .main-area {
+      margin-left: 0;
+    }
+   
+    .mobile-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 990;
+    }
+  }
+ 

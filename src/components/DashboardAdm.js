@@ -229,7 +229,7 @@ const DashboardAdm = () => {
       )}
 
       <div className="container-fluid p-4">
-        <h2 className="mb-4 dashboard-title">Admin Dashboard</h2>
+        <h2 className="mb-4 dashboard-title">Statistics</h2>
         
         <div className="row">
           <div className="col-md-6 col-xl-3 mb-4">

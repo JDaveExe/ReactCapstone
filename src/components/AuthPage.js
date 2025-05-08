@@ -10,11 +10,11 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'react-datepicker/dist/react-datepicker.css';
 import '../styles/AuthPage.css';
 import logoImage from '../images/maybunga.png';
-
+ 
 const AuthPage = () => {
   const [activeTab, setActiveTab] = useState('login');
   const navigate = useNavigate();
-
+ 
   // ===== LOGIN STATE =====
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,7 +24,7 @@ const AuthPage = () => {
   const [isQrLogin, setIsQrLogin] = useState(false);
   const [qrData, setQrData] = useState("");
   const [showQrScanner, setShowQrScanner] = useState(false);
-  
+ 
   // ===== REGISTRATION STATE =====
   const [formData, setFormData] = useState({
     firstName: '',
@@ -53,7 +53,7 @@ const AuthPage = () => {
   const [showQrCode, setShowQrCode] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const [userQrValue, setUserQrValue] = useState("");
-
+ 
   // ===== REGISTRATION DATA =====
   const suffixOptions = ['', 'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];
   const pasigStreets = [
@@ -80,57 +80,57 @@ const AuthPage = () => {
     'San Guillermo Street': ['San Jose', 'Pineda', 'Palatiw'],
     'Dr. Sixto Antonio Avenue': ['Kapasigan', 'Bagong Ilog', 'Caniogan']
   }
-
+ 
   // ===== PASSWORD STRENGTH CHECKER =====
   // Modified to be less punishing
   const checkPasswordStrength = (password) => {
     if (!password) return "";
-    
+   
     // Define criteria
     const hasLowerCase = /[a-z]/.test(password);
     const hasUpperCase = /[A-Z]/.test(password);
     const hasNumber = /\d/.test(password);
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    
+   
     // Less punishing criteria based primarily on length
     const length = password.length;
-    
+   
     if (length < 4) return "very-weak";
     if (length < 6) return "weak";
-    
+   
     // Count additional security features
     const securityFeatures = [hasLowerCase, hasUpperCase, hasNumber, hasSpecialChar].filter(Boolean).length;
-    
+   
     if (length >= 6 && length < 8) {
       return securityFeatures >= 2 ? "medium" : "weak";
     }
-    
+   
     if (length >= 8 && length < 10) {
       return securityFeatures >= 2 ? "strong" : "medium";
     }
-    
+   
     // 10+ characters with at least 2 special features is very strong
     if (length >= 10) {
       return securityFeatures >= 2 ? "very-strong" : "strong";
     }
-    
+   
     return "medium";
   };
-
+ 
   // Update password strength whenever registration password changes
   useEffect(() => {
     setRegPasswordStrength(checkPasswordStrength(formData.password));
   }, [formData.password]);
-
+ 
   // ===== LOGIN FUNCTIONS =====
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
-
+ 
   const toggleRegPasswordVisibility = () => {
     setShowRegPassword(!showRegPassword);
   };
-
+ 
   const toggleQrLogin = () => {
     setIsQrLogin(!isQrLogin);
     if (!isQrLogin) {
@@ -140,21 +140,42 @@ const AuthPage = () => {
     }
     setLoginError("");
   };
-
+ 
   const handleLogin = async () => {
     setLoginError(""); // Clear any previous error messages
-
+ 
+    // Hard-coded credentials check for admin and doctor
+    if (email === "admin@gmail.com" && password === "admin") {
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("userRole", "admin");
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem("userName", "Admin User");
+      localStorage.setItem("firstName", "Admin");
+      console.log("Redirecting to admin dashboard");
+      navigate("/admin/dashboard");
+      return;
+    } else if (email === "doctor@gmail.com" && password === "doctor") {
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("userRole", "doctor");
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem("userName", "Doctor User");
+      localStorage.setItem("firstName", "Doctor");
+      console.log("Redirecting to doctor dashboard");
+      navigate("/doctor/dashboard");
+      return;
+    }
+ 
     try {
       const response = await axios.post('http://localhost:5000/api/login', { email, password });
       const { user } = response.data;
-
+ 
       console.log("Login response:", user);
-
+ 
       // Store user data in localStorage consistently
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userRole", user.role);
       localStorage.setItem("userEmail", user.email);
-      
+     
       // Make sure we store the name consistently
       if (user.firstName) {
         localStorage.setItem("firstName", user.firstName);
@@ -168,7 +189,7 @@ const AuthPage = () => {
           localStorage.setItem("firstName", nameParts[0]);
         }
       }
-
+ 
       // Store patient ID if available
       if (user.role === "patient" || user.role === "member") {
         localStorage.setItem("patientId", user.id);
@@ -176,16 +197,11 @@ const AuthPage = () => {
           localStorage.setItem("patientName", user.name);
         }
       }
-
-      // Redirect based on role
-      const isAdminUser = user.role === "admin";
-      if (isAdminUser) {
-        console.log("Redirecting to admin dashboard");
-        navigate("/admin/dashboard");
-      } else {
-        console.log("Redirecting to patient dashboard");
-        navigate("/dashboard");
-      }
+ 
+      // Regular users (patients/members) go to dashboard
+      console.log("Redirecting to patient dashboard");
+      navigate("/dashboard");
+     
     } catch (error) {
       if (error.response && error.response.status === 404) {
         setLoginError("User not found. Please register first.");
@@ -197,32 +213,32 @@ const AuthPage = () => {
       console.error("Login failed:", error);
     }
   };
-  
+ 
   const handleQrLogin = async (scannedQrData) => {
     try {
       // Parse the QR data to get email and password
       const qrDataObj = JSON.parse(scannedQrData);
-      
+     
       if (!qrDataObj.email || !qrDataObj.authToken) {
         setLoginError("Invalid QR code format");
         return;
       }
-      
+     
       // Use the email and token from QR code for login
-      const response = await axios.post('http://localhost:5000/api/login', { 
-        email: qrDataObj.email, 
-        password: qrDataObj.authToken 
+      const response = await axios.post('http://localhost:5000/api/login', {
+        email: qrDataObj.email,
+        password: qrDataObj.authToken
       });
-      
+     
       const { user } = response.data;
-      
+     
       console.log("QR Login response:", user);
-      
+     
       // Store user data in localStorage with the same pattern as regular login
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userRole", user.role);
       localStorage.setItem("userEmail", user.email);
-      
+     
       // Store name data consistently
       if (user.firstName) {
         localStorage.setItem("firstName", user.firstName);
@@ -243,27 +259,27 @@ const AuthPage = () => {
           localStorage.setItem("firstName", nameParts[0]);
         }
       }
-      
+     
       if (user.role === "patient" || user.role === "member") {
         localStorage.setItem("patientId", user.id);
         if (!localStorage.getItem("patientName") && user.name) {
           localStorage.setItem("patientName", user.name);
         }
       }
-      
+     
       // Redirect based on role
       if (user.role === "admin") {
         navigate("/admin/dashboard");
       } else {
         navigate("/dashboard");
       }
-      
+     
     } catch (error) {
       console.error("QR Login failed:", error);
       setLoginError("QR code login failed. Please try again or use password login.");
     }
   };
-
+ 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       if (activeTab === 'login' && !isQrLogin) {
@@ -273,7 +289,7 @@ const AuthPage = () => {
       }
     }
   };
-
+ 
   // ===== REGISTRATION FUNCTIONS =====
   const getAvailableBarangays = () => {
     if (formData.street) {
@@ -281,7 +297,7 @@ const AuthPage = () => {
     }
     return [];
   };
-
+ 
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'street') {
@@ -298,7 +314,7 @@ const AuthPage = () => {
       });
     }
   };
-
+ 
   const handleDateChange = (date) => {
     const today = new Date();
     let computedAge = '';
@@ -316,7 +332,7 @@ const AuthPage = () => {
       age: computedAge
     }));
   };
-
+ 
   // Generate a unique token for QR code
   const generateQrToken = () => {
     // In a real application, this should be a secure, properly generated token
@@ -325,59 +341,59 @@ const AuthPage = () => {
     const timestamp = new Date().getTime().toString(36);
     return randomString + timestamp;
   };
-
+ 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setRegistrationMessage('');
     setRegistrationError('');
-    
+   
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
       setRegistrationError('Please fill in all required fields');
       return;
     }
-    
+   
     try {
       console.log('Submitting form data:', formData);
-      
+     
       // Generate QR token
       const qrToken = generateQrToken();
-      
+     
       // Format dateOfBirth as YYYY-MM-DD
       const formattedData = {
         ...formData,
-        dateOfBirth: formData.dateOfBirth ? 
-          formData.dateOfBirth.toISOString().split('T')[0] : 
+        dateOfBirth: formData.dateOfBirth ?
+          formData.dateOfBirth.toISOString().split('T')[0] :
           null,
         // Store the original password in a variable
         originalPassword: formData.password
       };
-      
+     
       // In a real application, we'd store the QR token in the database
       // For now, we'll just use the original password as the token
-      
+     
       const response = await axios.post('http://localhost:5000/api/register', formattedData);
       console.log('Backend response:', response.data);
-      
+     
       // Create QR code data
       const qrData = JSON.stringify({
         email: formData.email,
         authToken: formData.password, // In a real app, use a different secure token
         name: `${formData.firstName} ${formData.lastName}`.trim()
       });
-      
+     
       setUserQrValue(qrData);
       setRegistrationComplete(true);
       setShowQrCode(true);
-      
+     
       setRegistrationMessage('Registration successful! Your QR code is ready below.');
-      
+     
       // Store user data in localStorage
       localStorage.setItem("user", JSON.stringify({
         email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName
       }));
-      
+     
     } catch (error) {
       // Improved error handling to catch all possible error response formats
       if (error.response) {
@@ -398,7 +414,7 @@ const AuthPage = () => {
       }
     }
   };
-
+ 
   // Download QR code as image
   const downloadQRCode = () => {
     const canvas = document.getElementById("user-qr-code");
@@ -406,7 +422,7 @@ const AuthPage = () => {
       const pngUrl = canvas
         .toDataURL("image/png")
         .replace("image/png", "image/octet-stream");
-      
+     
       const downloadLink = document.createElement("a");
       downloadLink.href = pngUrl;
       downloadLink.download = `maybunga_health_qr_${formData.firstName}_${formData.lastName}.png`;
@@ -415,11 +431,11 @@ const AuthPage = () => {
       document.body.removeChild(downloadLink);
     }
   };
-
+ 
   // Print QR code
   const printQRCode = () => {
     const printWindow = window.open('', '_blank');
-    
+   
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -459,17 +475,17 @@ const AuthPage = () => {
               <h2>Maybunga Health Center</h2>
               <h3>Quick Login QR Code</h3>
             </div>
-            
+           
             <div>
               <img src="${document.getElementById('user-qr-code').toDataURL()}" alt="Your QR Code" style="width: 200px; height: 200px;">
             </div>
-            
+           
             <div class="user-info">
               <p><strong>Name:</strong> ${formData.firstName} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName} ${formData.suffix || ''}</p>
               <p><strong>Email:</strong> ${formData.email}</p>
               <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
             </div>
-            
+           
             <div class="instructions">
               <p><strong>Instructions:</strong></p>
               <ol>
@@ -487,10 +503,10 @@ const AuthPage = () => {
         </body>
       </html>
     `);
-    
+   
     printWindow.document.close();
   };
-
+ 
   // Toggle between login and registration forms
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -501,11 +517,11 @@ const AuthPage = () => {
     setIsQrLogin(false);
     setShowQrScanner(false);
   };
-
+ 
   // Password strength indicator UI component
   const PasswordStrengthIndicator = ({ strength }) => {
     if (!strength) return null;
-    
+   
     const getColorClass = () => {
       switch (strength) {
         case 'very-weak': return 'bg-danger';
@@ -516,7 +532,7 @@ const AuthPage = () => {
         default: return '';
       }
     };
-    
+   
     const getLabel = () => {
       switch (strength) {
         case 'very-weak': return 'Very Weak';
@@ -527,18 +543,18 @@ const AuthPage = () => {
         default: return '';
       }
     };
-    
+   
     return (
       <div className="mt-1">
         <div className="d-flex align-items-center">
           <div className="progress flex-grow-1" style={{height: '5px'}}>
-            <div 
-              className={`progress-bar ${getColorClass()}`} 
+            <div
+              className={`progress-bar ${getColorClass()}`}
               style={{
-                width: 
-                  strength === 'very-weak' ? '20%' : 
-                  strength === 'weak' ? '40%' : 
-                  strength === 'medium' ? '60%' : 
+                width:
+                  strength === 'very-weak' ? '20%' :
+                  strength === 'weak' ? '40%' :
+                  strength === 'medium' ? '60%' :
                   strength === 'strong' ? '80%' : '100%'
               }}
             ></div>
@@ -548,12 +564,12 @@ const AuthPage = () => {
       </div>
     );
   };
-
+ 
   const renderLoginForm = () => {
     return (
       <div className="login-form">
         {loginError && <div className="alert alert-danger">{loginError}</div>}
-        
+       
         {!isQrLogin ? (
           // Regular login form
           <>
@@ -569,7 +585,7 @@ const AuthPage = () => {
                 placeholder="Username"
               />
             </div>
-
+ 
             <div className="form-group mb-3">
               <label htmlFor="password">Password</label>
               <div className="password-input-container">
@@ -582,18 +598,18 @@ const AuthPage = () => {
                   onKeyPress={handleKeyPress}
                   placeholder="Password"
                 />
-                <span 
+                <span
                   className="password-toggle-icon"
                   onClick={togglePasswordVisibility}
                 >
-                  {showPassword ? 
-                    <i className="bi bi-eye-fill"></i> : 
+                  {showPassword ?
+                    <i className="bi bi-eye-fill"></i> :
                     <i className="bi bi-eye-slash-fill"></i>
                   }
                 </span>
               </div>
             </div>
-
+ 
             <div className="form-check mb-3">
               <input
                 type="checkbox"
@@ -606,9 +622,9 @@ const AuthPage = () => {
                 Remember me
               </label>
             </div>
-
-            <button 
-              className="btn btn-primary w-100 btn-lg mb-3" 
+ 
+            <button
+              className="btn btn-primary w-100 btn-lg mb-3"
               onClick={handleLogin}
             >
               Log In
@@ -618,7 +634,7 @@ const AuthPage = () => {
           // QR Code login form
           <div className="qr-scanner-container text-center">
             <h4 className="mb-3">Scan Your QR Code to Login</h4>
-            
+           
             {showQrScanner && (
               <div className="qr-reader-wrapper mb-3">
                 <QrReader
@@ -634,7 +650,7 @@ const AuthPage = () => {
                 />
               </div>
             )}
-            
+           
             <div className="text-center">
               <p className="text-muted">
                 Position your QR code within the camera frame
@@ -642,14 +658,14 @@ const AuthPage = () => {
             </div>
           </div>
         )}
-        
-        <button 
-          className="btn btn-outline-secondary w-100" 
+       
+        <button
+          className="btn btn-outline-secondary w-100"
           onClick={toggleQrLogin}
         >
           {isQrLogin ? "Login with Password" : "Login with QR Code"}
         </button>
-
+ 
         <div className="text-center mt-3">
           <a href="#" className="forgot-password">
             Forgot password?
@@ -658,20 +674,20 @@ const AuthPage = () => {
       </div>
     );
   };
-
+ 
   const renderRegistrationForm = () => {
     return (
       <div className="registration-form">
         {registrationMessage && <div className="alert alert-success">{registrationMessage}</div>}
         {registrationError && <div className="alert alert-danger">{registrationError}</div>}
-        
+       
         {showQrCode && registrationComplete ? (
           <div className="qr-code-container text-center">
             <h4 className="mb-3">Your QR Code for Quick Login</h4>
             <div className="mb-3">
-              <QRCode 
+              <QRCode
                 id="user-qr-code"
-                value={userQrValue} 
+                value={userQrValue}
                 size={200}
                 level="H"
                 includeMargin={true}
@@ -752,7 +768,7 @@ const AuthPage = () => {
                 </Form.Group>
               </Col>
             </Row>
-
+ 
             <Row className="mb-3">
               <Col md={6}>
                 <Form.Group controlId="email">
@@ -777,13 +793,13 @@ const AuthPage = () => {
                       onChange={handleChange}
                       required
                     />
-                    <span 
+                    <span
                       className="position-absolute top-50 end-0 translate-middle-y me-2"
                       style={{ cursor: 'pointer' }}
                       onClick={toggleRegPasswordVisibility}
                     >
-                      {showRegPassword ? 
-                        <i className="bi bi-eye-fill"></i> : 
+                      {showRegPassword ?
+                        <i className="bi bi-eye-fill"></i> :
                         <i className="bi bi-eye-slash-fill"></i>
                       }
                     </span>
@@ -792,7 +808,7 @@ const AuthPage = () => {
                 </Form.Group>
               </Col>
             </Row>
-
+ 
             <Row className="mb-3">
               <Col md={2}>
                 <Form.Group controlId="houseNo">
@@ -850,7 +866,7 @@ const AuthPage = () => {
                 </Form.Group>
               </Col>
             </Row>
-
+ 
             <Row className="mb-3">
               <Col md={4}>
                 <Form.Group controlId="contactNumber">
@@ -905,7 +921,7 @@ const AuthPage = () => {
                 </Form.Group>
               </Col>
             </Row>
-
+ 
             <Row className="mb-3">
               <Col md={4}>
                 <Form.Group controlId="dateOfBirth">
@@ -959,7 +975,7 @@ const AuthPage = () => {
                 </Form.Group>
               </Col>
             </Row>
-
+ 
             <div className="text-center mt-4">
               <Button variant="primary" type="submit" className="w-100">
                 Register
@@ -970,7 +986,7 @@ const AuthPage = () => {
       </div>
     );
   };
-
+ 
   return (
     <Container fluid className="auth-container">
       <Row>
@@ -995,7 +1011,7 @@ const AuthPage = () => {
                   <Nav.Link eventKey="register">Register</Nav.Link>
                 </Nav.Item>
               </Nav>
-
+ 
               {activeTab === 'login' ? renderLoginForm() : renderRegistrationForm()}
             </Card.Body>
           </Card>
@@ -1004,5 +1020,6 @@ const AuthPage = () => {
     </Container>
   );
 };
-
+ 
 export default AuthPage;
+ 

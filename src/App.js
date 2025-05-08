@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap-icons/font/bootstrap-icons.css'; 
+import 'bootstrap-icons/font/bootstrap-icons.css';
 import './App.css';
 import Homepage from "./components/Homepage";
 import RegistrationForm from "./components/Registration";
@@ -26,7 +26,9 @@ import TopbarAdmin from "./components/TopbarAdmin";
 import Reports from "./components/Reports";
 import AuthPage from "./components/AuthPage";
 import PatientLayout from "./components/PatientLayout";
-
+import DoctorLayout from "./components/DoctorLayout";
+import DoctorDashboard from "./components/DoctorDashboard";
+ 
 function App() {
   // Sidebar logic can be handled in each component if needed
   return (
@@ -36,7 +38,7 @@ function App() {
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/register" element={<RegistrationForm />} />
       <Route path="/login" element={<Login />} />
-
+ 
       {/* Patient Routes with Sidebar/Topbar */}
       <Route element={<PatientLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
@@ -49,11 +51,21 @@ function App() {
         <Route path="/admitting-data" element={<AdmittingData />} />
         <Route path="/manage" element={<Manage />} />
       </Route>
-
+ 
       {/* About Us and Contact Us without Sidebar/Topbar */}
       <Route path="/about-us" element={<AboutUs />} />
       <Route path="/contact" element={<ContactPage />} />
-
+ 
+      {/* Doctor Routes with DoctorLayout */}
+      <Route element={<DoctorLayout />}>
+        <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+        <Route path="/doctor/patient/:id" element={<PatientProfile />} />
+        <Route path="/doctor/patient/:id/immunisation" element={<ImmunisationH />} />
+        <Route path="/doctor/patient/:id/checkup" element={<CheckupRecords />} />
+        <Route path="/doctor/patient/:id/admitting" element={<AdmittingData />} />
+        <Route path="/doctor/patient/:id/referral" element={<Referral />} />
+      </Route>
+ 
       {/* Admin Routes */}
       <Route path="/admin/dashboard" element={
         <div className="app-wrapper admin-app">
@@ -126,5 +138,6 @@ function App() {
     </Routes>
   );
 }
-
+ 
 export default App;
+ 

@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import "../styles/DoctorDashboard.css";
+import "../styles/DocDashboard.css";
  
 const DocDashboard = () => {
   const navigate = useNavigate();
   const [selectedFamily, setSelectedFamily] = useState(null);
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [viewMode, setViewMode] = useState('list');
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
   const [searchTerm, setSearchTerm] = useState('');
  
+  // Sample data structure for families
   const families = [
     {
       id: 1,
@@ -146,15 +147,6 @@ const DocDashboard = () => {
           <h2>{patient.name}</h2>
           <span className="family-tag">{selectedFamily?.name}</span>
         </div>
-
-        <div className="contact-info mb-4">
-          <div className="info-grid">
-            <div>
-              <label>Address:</label>
-              <span>{patient.address}</span>
-            </div>
-          </div>
-        </div>
  
         <div className="personal-info mb-4">
           <h3>Personal Information</h3>
@@ -185,11 +177,15 @@ const DocDashboard = () => {
               <label>Email:</label>
               <span>{patient.email}</span>
             </div>
+            <div>
+              <label>Address:</label>
+              <span>{patient.address}</span>
+            </div>
           </div>
         </div>
  
         <div className="action-cards">
-          <div className="row">
+          <div className="row g-4">
             <div className="col-md-6">
               <div className="action-card checkup-profile" onClick={() => navigate(`/doctor/patient/${patient.id}`)}>
                 <div className="icon">👤</div>
@@ -266,6 +262,7 @@ const DocDashboard = () => {
           <div className="search-box mb-3">
             <input
               type="text"
+              className="form-control"
               placeholder="Search families..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}

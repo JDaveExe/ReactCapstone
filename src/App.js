@@ -27,7 +27,7 @@ import Reports from "./components/Reports";
 import AuthPage from "./components/AuthPage";
 import PatientLayout from "./components/PatientLayout";
 import DoctorLayout from "./components/DoctorLayout";
-import DoctorDashboard from "./components/DoctorDashboard";
+import DocDashboard from "./components/DoctorDashboard";
  
 function App() {
   // Sidebar logic can be handled in each component if needed
@@ -58,7 +58,7 @@ function App() {
  
       {/* Doctor Routes with DoctorLayout */}
       <Route element={<DoctorLayout />}>
-        <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+        <Route path="/doctor/dashboard" element={<DocDashboard />} />
         <Route path="/doctor/patient/:id" element={<PatientProfile />} />
         <Route path="/doctor/patient/:id/immunisation" element={<ImmunisationH />} />
         <Route path="/doctor/patient/:id/checkup" element={<CheckupRecords />} />

@@ -12,7 +12,6 @@ const TreatmentRecord = () => {
     birthMonth: '',
     birthDay: '',
     birthYear: '',
-    contactNumber: '',
     memberType: 'member',
     // Treatment record fields - left column
     leftDate: '',
@@ -346,15 +345,6 @@ const TreatmentRecord = () => {
                 type="text" 
                 name="philHealthNumber" 
                 value={formData.philHealthNumber} 
-                onChange={handleChange} 
-              />
-            </div>
-            <div className="form-field contact-field">
-              <label>Contact Number:</label>
-              <input 
-                type="text" 
-                name="contactNumber" 
-                value={formData.contactNumber} 
                 onChange={handleChange} 
               />
             </div>

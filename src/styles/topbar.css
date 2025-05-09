@@ -50,9 +50,106 @@
   background-color: #f8f9fa;
 }
 
+/* Modern Topbar Styles */
+.topbar-root {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  background: #fff;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
+  padding: 0 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 101;
+  transition: background 0.2s;
+}
+.topbar-sidebar-toggle {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #4f8cff;
+  margin-right: 1.5rem;
+  cursor: pointer;
+  display: none;
+}
+.topbar-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #2a3655;
+  letter-spacing: 0.02em;
+}
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.topbar-darkmode-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #4f8cff;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.topbar-darkmode-btn:hover {
+  color: #222b45;
+}
+.topbar-profile {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.topbar-profile-avatar {
+  font-size: 2rem;
+  color: #4f8cff;
+  background: #eaf1ff;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.topbar-profile-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2a3655;
+}
+
 /* Responsive adjustments for mobile */
 @media (max-width: 767.98px) {
   .topbar-title {
     font-size: 1rem;
   }
+}
+
+/* Responsive: show sidebar toggle on mobile */
+@media (max-width: 900px) {
+  .topbar-root {
+    padding: 0 1rem;
+  }
+  .topbar-sidebar-toggle {
+    display: inline-flex;
+  }
+  .topbar-title {
+    font-size: 1.1rem;
+  }
+}
+
+/* Dark mode support */
+body.dark-mode .topbar-root {
+  background: #232946;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.18);
+}
+body.dark-mode .topbar-title,
+body.dark-mode .topbar-profile-name {
+  color: #fff;
+}
+body.dark-mode .topbar-darkmode-btn {
+  color: #f4d35e;
+}
+body.dark-mode .topbar-profile-avatar {
+  background: #353b4a;
+  color: #f4d35e;
 }

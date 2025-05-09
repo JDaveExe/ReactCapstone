@@ -71,7 +71,6 @@ function App() {
         <div className="app-wrapper admin-app">
           <SidebarAdmin />
           <div className="admin-main-content">
-            <TopbarAdmin />
             <div className="admin-content-area">
               <DashboardAdm />
             </div>
@@ -140,4 +139,3 @@ function App() {
 }
  
 export default App;
- 

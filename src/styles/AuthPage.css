@@ -58,7 +58,7 @@
   margin: 0;
 }
 
-/* Tab styling */
+/* Updated auth-tabs styling */
 .auth-tabs {
   width: 100%;
   justify-content: center;
@@ -73,10 +73,11 @@
   text-align: center;
 }
 
+/* Updated nav-link styling to fix hover issue */
 .auth-tabs .nav-link {
   font-size: 22px;
   font-weight: 500;
-  color: #495057;
+  color: #6c757d; /* Lighter gray for inactive state */
   border: none;
   border-bottom: 3px solid transparent;
   border-radius: 0;
@@ -84,16 +85,44 @@
   background: none;
   transition: all 0.2s ease;
   margin: 0 8px;
+  cursor: pointer;
 }
 
+/* Clean hover state */
 .auth-tabs .nav-link:hover {
-  color: #007bff;
+  color: #495057; /* Slightly darker on hover, but not blue */
+  border-bottom-color: transparent; /* No border on hover unless active */
 }
 
-.auth-tabs .nav-link.active {
+/* Active state */
+.auth-tabs .nav-link.active,
+.auth-tabs .nav-link.active:hover {
+  color: #007bff; /* Blue for active tab */
+  border-bottom-color: #007bff; /* Blue border for active tab */
+  background-color: transparent; /* No background color */
+}
+
+/* You could also use these classes directly instead of nav-link */
+.auth-tab {
+  font-size: 22px;
+  font-weight: 500;
+  color: #6c757d;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 0 0 6px 0;
+  margin: 0 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.auth-tab:hover {
+  color: #495057;
+}
+
+.auth-tab.active {
   color: #007bff;
   border-bottom: 3px solid #007bff;
-  background-color: transparent;
 }
 
 /* Form container styling */

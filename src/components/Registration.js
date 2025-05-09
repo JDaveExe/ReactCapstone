@@ -20,7 +20,6 @@ const Registration = () => {
     barangay: '',
     city: 'Pasig',
     region: 'Metro Manila',
-    contactNumber: '',
     philHealthNumber: '',
     membershipStatus: '',
     dateOfBirth: null,
@@ -251,15 +250,13 @@ const Registration = () => {
             </Row>
 
             <Row className="mb-3">
-              <Col md={6}>
-                <Form.Group controlId="email">
+              <Col md={6}>                <Form.Group controlId="email">
                   <Form.Control
                     type="email"
                     placeholder="Email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    required
                   />
                 </Form.Group>
               </Col>
@@ -336,18 +333,6 @@ const Registration = () => {
             </Row>
 
             <Row className="mb-3">
-              <Col md={4}>
-                <Form.Group controlId="contactNumber">
-                  <Form.Control
-                    type="text"
-                    placeholder="Contact Number"
-                    name="contactNumber"
-                    value={formData.contactNumber}
-                    onChange={handleChange}
-                    required
-                  />
-                </Form.Group>
-              </Col>
               <Col md={4}>
                 <Form.Group controlId="philHealthNumber">
                   <Form.Control

@@ -15,7 +15,6 @@ const PatientProfile = () => {
     barangay: '',
     city: 'Pasig',
     region: 'Metro Manila',
-    contactNumber: '',
     philHealthNumber: '',
     membershipStatus: '',
     dateOfBirth: null,
@@ -165,16 +164,6 @@ const PatientProfile = () => {
                     <Form.Control
                       type="email"
                       value={userData.email || ""}
-                      readOnly
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={6}>
-                  <Form.Group controlId="contactNumber">
-                    <Form.Label>Contact Number</Form.Label>
-                    <Form.Control
-                      type="text"
-                      value={userData.contactNumber || ""}
                       readOnly
                     />
                   </Form.Group>

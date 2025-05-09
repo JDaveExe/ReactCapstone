@@ -1,10 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2');
-
 const app = express();
 const port = 5000;
-
 app.use(cors());
 app.use(express.json());
 
@@ -47,13 +45,13 @@ db.connect((err) => {
       lastName VARCHAR(100) NOT NULL,
       suffix VARCHAR(10),
       email VARCHAR(100) NOT NULL UNIQUE,
+      phoneNumber VARCHAR(20),
       password VARCHAR(255) NOT NULL,
       houseNo VARCHAR(50),
       street VARCHAR(100),
       barangay VARCHAR(100),
       city VARCHAR(50),
       region VARCHAR(50),
-      contactNumber VARCHAR(20),
       philHealthNumber VARCHAR(50),
       membershipStatus VARCHAR(20),
       dateOfBirth DATE,
@@ -213,6 +211,7 @@ app.post('/api/create-admin', (req, res) => {
 
 // Enhanced registration endpoint with validation and logging
 app.post('/api/register', (req, res) => {
+  console.log('==== /api/register endpoint hit ====' );
   console.log('Registration payload received:', {
     ...req.body,
     password: '******' // Mask password in logs
@@ -224,13 +223,13 @@ app.post('/api/register', (req, res) => {
     lastName,
     suffix,
     email,
+    phoneNumber,
     password,
     houseNo,
     street,
     barangay,
     city,
     region,
-    contactNumber,
     philHealthNumber,
     membershipStatus,
     dateOfBirth,
@@ -245,37 +244,84 @@ app.post('/api/register', (req, res) => {
   }));
 
   // Validate required fields
-  if (!firstName || !lastName || !email || !password) {
+  if (!firstName || !lastName || !password) {
     console.log('Missing required fields');
     return res.status(400).json({ 
       error: 'Missing required fields',
-      details: 'First name, last name, email and password are required'
+      details: 'First name, last name, and password are required'
     });
   }
 
-  // Validate email format
-  if (!validateEmail(email)) {
+  // Require at least one of email or phoneNumber
+  if (!email && !phoneNumber) {
+    console.log('Missing email and phone number');
+    return res.status(400).json({
+      error: 'Either email or phone number is required'
+    });
+  }
+
+  // Validate email format if provided
+  if (email && !validateEmail(email)) {
     console.log('Invalid email format:', email);
     return res.status(400).json({ 
       error: 'Invalid email format'
     });
   }
 
-  // Check for existing email with improved error handling
-  db.query('SELECT id FROM users WHERE email = ?', [email.toLowerCase()], (err, results) => {
+  // Validate Philippine phone number if provided
+  if (phoneNumber) {
+    // Accepts +639XXXXXXXXX or 09XXXXXXXXX
+    const phPhoneRegex = /^(\+639|09)\d{9}$/;
+    if (!phPhoneRegex.test(phoneNumber)) {
+      console.log('Invalid Philippine phone number:', phoneNumber);
+      return res.status(400).json({
+        error: 'Invalid Philippine phone number format. Use +639XXXXXXXXX or 09XXXXXXXXX.'
+      });
+    }
+  }
+
+  // Check for existing email or phone number
+  let checkQuery;
+  let checkValues;
+  if (email && phoneNumber) {
+    checkQuery = 'SELECT id, email, phoneNumber FROM users WHERE email = ? OR phoneNumber = ?';
+    checkValues = [email.toLowerCase(), phoneNumber];
+  } else if (email) {
+    checkQuery = 'SELECT id, email FROM users WHERE email = ?';
+    checkValues = [email.toLowerCase()];
+  } else {
+    checkQuery = 'SELECT id, phoneNumber FROM users WHERE phoneNumber = ?';
+    checkValues = [phoneNumber];
+  }
+
+  db.query(checkQuery, checkValues, (err, results) => {
     if (err) {
       console.error('Error checking existing user:', err);
       return res.status(500).json({ 
-        error: 'Database error during email check', 
+        error: 'Database error during user check', 
         details: err.message 
       });
     }
 
-    console.log('Duplicate email check results:', results);
+    console.log('Duplicate email/phone check results:', results);
 
+    // Enhanced duplicate check: distinguish between email and phone number
+    let duplicateEmail = false;
+    let duplicatePhone = false;
     if (results.length > 0) {
+      results.forEach(row => {
+        if (email && row.email && row.email.toLowerCase() === email.toLowerCase()) duplicateEmail = true;
+        if (phoneNumber && row.phoneNumber === phoneNumber) duplicatePhone = true;
+      });
+    }
+
+    if (duplicateEmail) {
       console.log('Email already registered:', email);
       return res.status(409).json({ error: 'Email already registered' });
+    }
+    if (duplicatePhone) {
+      console.log('Phone number already registered:', phoneNumber);
+      return res.status(409).json({ error: 'Phone number already registered' });
     }
 
     // Parse date properly
@@ -298,8 +344,8 @@ app.post('/api/register', (req, res) => {
     }
 
     const query = `INSERT INTO users (
-      firstName, middleName, lastName, suffix, email, password, 
-      houseNo, street, barangay, city, region, contactNumber, 
+      firstName, middleName, lastName, suffix, email, phoneNumber, password, 
+      houseNo, street, barangay, city, region, 
       philHealthNumber, membershipStatus, dateOfBirth, age, gender, civilStatus
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
@@ -308,14 +354,14 @@ app.post('/api/register', (req, res) => {
       middleName || '',
       lastName,
       suffix || '',
-      email.toLowerCase(),
+      email ? email.toLowerCase() : null,
+      phoneNumber || '',
       password, // In a production environment, this should be hashed
       houseNo || '',
       street || '',
       barangay || '',
       city || '',
       region || '',
-      contactNumber || '',
       philHealthNumber || '',
       membershipStatus || '',
       formattedDate, // Use properly formatted date
@@ -360,37 +406,37 @@ app.post('/api/register', (req, res) => {
   });
 });
 
-// Enhanced login endpoint with better admin handling
+// Enhanced login endpoint to accept email or phone number for authentication
 app.post('/api/login', (req, res) => {
-  const { email, password } = req.body;
+  const { emailOrPhone, password } = req.body;
   
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
+  if (!emailOrPhone || !password) {
+    return res.status(400).json({ error: 'Email/Phone and password are required' });
   }
 
-  console.log('Login attempt:', { email });
+  console.log('Login attempt:', { emailOrPhone });
 
-  const query = 'SELECT * FROM users WHERE LOWER(email) = LOWER(?)';
+  const query = 'SELECT * FROM users WHERE LOWER(email) = LOWER(?) OR phoneNumber = ?';
 
-  db.query(query, [email], (err, results) => {
+  db.query(query, [emailOrPhone, emailOrPhone], (err, results) => {
     if (err) {
       console.error('Error querying the database:', err);
       return res.status(500).json({ error: 'Internal server error' });
     }
 
     if (results.length === 0) {
-      console.log('User not found for email:', email);
+      console.log('User not found for email/phone:', emailOrPhone);
       return res.status(404).json({ error: 'User not found. Please register first.' });
     }
 
     const user = results[0];
 
     if (user.password !== password) {
-      console.log('Invalid password for user:', email);
+      console.log('Invalid password for user:', emailOrPhone);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    console.log('Login successful for user:', email);
+    console.log('Login successful for user:', emailOrPhone);
 
     // Improved role determination logic
     let role;
@@ -408,6 +454,7 @@ app.post('/api/login', (req, res) => {
       user: {
         id: user.id,
         email: user.email,
+        phoneNumber: user.phoneNumber,
         firstName: user.firstName,
         lastName: user.lastName,
         role: role

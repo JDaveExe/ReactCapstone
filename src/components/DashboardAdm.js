@@ -202,7 +202,22 @@ const DashboardAdm = () => {
   };
 
   return (
-    <div className="dashboard-admin">
+    <div className="dashboard-admin" style={{ minHeight: '100vh', marginLeft: 200 }}>
+      {/* Custom Header for Dashboard Admin */}
+      <header className="dashboard-header">
+        <button className="header-btn back-btn" onClick={() => window.history.back()}>
+          &lt; Back
+        </button>
+        <h1 className="dashboard-center-title">Maybunga Health Center</h1>
+        <div className="header-right">
+          <span className="admin-icon"><i className="bi bi-person-circle"></i> Admin</span>
+          <button className="header-btn logout-btn" onClick={() => {
+            if (window.confirm('Are you sure you want to log out?')) {
+              window.location.href = "/";
+            }
+          }}>Logout</button>
+        </div>
+      </header>
       {/* Zoom Modal for any chart when zoomed */}
       {zoomedChart && (
         <div className="zoom-modal-overlay">

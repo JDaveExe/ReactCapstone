@@ -16,7 +16,7 @@ const AuthPage = () => {
   const navigate = useNavigate();
  
   // ===== LOGIN STATE =====
-  const [email, setEmail] = useState("");
+  const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -33,12 +33,13 @@ const AuthPage = () => {
     suffix: '',
     email: '',
     password: '',
+    repeatPassword: '',
+    phoneNumber: '',
     houseNo: '',
     street: '',
     barangay: '',
     city: 'Pasig',
     region: 'Metro Manila',
-    contactNumber: '',
     philHealthNumber: '',
     membershipStatus: '',
     dateOfBirth: null,
@@ -145,19 +146,19 @@ const AuthPage = () => {
     setLoginError(""); // Clear any previous error messages
  
     // Hard-coded credentials check for admin and doctor
-    if (email === "admin@gmail.com" && password === "admin") {
+    if (emailOrPhone === "admin@gmail.com" && password === "admin") {
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userRole", "admin");
-      localStorage.setItem("userEmail", email);
+      localStorage.setItem("userEmail", emailOrPhone);
       localStorage.setItem("userName", "Admin User");
       localStorage.setItem("firstName", "Admin");
       console.log("Redirecting to admin dashboard");
       navigate("/admin/dashboard");
       return;
-    } else if (email === "doctor@gmail.com" && password === "doctor") {
+    } else if (emailOrPhone === "doctor@gmail.com" && password === "doctor") {
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userRole", "doctor");
-      localStorage.setItem("userEmail", email);
+      localStorage.setItem("userEmail", emailOrPhone);
       localStorage.setItem("userName", "Doctor User");
       localStorage.setItem("firstName", "Doctor");
       console.log("Redirecting to doctor dashboard");
@@ -166,7 +167,11 @@ const AuthPage = () => {
     }
  
     try {
-      const response = await axios.post('http://localhost:5000/api/login', { email, password });
+      const loginData = {
+        emailOrPhone,
+        password
+      };
+      const response = await axios.post('http://localhost:5000/api/login', loginData);
       const { user } = response.data;
  
       console.log("Login response:", user);
@@ -342,16 +347,23 @@ const AuthPage = () => {
     return randomString + timestamp;
   };
  
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Require at least one of email or phone number
+    if (!formData.email && !formData.phoneNumber) {
+      setRegistrationError("Please provide either an email or a phone number.");
+      return;
+    }
+
+    setRegistrationError("");
     setRegistrationMessage('');
-    setRegistrationError('');
    
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
+    if (!formData.firstName || !formData.lastName || !formData.password) {
       setRegistrationError('Please fill in all required fields');
       return;
     }
-   
+
     try {
       console.log('Submitting form data:', formData);
      
@@ -364,8 +376,8 @@ const AuthPage = () => {
         dateOfBirth: formData.dateOfBirth ?
           formData.dateOfBirth.toISOString().split('T')[0] :
           null,
-        // Store the original password in a variable
-        originalPassword: formData.password
+        originalPassword: formData.password,
+        phoneNumber: formData.phoneNumber
       };
      
       // In a real application, we'd store the QR token in the database
@@ -574,15 +586,15 @@ const AuthPage = () => {
           // Regular login form
           <>
             <div className="form-group mb-3">
-              <label htmlFor="username">Username</label>
+              <label htmlFor="username">Email or Phone Number</label>
               <input
-                type="email"
+                type="text"
                 id="username"
                 className="form-control form-control-lg"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={emailOrPhone}
+                onChange={(e) => setEmailOrPhone(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Username"
+                placeholder="Email or Phone Number"
               />
             </div>
  
@@ -768,20 +780,38 @@ const AuthPage = () => {
                 </Form.Group>
               </Col>
             </Row>
- 
+
             <Row className="mb-3">
               <Col md={6}>
                 <Form.Group controlId="email">
                   <Form.Control
                     type="email"
-                    placeholder="Email"
+                    placeholder="Email (optional if phone number is provided)"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    required
+                  />
+                  <Form.Text className="text-muted">
+                    Provide either an email or a phone number.
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group controlId="phoneNumber">
+                  <Form.Control
+                    type="text"
+                    placeholder="Phone Number (e.g. 09XXXXXXXXX)"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleChange}
+                    pattern="^(09|\+639)\d{9}$"
+                    title="Enter a valid Philippine phone number"
                   />
                 </Form.Group>
               </Col>
+            </Row>
+ 
+            <Row className="mb-3">
               <Col md={6}>
                 <Form.Group controlId="password">
                   <div className="position-relative">
@@ -805,6 +835,61 @@ const AuthPage = () => {
                     </span>
                   </div>
                   <PasswordStrengthIndicator strength={regPasswordStrength} />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group controlId="repeatPassword">
+                  <Form.Control
+                    type={showRegPassword ? "text" : "password"}
+                    placeholder="Repeat Password"
+                    name="repeatPassword"
+                    value={formData.repeatPassword}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+ 
+            <Row className="mb-3 align-items-center">
+              <Col md={4} className="d-flex align-items-center gap-4">
+                <Form.Group controlId="membershipStatus" className="mb-0">
+                  <Row className="flex-nowrap">
+                    <Col xs="auto">
+                      <Form.Check
+                        type="radio"
+                        id="member"
+                        name="membershipStatus"
+                        value="member"
+                        checked={formData.membershipStatus === 'member'}
+                        onChange={handleChange}
+                        label={<span style={{whiteSpace: 'nowrap'}}>Member</span>}
+                        className="me-3"
+                      />
+                    </Col>
+                    <Col xs="auto">
+                      <Form.Check
+                        type="radio"
+                        id="nonmember"
+                        name="membershipStatus"
+                        value="nonmember"
+                        checked={formData.membershipStatus === 'nonmember'}
+                        onChange={handleChange}
+                        label={<span style={{whiteSpace: 'nowrap'}}>Non-Member</span>}
+                      />
+                    </Col>
+                  </Row>
+                </Form.Group>
+                <Form.Group controlId="philHealthNumber" className="mb-0 flex-grow-1">
+                  <Form.Control
+                    type="text"
+                    placeholder="PhilHealth Number"
+                    name="philHealthNumber"
+                    value={formData.philHealthNumber}
+                    onChange={handleChange}
+                    disabled={formData.membershipStatus === 'nonmember'}
+                    style={{ minWidth: 200 }}
+                  />
                 </Form.Group>
               </Col>
             </Row>
@@ -863,61 +948,6 @@ const AuthPage = () => {
               <Col md={2}>
                 <Form.Group controlId="region">
                   <Form.Control type="text" placeholder="Region" name="region" value={formData.region} readOnly />
-                </Form.Group>
-              </Col>
-            </Row>
- 
-            <Row className="mb-3">
-              <Col md={4}>
-                <Form.Group controlId="contactNumber">
-                  <Form.Control
-                    type="text"
-                    placeholder="Contact Number"
-                    name="contactNumber"
-                    value={formData.contactNumber}
-                    onChange={handleChange}
-                    required
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={4}>
-                <Form.Group controlId="philHealthNumber">
-                  <Form.Control
-                    type="text"
-                    placeholder="PhilHealth Number"
-                    name="philHealthNumber"
-                    value={formData.philHealthNumber}
-                    onChange={handleChange}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={4}>
-                <Form.Group controlId="membershipStatus">
-                  <Row>
-                    <Col xs={6}>
-                      <Form.Check
-                        type="radio"
-                        id="member"
-                        name="membershipStatus"
-                        value="member"
-                        checked={formData.membershipStatus === 'member'}
-                        onChange={handleChange}
-                        label="Member"
-                        className="me-3"
-                      />
-                    </Col>
-                    <Col xs={6}>
-                      <Form.Check
-                        type="radio"
-                        id="nonmember"
-                        name="membershipStatus"
-                        value="nonmember"
-                        checked={formData.membershipStatus === 'nonmember'}
-                        onChange={handleChange}
-                        label="Non-Member"
-                      />
-                    </Col>
-                  </Row>
                 </Form.Group>
               </Col>
             </Row>

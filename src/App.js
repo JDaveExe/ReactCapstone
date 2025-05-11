@@ -28,6 +28,7 @@ import AuthPage from "./components/AuthPage";
 import PatientLayout from "./components/PatientLayout";
 import DoctorLayout from "./components/DoctorLayout";
 import DocDashboard from "./components/DoctorDashboard";
+import AdminDashboard from "./components/AdminDashboard";
  
 function App() {
   // Sidebar logic can be handled in each component if needed
@@ -67,16 +68,7 @@ function App() {
       </Route>
  
       {/* Admin Routes */}
-      <Route path="/admin/dashboard" element={
-        <div className="app-wrapper admin-app">
-          <SidebarAdmin />
-          <div className="admin-main-content">
-            <div className="admin-content-area">
-              <DashboardAdm />
-            </div>
-          </div>
-        </div>
-      } />
+      <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/manage-patient-data" element={
         <div className="app-wrapper admin-app">
           <SidebarAdmin />

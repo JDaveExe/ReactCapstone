@@ -115,9 +115,9 @@ const Manage = () => {
   };
 
   return (
-    <div className="manage-container">
+    <div className="manage-container" style={{ color: '#f1f5f9' }}>
       <div className="header">
-        <h1>Manage Patient Data</h1>
+        <h1 style={{ color: '#38bdf8', fontWeight: 700 }}>Manage Patient Data</h1>
         <button 
           className="new-patient-btn" 
           onClick={() => setShowModal(true)}
@@ -128,19 +128,21 @@ const Manage = () => {
       </div>
       
       <div className="search-filter">
-        <input
+        <input 
           type="text"
           placeholder="Search by patient name"
           value={searchTerm}
           onChange={handleSearchChange}
           className="search-input"
           aria-label="Search patients"
+          style={{ color: '#f1f5f9', background: '#172136', border: '1px solid #334155' }}
         />
         <select 
           value={statusFilter} 
           onChange={handleStatusChange}
           className="filter-dropdown"
           aria-label="Filter by gender"
+          style={{ color: '#f1f5f9', background: '#172136', border: '1px solid #334155' }}
         >
           <option value="All">All Patients</option>
           <option value="Male">Male</option>
@@ -151,13 +153,13 @@ const Manage = () => {
       <div className="patients-grid">
         {filteredPatients.length > 0 ? (
           filteredPatients.map(patient => (
-            <div key={patient.id} className="patient-card">
+            <div key={patient.id} className="patient-card" style={{ background: '#172136', color: '#f1f5f9', border: '1px solid #334155' }}>
               <div className="patient-info">
-                <h3>{patient.name}</h3>
+                <h3 style={{ color: '#38bdf8', fontWeight: 600 }}>{patient.name}</h3>
                 <div className="patient-details">
-                  <p><span className="icon">📅</span> DOB: {patient.dob || 'Not specified'}</p>
-                  <p><span className="icon">👤</span> Gender: {patient.gender}</p>
-                  <p><span className="icon">🩺</span> Diagnosis: {patient.diagnosis || 'None'}</p>
+                  <p><span className="icon">📅</span> <span style={{ color: '#a5b4fc' }}>DOB:</span> {patient.dob || 'Not specified'}</p>
+                  <p><span className="icon">👤</span> <span style={{ color: '#a5b4fc' }}>Gender:</span> {patient.gender}</p>
+                  <p><span className="icon">🩺</span> <span style={{ color: '#a5b4fc' }}>Diagnosis:</span> {patient.diagnosis || 'None'}</p>
                 </div>
               </div>
               <div className="patient-actions">
@@ -187,25 +189,26 @@ const Manage = () => {
           ))
         ) : (
           <div className="no-results">
-            <p>No patients found matching your criteria.</p>
+            <p style={{ color: '#f87171' }}>No patients found matching your criteria.</p>
           </div>
         )}
       </div>
       
       {showModal && (
         <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ background: '#172136', color: '#f1f5f9' }}>
             <button 
               className="close-modal" 
               onClick={handleCloseModal}
               aria-label="Close modal"
+              style={{ color: '#f87171' }}
             >
               &times;
             </button>
-            <h2>{isEditing ? 'Edit Patient' : 'Add New Patient'}</h2>
+            <h2 style={{ color: '#38bdf8', fontWeight: 700 }}>{isEditing ? 'Edit Patient' : 'Add New Patient'}</h2>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="patient-name">Full Name:</label>
+                <label htmlFor="patient-name" style={{ color: '#a5b4fc' }}>Full Name:</label>
                 <input
                   id="patient-name"
                   type="text"
@@ -215,10 +218,11 @@ const Manage = () => {
                   placeholder="Enter patient's full name"
                   required
                   autoFocus
+                  style={{ color: '#f1f5f9', background: '#111827', border: '1px solid #334155' }}
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="patient-dob">Date of Birth:</label>
+                <label htmlFor="patient-dob" style={{ color: '#a5b4fc' }}>Date of Birth:</label>
                 <input
                   id="patient-dob"
                   type="date"
@@ -226,15 +230,17 @@ const Manage = () => {
                   value={currentPatient.dob}
                   onChange={handleInputChange}
                   max={new Date().toISOString().split('T')[0]}
+                  style={{ color: '#f1f5f9', background: '#111827', border: '1px solid #334155' }}
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="patient-gender">Gender:</label>
+                <label htmlFor="patient-gender" style={{ color: '#a5b4fc' }}>Gender:</label>
                 <select
                   id="patient-gender"
                   name="gender"
                   value={currentPatient.gender}
                   onChange={handleInputChange}
+                  style={{ color: '#f1f5f9', background: '#111827', border: '1px solid #334155' }}
                 >
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
@@ -242,7 +248,7 @@ const Manage = () => {
                 </select>
               </div>
               <div className="form-group">
-                <label htmlFor="patient-diagnosis">Diagnosis:</label>
+                <label htmlFor="patient-diagnosis" style={{ color: '#a5b4fc' }}>Diagnosis:</label>
                 <input
                   id="patient-diagnosis"
                   type="text"
@@ -250,6 +256,7 @@ const Manage = () => {
                   value={currentPatient.diagnosis}
                   onChange={handleInputChange}
                   placeholder="Enter primary diagnosis"
+                  style={{ color: '#f1f5f9', background: '#111827', border: '1px solid #334155' }}
                 />
               </div>
               <div className="form-actions">
@@ -257,12 +264,14 @@ const Manage = () => {
                   type="button" 
                   onClick={handleCloseModal} 
                   className="cancel-btn"
+                  style={{ color: '#f87171', background: 'transparent', border: '1px solid #f87171' }}
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
                   className="save-btn"
+                  style={{ color: '#fff', background: '#38bdf8', border: 'none' }}
                 >
                   {isEditing ? 'Update Patient' : 'Save Patient'}
                 </button>

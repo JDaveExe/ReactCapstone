@@ -23,6 +23,11 @@
     font-weight: bold;
   }
   
+  .new-patient-btn:hover {
+    background: #1d4ed8;
+    color: #fff;
+  }
+  
   .search-filter {
     display: flex;
     margin-bottom: 20px;
@@ -50,7 +55,9 @@
   }
   
   .patient-card {
-    border: 1px solid #ccc;
+    background: #172136;
+    color: #f1f5f9;
+    border: 1px solid #334155;
     border-radius: 4px;
     overflow: hidden;
   }
@@ -62,7 +69,8 @@
   .patient-info h3 {
     margin-top: 0;
     margin-bottom: 10px;
-    color: #000; /* Set text color to black */
+    color: #38bdf8;
+    font-weight: 600;
   }
   
   .patient-details {
@@ -74,6 +82,7 @@
     margin: 5px 0;
     display: flex;
     align-items: center;
+    color: #a5b4fc;
   }
   
   .icon {
@@ -102,8 +111,22 @@
     background-color: #f0f0f0;
   }
   
-  .edit-btn, .view-btn, .export-btn {
-    font-size: 14px;
+  .edit-btn, .delete-btn, .export-btn, .btn-export {
+    background: #22c55e !important;
+    color: #fff !important;
+    border: none !important;
+    font-weight: 600;
+    box-shadow: 0 2px 8px 0 rgba(34,197,94,0.10);
+    transition: background 0.2s;
+  }
+  
+  .edit-btn:hover, .delete-btn:hover, .export-btn:hover, .btn-export:hover {
+    background: #16a34a !important;
+    color: #fff !important;
+  }
+  
+  .no-results p {
+    color: #f87171;
   }
   
   /* Modal Styles */
@@ -113,7 +136,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    background: rgba(15, 23, 42, 0.85);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -121,7 +144,8 @@
   }
   
   .modal {
-    background-color: white;
+    background: #172136;
+    color: #f1f5f9;
     padding: 20px;
     border-radius: 4px;
     width: 100%;
@@ -134,6 +158,14 @@
     color: #000; /* Set text color to black */
   }
   
+  .close-modal {
+    color: #f87171;
+  }
+  
+  .close-modal:hover {
+    color: #dc2626;
+  }
+  
   .form-group {
     margin-bottom: 15px;
   }
@@ -142,14 +174,16 @@
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
-    color: #000; /* Set text color to black */
+    color: #a5b4fc;
   }
   
   .form-group input,
   .form-group select {
     width: 100%;
     padding: 8px;
-    border: 1px solid #ccc;
+    color: #ffffff;
+    background: #111827;
+    border: 1px solid #334155;
     border-radius: 4px;
   }
   
@@ -161,20 +195,30 @@
   }
   
   .cancel-btn {
-    background-color: #f0f0f0;
-    border: 1px solid #ccc;
+    color: #f87171;
+    background: transparent;
+    border: 1px solid #f87171;
     padding: 8px 15px;
     border-radius: 4px;
     cursor: pointer;
   }
   
+  .cancel-btn:hover {
+    background: #f87171;
+    color: #fff;
+  }
+  
   .save-btn {
-    background-color: #0066cc;
-    color: white;
+    color: #fff;
+    background: #38bdf8;
     border: none;
     padding: 8px 15px;
     border-radius: 4px;
     cursor: pointer;
+  }
+  
+  .save-btn:hover {
+    background: #2563eb;
   }
   
   /* Responsive adjustments */
@@ -193,20 +237,8 @@
       flex-direction: column;
     }
   }
-  /* Basic modal styling */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
   
+  /* Basic modal styling */
   .modal-content {
     background: white;
     padding: 20px;

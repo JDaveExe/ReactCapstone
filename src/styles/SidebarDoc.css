@@ -116,6 +116,36 @@
   min-height: 100vh;
   border-right: 1px solid #1e293b;
 }
+.docdash-sidebar.collapsed {
+  width: 64px !important;
+  min-width: 64px !important;
+  transition: width 0.3s;
+}
+.docdash-sidebar.show {
+  transform: translateX(0);
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+}
+@media (max-width: 767.98px) {
+  .docdash-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 260px !important;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 1030;
+  }
+  .docdash-sidebar.show {
+    transform: translateX(0);
+  }
+  .sidebar-overlay {
+    display: block;
+  }
+}
+.sidebar-overlay {
+  display: none;
+}
 .docdash-menu-title {
   font-size: 18px;
   font-weight: 600;
@@ -153,6 +183,9 @@
 }
 .docdash-menu-icon {
   color: inherit;
+}
+.docdash-menuitem-collapsed .docdash-menu-link span {
+  display: none;
 }
 .docdash-sidebar-bottom {
   padding: 18px 18px 0 18px;
@@ -208,7 +241,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 8px;
+  padding: 10px 18px;
   border-radius: 6px;
   color: #e5e7eb;
   font-weight: 500;
@@ -220,4 +253,14 @@
 .docdash-family-item:hover {
   background: #334155;
   color: #38bdf8;
+}
+.docdash-family-item-collapsed span,
+.docdash-family-item-collapsed .docdash-member-chevron {
+  display: none !important;
+}
+.docdash-family-item-collapsed {
+  justify-content: center;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding: 10px 0 !important;
 }

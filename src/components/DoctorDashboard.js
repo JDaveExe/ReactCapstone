@@ -1,12 +1,25 @@
 import { useState } from 'react';
-import { Search, User, Calendar, FileText, Beaker, CheckSquare, ChevronRight, Grid, List, Shield, Activity, AlarmClock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, User, Calendar, FileText, Beaker, CheckSquare, ChevronRight, Grid, List, Shield, Activity, AlarmClock, Bell, Settings, LogOut, X, Menu } from 'lucide-react';
 import '../styles/SidebarDoc.css';
 import '../styles/DoctorDashboard.css';
+import AdmittingData from './AdmittingData';
+import ImmunisationH from './ImmunisationH';
+import Referral from './Referral';
+import Reports from './Reports';
+import Asettings from './Asettings';
+import TreatmentRecord from './TreatmentRecord';
+import ScheduleVisit from './ScheduleVisit';
+import CKProfile from './CKProfile';
 
 export default function DoctorDashboard() {
   const [selectedFamily, setSelectedFamily] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
   const [viewMode, setViewMode] = useState('list');
+  const [actionView, setActionView] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // for mobile
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // for desktop
+  const navigate = useNavigate();
 
   const families = [
     { id: 1, name: 'Smith Family' },
@@ -50,7 +63,9 @@ export default function DoctorDashboard() {
   };
 
   const handleBackClick = () => {
-    if (selectedMember) {
+    if (actionView) {
+      setActionView(null);
+    } else if (selectedMember) {
       setSelectedMember(null);
     } else if (selectedFamily) {
       setSelectedFamily(null);
@@ -62,49 +77,63 @@ export default function DoctorDashboard() {
       {/* Header */}
       <header className="docdash-header">
         <div className="docdash-header-left">
+          <button
+            className="docdash-header-btn d-md-none"
+            style={{ marginRight: 12, background: 'none', border: 'none', color: '#fff', display: 'inline-flex', alignItems: 'center' }}
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open sidebar"
+          >
+            <Menu size={22} />
+          </button>
           <div className="docdash-logo"></div>
           <h1 className="docdash-title">Maybunga Healthcare Center</h1>
         </div>
         <div className="docdash-header-right">
-          <div className="docdash-avatar"></div>
+          <button className="docdash-header-btn"><Bell size={20} /></button>
+          <button className="docdash-header-btn"><Settings size={20} /></button>
+          <div className="docdash-header-user">
+            <div className="docdash-header-avatar"><User size={18} /></div>
+            <span className="docdash-header-admin">Doctor</span>
+          </div>
+          <button className="docdash-header-btn" onClick={() => { localStorage.clear(); navigate('/'); }}><LogOut size={20} /></button>
         </div>
       </header>
 
       {/* Main Content */}
       <div className="docdash-main">
-        {/* Sidebar */}
-        <aside className="docdash-sidebar">
-          <div className="docdash-menu-title">Menu</div>
+        {/* Sidebar and overlay */}
+        {sidebarOpen && (
+          <div
+            className="sidebar-overlay"
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1025 }}
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        <aside
+          className={`docdash-sidebar${sidebarCollapsed ? ' collapsed' : ''}${sidebarOpen ? ' show' : ''}`}
+          style={{ zIndex: 1030, position: 'relative' }}
+        >
+          {/* Collapse/expand button replaces 'Menu' text */}
+          <button
+            className="docdash-header-btn"
+            style={{ margin: '18px 0 12px 18px', background: 'none', border: 'none', color: '#fff', display: 'inline-flex', alignItems: 'center' }}
+            onClick={() => setSidebarCollapsed((c) => !c)}
+            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {sidebarCollapsed ? <Menu size={22} /> : <X size={22} />}
+          </button>
           <nav className="docdash-menu">
             <ul>
-              <li className="docdash-menuitem">
+              <li className={`docdash-menuitem${!sidebarCollapsed ? '' : ' docdash-menuitem-collapsed'}`}> 
                 <a href="#" className="docdash-menu-link">
                   <CheckSquare size={20} className="docdash-menu-icon" />
-                  <span>Check Ups</span>
+                  {!sidebarCollapsed && <span>Check Ups</span>}
                 </a>
               </li>
-              <li className="docdash-menuitem docdash-menuitem-active">
+              <li className={`docdash-menuitem docdash-menuitem-active${!sidebarCollapsed ? '' : ' docdash-menuitem-collapsed'}`}> 
                 <a href="#" className="docdash-menu-link">
                   <User size={20} className="docdash-menu-icon" />
-                  <span>Patient Database</span>
-                </a>
-              </li>
-              <li className="docdash-menuitem">
-                <a href="#" className="docdash-menu-link">
-                  <Calendar size={20} className="docdash-menu-icon" />
-                  <span>Appointment</span>
-                </a>
-              </li>
-              <li className="docdash-menuitem">
-                <a href="#" className="docdash-menu-link">
-                  <FileText size={20} className="docdash-menu-icon" />
-                  <span>Medical Records</span>
-                </a>
-              </li>
-              <li className="docdash-menuitem">
-                <a href="#" className="docdash-menu-link">
-                  <Beaker size={20} className="docdash-menu-icon" />
-                  <span>Lab Results</span>
+                  {!sidebarCollapsed && <span>Patient Database</span>}
                 </a>
               </li>
             </ul>
@@ -121,30 +150,44 @@ export default function DoctorDashboard() {
             </div>
 
             <div className="docdash-views-row">
-              <span className="docdash-views-label">Views:</span>
-              <button 
-                className={`docdash-viewbtn${viewMode === 'list' ? ' docdash-viewbtn-active' : ''}`}
-                onClick={() => setViewMode('list')}
-              >
-                <List size={16} />
-              </button>
-              <button 
-                className={`docdash-viewbtn${viewMode === 'grid' ? ' docdash-viewbtn-active' : ''}`}
-                onClick={() => setViewMode('grid')}
-              >
-                <Grid size={16} />
-              </button>
+              {/* Show only the icon when collapsed, label and buttons when expanded */}
+              {sidebarCollapsed ? (
+                <span className="docdash-views-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                  <Grid size={18} style={{ color: '#fff' }} />
+                </span>
+              ) : (
+                <>
+                  <span className="docdash-views-icon" style={{ display: 'inline-flex', alignItems: 'center', marginRight: 8 }}>
+                    <Grid size={18} style={{ color: '#fff', marginRight: 8 }} />
+                  </span>
+                  <span className="docdash-views-label" style={{ marginRight: 8 }}>Views:</span>
+                  <button 
+                    className={`docdash-viewbtn${viewMode === 'list' ? ' docdash-viewbtn-active' : ''}`}
+                    onClick={() => setViewMode('list')}
+                  >
+                    <List size={16} />
+                  </button>
+                  <button 
+                    className={`docdash-viewbtn${viewMode === 'grid' ? ' docdash-viewbtn-active' : ''}`}
+                    onClick={() => setViewMode('grid')}
+                  >
+                    <Grid size={16} />
+                  </button>
+                </>
+              )}
             </div>
 
             <div className="docdash-family-list">
               {families.map(family => (
                 <div 
                   key={family.id} 
-                  className={`docdash-family-item${selectedFamily === family.id ? ' docdash-family-item-active' : ''}`}
+                  className={`docdash-family-item${selectedFamily === family.id ? ' docdash-family-item-active' : ''}${sidebarCollapsed ? ' docdash-family-item-collapsed' : ''}`}
                   onClick={() => handleFamilyClick(family.id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: sidebarCollapsed ? 0 : 8 }}
                 >
-                  <span>{family.name}</span>
-                  <ChevronRight size={16} />
+                  <User size={18} style={{ marginRight: sidebarCollapsed ? 0 : 8, color: '#38bdf8' }} />
+                  {!sidebarCollapsed && <span>{family.name}</span>}
+                  {!sidebarCollapsed && <ChevronRight size={16} />}
                 </div>
               ))}
             </div>
@@ -153,16 +196,66 @@ export default function DoctorDashboard() {
 
         {/* Main Content Area */}
         <main className="docdash-content">
-          <div className="docdash-content-header">
-            <h2 className="docdash-content-title">DOCTOR DASHBOARD</h2>
-            {(selectedFamily || selectedMember) && (
-              <button 
-                onClick={handleBackClick}
-                className="docdash-backbtn"
-              >
-                Back
-              </button>
-            )}
+          {/* Breadcrumb */}
+          <div style={{ height: 64, background: '#111827', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', marginBottom: 32 }}>
+            <div style={{ display: 'flex', alignItems: 'center', fontSize: 14 }}>
+              <span style={{ color: '#64748b', marginRight: 8 }}>YOU ARE HERE &gt;</span>
+              {/* Breadcrumb navigation logic */}
+              {(() => {
+                const familyObj = families.find(f => f.id === selectedFamily);
+                const breadcrumbStyle = { color: '#38bdf8', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', marginRight: 4 };
+                const sep = <span style={{ color: '#64748b', margin: '0 4px' }}>/</span>;
+                if (!selectedFamily) {
+                  return (
+                    <span style={{ color: '#38bdf8', fontWeight: 600 }}>Dashboard</span>
+                  );
+                }
+                if (selectedFamily && !selectedMember) {
+                  return (
+                    <>
+                      <span style={breadcrumbStyle} onClick={() => { setSelectedFamily(null); setSelectedMember(null); setActionView(null); }}>Dashboard</span>
+                      {sep}
+                      <span style={{ color: '#38bdf8', fontWeight: 600 }}>{familyObj?.name}</span>
+                    </>
+                  );
+                }
+                if (selectedMember && !actionView) {
+                  return (
+                    <>
+                      <span style={breadcrumbStyle} onClick={() => { setSelectedFamily(null); setSelectedMember(null); setActionView(null); }}>Dashboard</span>
+                      {sep}
+                      <span style={breadcrumbStyle} onClick={() => { setSelectedMember(null); setActionView(null); }}>{familyObj?.name}</span>
+                      {sep}
+                      <span style={{ color: '#38bdf8', fontWeight: 600 }}>{selectedMember.name}</span>
+                    </>
+                  );
+                }
+                if (selectedMember && actionView) {
+                  let actionLabel = '';
+                  switch (actionView) {
+                    case 'checkup': actionLabel = 'Check-up Profile'; break;
+                    case 'treatment': actionLabel = 'Individual Treatment Record'; break;
+                    case 'schedule': actionLabel = 'Schedule Visit'; break;
+                    case 'admitting': actionLabel = 'Admitting Data'; break;
+                    case 'immunization': actionLabel = 'Immunization History'; break;
+                    case 'referral': actionLabel = 'Referral'; break;
+                    default: actionLabel = actionView;
+                  }
+                  return (
+                    <>
+                      <span style={breadcrumbStyle} onClick={() => { setSelectedFamily(null); setSelectedMember(null); setActionView(null); }}>Dashboard</span>
+                      {sep}
+                      <span style={breadcrumbStyle} onClick={() => { setSelectedMember(null); setActionView(null); }}>{familyObj?.name}</span>
+                      {sep}
+                      <span style={breadcrumbStyle} onClick={() => { setActionView(null); }}>{selectedMember.name}</span>
+                      {sep}
+                      <span style={{ color: '#38bdf8', fontWeight: 600 }}>{actionLabel}</span>
+                    </>
+                  );
+                }
+                return <span style={{ color: '#38bdf8', fontWeight: 600 }}>Dashboard</span>;
+              })()}
+            </div>
           </div>
 
           {!selectedFamily && (
@@ -193,7 +286,7 @@ export default function DoctorDashboard() {
             </div>
           )}
 
-          {selectedMember && (
+          {selectedMember && !actionView && (
             <div>
               <div className="docdash-member-header">
                 <h3 className="docdash-member-detail-title">{selectedMember.name}</h3>
@@ -237,56 +330,69 @@ export default function DoctorDashboard() {
               </div>
 
               <div className="docdash-actions-grid">
-                <div className="docdash-action-card">
+                <div className="docdash-action-card" onClick={() => setActionView('checkup')}>
                   <div className="docdash-action-avatar"><User size={20} /></div>
                   <div>
                     <h5 className="docdash-action-title">Check-up Profile</h5>
                     <p className="docdash-action-desc">Full examination details</p>
                   </div>
                 </div>
-                <div className="docdash-action-card">
+                <div className="docdash-action-card" onClick={() => setActionView('treatment')}>
                   <div className="docdash-action-avatar"><Activity size={20} /></div>
                   <div>
-                    <h5 className="docdash-action-title">Medical History</h5>
+                    <h5 className="docdash-action-title">Individual Treatment Record</h5>
                     <p className="docdash-action-desc">Previous medical records</p>
                   </div>
                 </div>
-                <div className="docdash-action-card">
+                <div className="docdash-action-card" onClick={() => setActionView('schedule')}>
                   <div className="docdash-action-avatar"><AlarmClock size={20} /></div>
                   <div>
                     <h5 className="docdash-action-title">Schedule Visit</h5>
                     <p className="docdash-action-desc">Set up new appointment</p>
                   </div>
                 </div>
-              </div>
-
-              <div className="docdash-info-card docdash-labresults-card">
-                <h4 className="docdash-info-title">Recent Lab Results</h4>
-                <div className="docdash-labresults-list">
-                  <div className="docdash-labresult-row">
-                    <div>
-                      <p className="docdash-labresult-name">Blood Test</p>
-                      <p className="docdash-labresult-date">04/01/2025</p>
-                    </div>
-                    <span className="docdash-labresult-status docdash-status-normal">Normal</span>
+                <div className="docdash-action-card" onClick={() => setActionView('admitting')}>
+                  <div className="docdash-action-avatar"><FileText size={20} /></div>
+                  <div>
+                    <h5 className="docdash-action-title">Admitting Data</h5>
+                    <p className="docdash-action-desc">Admission and discharge info</p>
                   </div>
-                  <div className="docdash-labresult-row">
-                    <div>
-                      <p className="docdash-labresult-name">Cholesterol Panel</p>
-                      <p className="docdash-labresult-date">03/15/2025</p>
-                    </div>
-                    <span className="docdash-labresult-status docdash-status-review">Review</span>
+                </div>
+                <div className="docdash-action-card" onClick={() => setActionView('immunization')}>
+                  <div className="docdash-action-avatar"><Shield size={20} /></div>
+                  <div>
+                    <h5 className="docdash-action-title">Immunization History</h5>
+                    <p className="docdash-action-desc">Vaccination records</p>
                   </div>
-                  <div className="docdash-labresult-row">
-                    <div>
-                      <p className="docdash-labresult-name">Urinalysis</p>
-                      <p className="docdash-labresult-date">03/15/2025</p>
-                    </div>
-                    <span className="docdash-labresult-status docdash-status-normal">Normal</span>
+                </div>
+                <div className="docdash-action-card" onClick={() => setActionView('referral')}>
+                  <div className="docdash-action-avatar"><Activity size={20} /></div>
+                  <div>
+                    <h5 className="docdash-action-title">Referral</h5>
+                    <p className="docdash-action-desc">Specialist referrals</p>
                   </div>
                 </div>
               </div>
             </div>
+          )}
+
+          {selectedMember && actionView === 'checkup' && (
+            <CKProfile member={selectedMember} onBack={() => setActionView(null)} />
+          )}
+          {selectedMember && actionView === 'treatment' && (
+            <TreatmentRecord member={selectedMember} onBack={() => setActionView(null)} />
+          )}
+          {selectedMember && actionView === 'admitting' && (
+            <AdmittingData member={selectedMember} onBack={() => setActionView(null)} />
+          )}
+          {selectedMember && actionView === 'immunization' && (
+            <ImmunisationH member={selectedMember} onBack={() => setActionView(null)} />
+          )}
+          {selectedMember && actionView === 'referral' && (
+            <Referral member={selectedMember} onBack={() => setActionView(null)} />
+          )}
+          {selectedMember && actionView === 'schedule' && (
+            <ScheduleVisit member={selectedMember} onBack={() => setActionView(null)} />
           )}
         </main>
       </div>

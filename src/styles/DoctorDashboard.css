@@ -307,13 +307,40 @@
 .docdash-header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 18px;
 }
-.docdash-avatar {
+.docdash-header-btn {
+  background: none;
+  border: none;
+  border-radius: 50%;
+  padding: 7px;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.docdash-header-btn:active, .docdash-header-btn:focus {
+  background: #334155;
+}
+.docdash-header-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.docdash-header-avatar {
   width: 32px;
   height: 32px;
-  background: #3b82f6;
   border-radius: 50%;
+  background: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.docdash-header-admin {
+  font-size: 14px;
+  color: #fff;
 }
 .docdash-main {
   display: flex;

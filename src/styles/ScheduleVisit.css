@@ -1,0 +1,92 @@
+.schedule-visit-root {
+  background: #232a36;
+  border-radius: 12px;
+  padding: 32px 36px;
+  max-width: 500px;
+  margin: 0 auto;
+  color: #f1f5f9 !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+}
+.schedule-visit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.schedule-visit-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #f1f5f9 !important;
+}
+.schedule-visit-back {
+  background: #334155;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 18px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.schedule-visit-back:hover {
+  background: #38bdf8;
+}
+.schedule-visit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.schedule-visit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.schedule-visit-field label {
+  font-size: 14px;
+  color: #a3b8d8 !important;
+}
+.schedule-visit-field input,
+.schedule-visit-field textarea {
+  background: #334155;
+  border: none;
+  border-radius: 6px;
+  color: #f1f5f9;
+  font-size: 15px;
+  padding: 8px 12px;
+  outline: none;
+  resize: none;
+}
+.schedule-visit-field input::placeholder,
+.schedule-visit-field textarea::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+.schedule-visit-field textarea {
+  min-height: 60px;
+}
+.schedule-visit-submit {
+  background: #38bdf8;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 0;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+.schedule-visit-submit:hover {
+  background: #2563eb;
+}
+.schedule-visit-success {
+  text-align: center;
+  padding: 32px 0;
+}
+.schedule-visit-success h3 {
+  color: #38bdf8 !important;
+  margin-bottom: 12px;
+}
+.schedule-visit-success p {
+  color: #e0e7ef !important;
+}

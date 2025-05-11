@@ -1,0 +1,82 @@
+.ckprofile-root {
+  background: #181e29;
+  color: #f1f5f9;
+  padding: 32px 24px;
+  border-radius: 12px;
+  max-width: 700px;
+  margin: 32px auto;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+}
+.ckprofile-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.ckprofile-backbtn {
+  background: #334155;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 18px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.ckprofile-backbtn:hover {
+  background: #475569;
+}
+.ckprofile-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: #38bdf8;
+}
+.ckprofile-member-info {
+  margin-bottom: 24px;
+}
+.ckprofile-member-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+.ckprofile-member-info p {
+  color: #cbd5e1;
+  font-size: 1rem;
+}
+.ckprofile-visits h4 {
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #38bdf8;
+}
+.ckprofile-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+  color: #f1f5f9;
+}
+.ckprofile-table th, .ckprofile-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #334155;
+  text-align: left;
+  color: #f1f5f9;
+}
+.ckprofile-table th {
+  background: #22304a;
+  color: #38bdf8;
+  font-weight: 600;
+}
+.ckprofile-table tr:last-child td {
+  border-bottom: none;
+}
+.ckprofile-table tr {
+  background: #1e293b;
+  transition: background 0.2s;
+}
+.ckprofile-table tr:hover {
+  background: #334155;
+}

@@ -11,6 +11,7 @@ import Asettings from './Asettings';
 import TreatmentRecord from './TreatmentRecord';
 import ScheduleVisit from './ScheduleVisit';
 import CKProfile from './CKProfile';
+import CheckupRecords from './CheckupRecords';
 
 export default function DoctorDashboard() {
   const [selectedFamily, setSelectedFamily] = useState(null);
@@ -19,6 +20,7 @@ export default function DoctorDashboard() {
   const [actionView, setActionView] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false); // for mobile
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // for desktop
+  const [activeSection, setActiveSection] = useState('checkups');
   const navigate = useNavigate();
 
   const families = [
@@ -125,16 +127,34 @@ export default function DoctorDashboard() {
           <nav className="docdash-menu">
             <ul>
               <li className={`docdash-menuitem${!sidebarCollapsed ? '' : ' docdash-menuitem-collapsed'}`}> 
-                <a href="#" className="docdash-menu-link">
+                <button
+                  className={`docdash-menu-link${activeSection === 'checkups' ? ' docdash-menu-link-active' : ''}`}
+                  style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', color: 'inherit', padding: 0, cursor: 'pointer' }}
+                  onClick={() => {
+                    setActiveSection('checkups');
+                    setSelectedFamily(null);
+                    setSelectedMember(null);
+                    setActionView(null);
+                  }}
+                >
                   <CheckSquare size={20} className="docdash-menu-icon" />
                   {!sidebarCollapsed && <span>Check Ups</span>}
-                </a>
+                </button>
               </li>
-              <li className={`docdash-menuitem docdash-menuitem-active${!sidebarCollapsed ? '' : ' docdash-menuitem-collapsed'}`}> 
-                <a href="#" className="docdash-menu-link">
+              <li className={`docdash-menuitem${activeSection === 'patients' ? ' docdash-menu-link-active' : ''}${!sidebarCollapsed ? '' : ' docdash-menuitem-collapsed'}`}> 
+                <button
+                  className={`docdash-menu-link${activeSection === 'patients' ? ' docdash-menu-link-active' : ''}`}
+                  style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', color: 'inherit', padding: 0, cursor: 'pointer' }}
+                  onClick={() => {
+                    setActiveSection('patients');
+                    setSelectedFamily(null);
+                    setSelectedMember(null);
+                    setActionView(null);
+                  }}
+                >
                   <User size={20} className="docdash-menu-icon" />
                   {!sidebarCollapsed && <span>Patient Database</span>}
-                </a>
+                </button>
               </li>
             </ul>
           </nav>
@@ -201,7 +221,10 @@ export default function DoctorDashboard() {
             <div style={{ display: 'flex', alignItems: 'center', fontSize: 14 }}>
               <span style={{ color: '#64748b', marginRight: 8 }}>YOU ARE HERE &gt;</span>
               {/* Breadcrumb navigation logic */}
-              {(() => {
+              {activeSection === 'checkups' && (
+                <span style={{ color: '#38bdf8', fontWeight: 600 }}>Check Ups</span>
+              )}
+              {activeSection === 'patients' && (() => {
                 const familyObj = families.find(f => f.id === selectedFamily);
                 const breadcrumbStyle = { color: '#38bdf8', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', marginRight: 4 };
                 const sep = <span style={{ color: '#64748b', margin: '0 4px' }}>/</span>;
@@ -258,141 +281,147 @@ export default function DoctorDashboard() {
             </div>
           </div>
 
-          {!selectedFamily && (
-            <div className="docdash-empty-state">
-              <p>Select a family to view members</p>
-            </div>
-          )}
+          {activeSection === 'checkups' ? (
+            <CheckupRecords />
+          ) : (
+            <>
+              {!selectedFamily && (
+                <div className="docdash-empty-state">
+                  <p>Select a family to view members</p>
+                </div>
+              )}
 
-          {selectedFamily && !selectedMember && (
-            <div>
-              <h3 className="docdash-section-title">{families.find(f => f.id === selectedFamily)?.name} Members</h3>
-              <div className={viewMode === 'grid' ? 'docdash-members-grid' : 'docdash-members-list'}>
-                {familyMembers[selectedFamily]?.map(member => (
-                  <div 
-                    key={member.id}
-                    className={`docdash-member-card${viewMode === 'list' ? ' docdash-member-card-list' : ''}`}
-                    onClick={() => handleMemberClick(member)}
-                  >
-                    <div className="docdash-member-avatar"><User size={20} /></div>
-                    <div className="docdash-member-info">
-                      <p className="docdash-member-name">{member.name}</p>
-                      <p className="docdash-member-last">Last checkup: {member.lastCheckup}</p>
+              {selectedFamily && !selectedMember && (
+                <div>
+                  <h3 className="docdash-section-title">{families.find(f => f.id === selectedFamily)?.name} Members</h3>
+                  <div className={viewMode === 'grid' ? 'docdash-members-grid' : 'docdash-members-list'}>
+                    {familyMembers[selectedFamily]?.map(member => (
+                      <div 
+                        key={member.id}
+                        className={`docdash-member-card${viewMode === 'list' ? ' docdash-member-card-list' : ''}`}
+                        onClick={() => handleMemberClick(member)}
+                      >
+                        <div className="docdash-member-avatar"><User size={20} /></div>
+                        <div className="docdash-member-info">
+                          <p className="docdash-member-name">{member.name}</p>
+                          <p className="docdash-member-last">Last checkup: {member.lastCheckup}</p>
+                        </div>
+                        <ChevronRight size={16} className="docdash-member-chevron" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedMember && !actionView && (
+                <div>
+                  <div className="docdash-member-header">
+                    <h3 className="docdash-member-detail-title">{selectedMember.name}</h3>
+                    <button className="docdash-emailbtn">Email Family</button>
+                  </div>
+
+                  <div className="docdash-info-card">
+                    <h4 className="docdash-info-title">Personal Information</h4>
+                    <div className="docdash-info-grid">
+                      <div className="docdash-info-item">
+                        <p className="docdash-info-label">Age</p>
+                        <p>{selectedMember.age} years</p>
+                      </div>
+                      <div className="docdash-info-item">
+                        <p className="docdash-info-label">Gender</p>
+                        <p>{selectedMember.gender}</p>
+                      </div>
+                      <div className="docdash-info-item">
+                        <p className="docdash-info-label">Last Checkup</p>
+                        <p>{selectedMember.lastCheckup}</p>
+                      </div>
                     </div>
-                    <ChevronRight size={16} className="docdash-member-chevron" />
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {selectedMember && !actionView && (
-            <div>
-              <div className="docdash-member-header">
-                <h3 className="docdash-member-detail-title">{selectedMember.name}</h3>
-                <button className="docdash-emailbtn">Email Family</button>
-              </div>
+                  <div className="docdash-info-card">
+                    <h4 className="docdash-info-title">Contact Information</h4>
+                    <div className="docdash-info-grid">
+                      <div className="docdash-info-item">
+                        <p className="docdash-info-label">Phone</p>
+                        <p>{selectedMember.phone}</p>
+                      </div>
+                      <div className="docdash-info-item">
+                        <p className="docdash-info-label">Email</p>
+                        <p>{selectedMember.email}</p>
+                      </div>
+                      <div className="docdash-info-item">
+                        <p className="docdash-info-label">Address</p>
+                        <p>{selectedMember.address}</p>
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="docdash-info-card">
-                <h4 className="docdash-info-title">Personal Information</h4>
-                <div className="docdash-info-grid">
-                  <div className="docdash-info-item">
-                    <p className="docdash-info-label">Age</p>
-                    <p>{selectedMember.age} years</p>
-                  </div>
-                  <div className="docdash-info-item">
-                    <p className="docdash-info-label">Gender</p>
-                    <p>{selectedMember.gender}</p>
-                  </div>
-                  <div className="docdash-info-item">
-                    <p className="docdash-info-label">Last Checkup</p>
-                    <p>{selectedMember.lastCheckup}</p>
+                  <div className="docdash-actions-grid">
+                    <div className="docdash-action-card" onClick={() => setActionView('checkup')}>
+                      <div className="docdash-action-avatar"><User size={20} /></div>
+                      <div>
+                        <h5 className="docdash-action-title">Check-up Profile</h5>
+                        <p className="docdash-action-desc">Full examination details</p>
+                      </div>
+                    </div>
+                    <div className="docdash-action-card" onClick={() => setActionView('treatment')}>
+                      <div className="docdash-action-avatar"><Activity size={20} /></div>
+                      <div>
+                        <h5 className="docdash-action-title">Individual Treatment Record</h5>
+                        <p className="docdash-action-desc">Previous medical records</p>
+                      </div>
+                    </div>
+                    <div className="docdash-action-card" onClick={() => setActionView('schedule')}>
+                      <div className="docdash-action-avatar"><AlarmClock size={20} /></div>
+                      <div>
+                        <h5 className="docdash-action-title">Schedule Visit</h5>
+                        <p className="docdash-action-desc">Set up new appointment</p>
+                      </div>
+                    </div>
+                    <div className="docdash-action-card" onClick={() => setActionView('admitting')}>
+                      <div className="docdash-action-avatar"><FileText size={20} /></div>
+                      <div>
+                        <h5 className="docdash-action-title">Admitting Data</h5>
+                        <p className="docdash-action-desc">Admission and discharge info</p>
+                      </div>
+                    </div>
+                    <div className="docdash-action-card" onClick={() => setActionView('immunization')}>
+                      <div className="docdash-action-avatar"><Shield size={20} /></div>
+                      <div>
+                        <h5 className="docdash-action-title">Immunization History</h5>
+                        <p className="docdash-action-desc">Vaccination records</p>
+                      </div>
+                    </div>
+                    <div className="docdash-action-card" onClick={() => setActionView('referral')}>
+                      <div className="docdash-action-avatar"><Activity size={20} /></div>
+                      <div>
+                        <h5 className="docdash-action-title">Referral</h5>
+                        <p className="docdash-action-desc">Specialist referrals</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              <div className="docdash-info-card">
-                <h4 className="docdash-info-title">Contact Information</h4>
-                <div className="docdash-info-grid">
-                  <div className="docdash-info-item">
-                    <p className="docdash-info-label">Phone</p>
-                    <p>{selectedMember.phone}</p>
-                  </div>
-                  <div className="docdash-info-item">
-                    <p className="docdash-info-label">Email</p>
-                    <p>{selectedMember.email}</p>
-                  </div>
-                  <div className="docdash-info-item">
-                    <p className="docdash-info-label">Address</p>
-                    <p>{selectedMember.address}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="docdash-actions-grid">
-                <div className="docdash-action-card" onClick={() => setActionView('checkup')}>
-                  <div className="docdash-action-avatar"><User size={20} /></div>
-                  <div>
-                    <h5 className="docdash-action-title">Check-up Profile</h5>
-                    <p className="docdash-action-desc">Full examination details</p>
-                  </div>
-                </div>
-                <div className="docdash-action-card" onClick={() => setActionView('treatment')}>
-                  <div className="docdash-action-avatar"><Activity size={20} /></div>
-                  <div>
-                    <h5 className="docdash-action-title">Individual Treatment Record</h5>
-                    <p className="docdash-action-desc">Previous medical records</p>
-                  </div>
-                </div>
-                <div className="docdash-action-card" onClick={() => setActionView('schedule')}>
-                  <div className="docdash-action-avatar"><AlarmClock size={20} /></div>
-                  <div>
-                    <h5 className="docdash-action-title">Schedule Visit</h5>
-                    <p className="docdash-action-desc">Set up new appointment</p>
-                  </div>
-                </div>
-                <div className="docdash-action-card" onClick={() => setActionView('admitting')}>
-                  <div className="docdash-action-avatar"><FileText size={20} /></div>
-                  <div>
-                    <h5 className="docdash-action-title">Admitting Data</h5>
-                    <p className="docdash-action-desc">Admission and discharge info</p>
-                  </div>
-                </div>
-                <div className="docdash-action-card" onClick={() => setActionView('immunization')}>
-                  <div className="docdash-action-avatar"><Shield size={20} /></div>
-                  <div>
-                    <h5 className="docdash-action-title">Immunization History</h5>
-                    <p className="docdash-action-desc">Vaccination records</p>
-                  </div>
-                </div>
-                <div className="docdash-action-card" onClick={() => setActionView('referral')}>
-                  <div className="docdash-action-avatar"><Activity size={20} /></div>
-                  <div>
-                    <h5 className="docdash-action-title">Referral</h5>
-                    <p className="docdash-action-desc">Specialist referrals</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {selectedMember && actionView === 'checkup' && (
-            <CKProfile member={selectedMember} onBack={() => setActionView(null)} />
-          )}
-          {selectedMember && actionView === 'treatment' && (
-            <TreatmentRecord member={selectedMember} onBack={() => setActionView(null)} />
-          )}
-          {selectedMember && actionView === 'admitting' && (
-            <AdmittingData member={selectedMember} onBack={() => setActionView(null)} />
-          )}
-          {selectedMember && actionView === 'immunization' && (
-            <ImmunisationH member={selectedMember} onBack={() => setActionView(null)} />
-          )}
-          {selectedMember && actionView === 'referral' && (
-            <Referral member={selectedMember} onBack={() => setActionView(null)} />
-          )}
-          {selectedMember && actionView === 'schedule' && (
-            <ScheduleVisit member={selectedMember} onBack={() => setActionView(null)} />
+              {selectedMember && actionView === 'checkup' && (
+                <CKProfile member={selectedMember} onBack={() => setActionView(null)} />
+              )}
+              {selectedMember && actionView === 'treatment' && (
+                <TreatmentRecord member={selectedMember} onBack={() => setActionView(null)} />
+              )}
+              {selectedMember && actionView === 'admitting' && (
+                <AdmittingData member={selectedMember} onBack={() => setActionView(null)} />
+              )}
+              {selectedMember && actionView === 'immunization' && (
+                <ImmunisationH member={selectedMember} onBack={() => setActionView(null)} />
+              )}
+              {selectedMember && actionView === 'referral' && (
+                <Referral member={selectedMember} onBack={() => setActionView(null)} />
+              )}
+              {selectedMember && actionView === 'schedule' && (
+                <ScheduleVisit member={selectedMember} onBack={() => setActionView(null)} />
+              )}
+            </>
           )}
         </main>
       </div>

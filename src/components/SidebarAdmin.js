@@ -12,7 +12,7 @@ import React, { useState, useEffect } from "react";
         if (isOpen && sidebar && !sidebar.contains(event.target)) {
             closeSidebar();
         }
-        };
+        };  
 
         if (isOpen) {
         document.addEventListener('mousedown', handleClickOutside);
@@ -79,6 +79,16 @@ import React, { useState, useEffect } from "react";
                 >
                     <i className="bi bi-speedometer2 me-2"></i>
                     {!isCollapsed && "Dashboard"}
+                </button>
+                </li>
+                <li className="nav-item">
+                <button 
+                    className="nav-link text-start text-light w-100" 
+                    onClick={() => handleNavigation("/admin/checkups-today")}
+                    title="Check-Ups Today"
+                >
+                    <i className="bi bi-calendar-check me-2"></i>
+                    {!isCollapsed && "Check-Ups Today"}
                 </button>
                 </li>
                 

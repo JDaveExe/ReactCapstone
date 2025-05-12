@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Search, Settings, Bell, LogOut, User, Menu, X, Maximize, BarChart2, Circle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, Settings, Bell, LogOut, User, Menu, X, Maximize, BarChart2, Circle, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/DashboardAdm.css';
 import '../styles/SidebarAdmin.css';
 import Manage from './Manage';
 import Reports from './Reports';
 import Asettings from './Asettings';
+import CheckUpToday from './CheckUpToday';
 
 function SidebarItem({ icon, label, active, collapsed, indent, onClick }) {
   return (
@@ -141,6 +142,14 @@ export default function AdminDashboard() {
   };
 
   function renderContent() {
+    if (selectedView === 'checkups') {
+      return (
+        <div style={{ color: '#f1f5f9' }}>
+          <h2 style={{ color: '#38bdf8', fontWeight: 700, fontSize: 28, textAlign: 'center', marginBottom: 24 }}>Check-Ups Scheduled for Today</h2>
+          <CheckUpToday showDateTimePerPatient />
+        </div>
+      );
+    }
     if (selectedView === 'manage') return <div style={{ color: '#f1f5f9' }}><Manage /></div>;
     if (selectedView === 'reports') return <div style={{ color: '#f1f5f9' }}><Reports /></div>;
     if (selectedView === 'settings') return <div style={{ color: '#f1f5f9' }}><Asettings /></div>;
@@ -234,6 +243,7 @@ export default function AdminDashboard() {
         </div>
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <SidebarItem icon={<BarChart2 size={18} />} label="Dashboard" active={selectedView === 'dashboard'} collapsed={collapsed} onClick={() => setSelectedView('dashboard')} />
+          <SidebarItem icon={<Calendar size={18} />} label="Check Up Today" active={selectedView === 'checkups'} collapsed={collapsed} onClick={() => setSelectedView('checkups')} />
           <SidebarDropdown icon={<User size={18} />} label="Patient Management" collapsed={collapsed} isOpen={dropdowns.patientManagement} onClick={() => toggleDropdown('patientManagement')}>
             <SidebarItem label="Manage Patient Data" collapsed={collapsed} indent onClick={() => setSelectedView('manage')} />
           </SidebarDropdown>

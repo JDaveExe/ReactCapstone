@@ -1,96 +1,94 @@
 import React, { useState } from "react";
 import "../styles/CheckupRecords.css";
 
+const today = new Date();
+const todayDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+const initialCheckups = [
+  { name: 'John Doe', time: '09:00 AM', type: 'General Consultation', date: todayDate, status: '' },
+  { name: 'Jane Smith', time: '10:30 AM', type: 'Dental Check-Up', date: todayDate, status: '' },
+  { name: 'Carlos Reyes', time: '01:00 PM', type: 'Eye Exam', date: todayDate, status: '' },
+  { name: 'Maria Garcia', time: '03:15 PM', type: 'Pediatric Check-Up', date: todayDate, status: '' },
+];
+
 const CheckupRecords = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [expandedRow, setExpandedRow] = useState(null);
-  const [checkupData, setCheckupData] = useState([
-    { id: 1, date: "2025-03-20", diagnosis: "Flu", doctor: "Dr. Smith", symptoms: "Fever, Cough", medication: "Paracetamol", nextAppointment: "2025-04-05", notes: "Rest and hydrate well." },
-    { id: 2, date: "2025-03-18", diagnosis: "Migraine", doctor: "Dr. Johnson", symptoms: "Headache, Nausea", medication: "Ibuprofen", nextAppointment: "2025-04-01", notes: "Avoid bright lights and stress." },
-  ]);
+  const [search, setSearch] = useState("");
+  const [sortField, setSortField] = useState("time");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [checkups, setCheckups] = useState(initialCheckups);
 
-  // Filter records based on search term
-  const filteredData = checkupData.filter(
-    (record) =>
-      record.date.includes(searchTerm) ||
-      record.diagnosis.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.doctor.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter by name
+  const filtered = checkups.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
 
-  const toggleDetails = (id) => {
-    setExpandedRow(expandedRow === id ? null : id);
+  // Sort by date or time
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortField === 'date') {
+      const dA = new Date(a.date + ' ' + a.time);
+      const dB = new Date(b.date + ' ' + b.time);
+      return sortOrder === 'asc' ? dA - dB : dB - dA;
+    } else if (sortField === 'time') {
+      const dA = new Date(a.date + ' ' + a.time);
+      const dB = new Date(b.date + ' ' + b.time);
+      return sortOrder === 'asc' ? dA - dB : dB - dA;
+    }
+    return 0;
+  });
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
   };
 
-  const addNotes = (id) => {
-    const newNote = prompt("Enter additional notes:");
-    if (newNote !== null) {
-      setCheckupData((prevData) =>
-        prevData.map((record) =>
-          record.id === id ? { ...record, notes: newNote } : record
-        )
-      );
-    }
+  const handleStatusChange = (idx, value) => {
+    setCheckups(prev => prev.map((c, i) => i === idx ? { ...c, status: value } : c));
   };
 
   return (
     <div className="checkup-container">
-      <h2>Recent Checkup Records</h2>
-      
+      <h2>Today's Check-Up Records</h2>
       <input
         type="text"
-        placeholder="Search by date, diagnosis, or doctor"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
+        placeholder="Search by name..."
+        value={search}
+        onChange={e => setSearch(e.target.value)}
         className="search-bar"
+        style={{ marginBottom: 18 }}
       />
-      
       <div className="table-container">
         <table className="checkup-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Diagnosis</th>
-              <th>Doctor</th>
-              <th>Symptoms</th>
-              <th>Medication</th>
-              <th>Next Appointment</th>
-              <th>Actions</th>
+              <th>Name</th>
+              <th style={{ cursor: 'pointer' }} onClick={() => handleSort('date')}>
+                Date {sortField === 'date' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+              </th>
+              <th style={{ cursor: 'pointer' }} onClick={() => handleSort('time')}>
+                Time {sortField === 'time' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+              </th>
+              <th>Purpose</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            {filteredData.length > 0 ? (
-              filteredData.map((record) => (
-                <React.Fragment key={record.id}>
-                  <tr>
-                    <td>{record.date}</td>
-                    <td>{record.diagnosis}</td>
-                    <td>{record.doctor}</td>
-                    <td>{record.symptoms}</td>
-                    <td>{record.medication}</td>
-                    <td>{record.nextAppointment}</td>
-                    <td>
-                      <button className="view-more" onClick={() => toggleDetails(record.id)}>
-                        {expandedRow === record.id ? "Hide Details" : "View More"}
-                      </button>
-                    </td>
-                  </tr>
-                  {expandedRow === record.id && (
-                    <tr className="expanded-row">
-                      <td colSpan="7">
-                        <div className="details-box">
-                          <p><strong>Additional Notes:</strong> {record.notes || "No additional details available"}</p>
-                          <button className="add-notes" onClick={() => addNotes(record.id)}>Add Notes</button>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="7">No records found</td>
+            {sorted.map((c, i) => (
+              <tr key={i}>
+                <td>{c.name}</td>
+                <td>{c.date}</td>
+                <td>{c.time}</td>
+                <td>{c.type}</td>
+                <td>
+                  <select value={c.status} onChange={e => handleStatusChange(i, e.target.value)}>
+                    <option value="">Select</option>
+                    <option value="done">Done</option>
+                    <option value="not-done">Not Done</option>
+                  </select>
+                </td>
               </tr>
-            )}
+            ))}
           </tbody>
         </table>
       </div>

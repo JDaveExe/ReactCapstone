@@ -70,6 +70,45 @@ db.connect((err) => {
     // Create default admin user if it doesn't exist
     createDefaultAdmin();
   });
+
+  // Table for checkup records
+  const createCheckupTable = `
+  CREATE TABLE IF NOT EXISTS checkup_records (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId INT,
+    name VARCHAR(255),
+    checkupDate DATE,
+    checkupTime TIME,
+    purpose VARCHAR(255),
+    status VARCHAR(50) DEFAULT 'pending',
+    doctorId INT,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`;
+  db.query(createCheckupTable, (err) => {
+    if (err) {
+      console.error('Error creating checkup_records table:', err);
+    } else {
+      console.log('✓ checkup_records table ready');
+    }
+  });
+
+  // Table for unsorted members
+  const createUnsortedTable = `
+  CREATE TABLE IF NOT EXISTS unsorted_members (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId INT,
+    name VARCHAR(255),
+    registrationTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    assignedFamily VARCHAR(255),
+    status VARCHAR(50) DEFAULT 'unsorted'
+  )`;
+  db.query(createUnsortedTable, (err) => {
+    if (err) {
+      console.error('Error creating unsorted_members table:', err);
+    } else {
+      console.log('✓ unsorted_members table ready');
+    }
+  });
 });
 
 // Function to create default admin user
@@ -396,6 +435,16 @@ app.post('/api/register', (req, res) => {
       
       console.log('User registered successfully:', email);
       console.log('User ID:', result.insertId);
+
+      // After successful registration, add to unsorted_members
+      db.query('INSERT INTO unsorted_members (userId, name) VALUES (?, ?)', [result.insertId, `${firstName} ${lastName}`], (err2) => {
+        if (err2) {
+          console.error('Error adding to unsorted_members:', err2);
+        } else {
+          console.log('User added to unsorted_members');
+        }
+      });
+
       console.log('==== Registration Process Completed ====');
       
       res.status(201).json({ 
@@ -447,6 +496,24 @@ app.post('/api/login', (req, res) => {
       role = 'patient';
     } else {
       role = 'patient'; // Default role
+    }
+
+    // After successful login, create a checkup record for today
+    if (role === 'patient') {
+      const now = new Date();
+      const checkupDate = now.toISOString().slice(0, 10); // YYYY-MM-DD
+      const checkupTime = now.toTimeString().slice(0, 8); // HH:MM:SS
+      db.query(
+        'INSERT INTO checkup_records (userId, name, checkupDate, checkupTime, purpose, status) VALUES (?, ?, ?, ?, \'\', \'pending\')',
+        [user.id, `${user.firstName} ${user.lastName}`, checkupDate, checkupTime],
+        (err) => {
+          if (err) {
+            console.error('Error creating checkup record on login:', err);
+          } else {
+            console.log('Checkup record created for user login:', user.id);
+          }
+        }
+      );
     }
 
     res.status(200).json({
@@ -537,6 +604,97 @@ app.post('/api/get-user-details', (req, res) => {
   });
 });
 
+// Add checkup record on login
+app.post('/api/checkup-login', (req, res) => {
+  const { userId, name } = req.body;
+  const now = new Date();
+  const checkupDate = now.toISOString().slice(0, 10); // YYYY-MM-DD
+  const checkupTime = now.toTimeString().slice(0, 8); // HH:MM:SS
+  const query = `INSERT INTO checkup_records (userId, name, checkupDate, checkupTime, purpose, status) VALUES (?, ?, ?, ?, '', 'pending')`;
+  db.query(query, [userId, name, checkupDate, checkupTime], (err, result) => {
+    if (err) {
+      console.error('Error inserting checkup record:', err);
+      return res.status(500).json({ error: 'Failed to create checkup record' });
+    }
+    res.status(201).json({ message: 'Checkup record created' });
+  });
+});
+
+// Get today's checkup records (for admin)
+app.get('/api/checkup-today', (req, res) => {
+  const today = new Date().toISOString().slice(0, 10);
+  db.query('SELECT * FROM checkup_records WHERE checkupDate = ?', [today], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Failed to fetch checkup records' });
+    res.json(results);
+  });
+});
+
+// Get all checkup records (for doctor)
+app.get('/api/checkup-records', (req, res) => {
+  db.query('SELECT * FROM checkup_records', (err, results) => {
+    if (err) return res.status(500).json({ error: 'Failed to fetch checkup records' });
+    res.json(results);
+  });
+});
+
+// Doctor updates purpose and marks as done
+app.patch('/api/checkup/:id/purpose', (req, res) => {
+  const { id } = req.params;
+  const { purpose, status, doctorId } = req.body;
+  db.query('UPDATE checkup_records SET purpose = ?, status = ?, doctorId = ? WHERE id = ?', [purpose, status, doctorId, id], (err) => {
+    if (err) return res.status(500).json({ error: 'Failed to update checkup record' });
+    res.json({ message: 'Checkup record updated' });
+  });
+});
+
+// Add to unsorted members on registration
+app.post('/api/unsorted', (req, res) => {
+  const { userId, name } = req.body;
+  db.query('INSERT INTO unsorted_members (userId, name) VALUES (?, ?)', [userId, name], (err) => {
+    if (err) return res.status(500).json({ error: 'Failed to add to unsorted members' });
+    res.status(201).json({ message: 'Added to unsorted members' });
+  });
+});
+
+// Get unsorted members
+app.get('/api/unsorted', (req, res) => {
+  db.query('SELECT * FROM unsorted_members WHERE status = "unsorted"', (err, results) => {
+    if (err) return res.status(500).json({ error: 'Failed to fetch unsorted members' });
+    res.json(results);
+  });
+});
+
+// Assign family and mark as sorted
+app.patch('/api/unsorted/:id/assign-family', (req, res) => {
+  const { id } = req.params;
+  const { assignedFamily } = req.body;
+  db.query('UPDATE unsorted_members SET assignedFamily = ?, status = "sorted" WHERE id = ?', [assignedFamily, id], (err) => {
+    if (err) return res.status(500).json({ error: 'Failed to assign family' });
+    res.json({ message: 'Family assigned and member sorted' });
+  });
+});
+
+// Get all sorted families and their members
+app.get('/api/sorted-families', (req, res) => {
+  db.query('SELECT * FROM unsorted_members WHERE status = "sorted"', (err, results) => {
+    if (err) return res.status(500).json({ error: 'Failed to fetch sorted members' });
+    // Group by assignedFamily
+    const families = {};
+    results.forEach(row => {
+      if (!families[row.assignedFamily]) {
+        families[row.assignedFamily] = [];
+      }
+      families[row.assignedFamily].push({ id: row.userId, name: row.name });
+    });
+    // Convert to array
+    const familyArr = Object.keys(families).map(famName => ({
+      familyName: famName,
+      members: families[famName]
+    }));
+    res.json(familyArr);
+  });
+});
+
 // Start server with detailed logging
 app.listen(port, () => {
   console.log('=================================');
@@ -549,5 +707,13 @@ app.listen(port, () => {
   console.log('5. POST http://localhost:5000/api/login');
   console.log('6. POST http://localhost:5000/api/get-patient-name');
   console.log('7. POST http://localhost:5000/api/create-admin');
+  console.log('8. POST http://localhost:5000/api/checkup-login');
+  console.log('9. GET  http://localhost:5000/api/checkup-today');
+  console.log('10. GET  http://localhost:5000/api/checkup-records');
+  console.log('11. PATCH http://localhost:5000/api/checkup/:id/purpose');
+  console.log('12. POST http://localhost:5000/api/unsorted');
+  console.log('13. GET  http://localhost:5000/api/unsorted');
+  console.log('14. PATCH http://localhost:5000/api/unsorted/:id/assign-family');
+  console.log('15. GET  http://localhost:5000/api/sorted-families');
   console.log('=================================');
 });

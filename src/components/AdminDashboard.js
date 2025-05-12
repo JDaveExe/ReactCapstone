@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Search, Settings, Bell, LogOut, User, Menu, X, Maximize, BarChart2, Circle, Calendar } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { ChevronDown, ChevronUp, Search, Settings, Bell, LogOut, User, Menu, X, Maximize, BarChart2, Circle, Calendar, Square, ChevronRight, Activity, AlarmClock, FileText, Shield, Grid, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/DashboardAdm.css';
 import '../styles/SidebarAdmin.css';
@@ -7,6 +8,12 @@ import Manage from './Manage';
 import Reports from './Reports';
 import Asettings from './Asettings';
 import CheckUpToday from './CheckUpToday';
+import UnsortedMembers from './UnsortedMembers';
+import CKProfile from './CKProfile';
+import TreatmentRecord from './TreatmentRecord';
+import AdmittingData from './AdmittingData';
+import ImmunisationH from './ImmunisationH';
+import Referral from './Referral';
 
 function SidebarItem({ icon, label, active, collapsed, indent, onClick }) {
   return (
@@ -67,12 +74,19 @@ function SidebarDropdown({ icon, label, children, collapsed, isOpen, onClick }) 
   );
 }
 
-function DashboardCard({ title, children }) {
+function DashboardCard({ title, children, onClose, onZoom }) {
   return (
-    <div className="dashboard-card" style={{ background: '#1e293b', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', padding: 20, marginBottom: 24 }}>
+    <div className="dashboard-card" style={{ background: '#1e293b', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', padding: 20, marginBottom: 24, position: 'relative' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, color: '#f1f5f9', letterSpacing: 0.2 }}>{title}</h2>
-        <button style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}><X size={16} /></button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {onZoom && (
+            <button style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', borderRadius: 6, padding: 6 }} onClick={onZoom} aria-label="Zoom"><Maximize size={16} /></button>
+          )}
+          {onClose && (
+            <button style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', borderRadius: 6, padding: 6 }} onClick={onClose} aria-label="Close"><Square size={16} /></button>
+          )}
+        </div>
       </div>
       {children}
     </div>
@@ -135,11 +149,44 @@ export default function AdminDashboard() {
     management: false
   });
   const [selectedView, setSelectedView] = useState('dashboard');
+  const [zoomedChart, setZoomedChart] = useState(null);
   const navigate = useNavigate();
+
+  const [selectedFamily, setSelectedFamily] = useState(null);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [viewMode, setViewMode] = useState('list');
+  const [actionView, setActionView] = useState(null);
+  const [familySearchTerm, setFamilySearchTerm] = useState('');
+  const [families, setFamilies] = useState([]);
+  const [loadingFamilies, setLoadingFamilies] = useState(true);
+  const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'admin');
+
+  useEffect(() => {
+    if (selectedView === 'patients') {
+      setLoadingFamilies(true);
+      axios.get('http://localhost:5000/api/sorted-families')
+        .then(res => {
+          setFamilies(res.data);
+          setLoadingFamilies(false);
+          setSelectedFamily(null);
+          setSelectedMember(null);
+          setActionView(null);
+        })
+        .catch(() => setLoadingFamilies(false));
+    }
+  }, [selectedView]);
 
   const toggleDropdown = (key) => {
     setDropdowns(prev => ({ ...prev, [key]: !prev[key] }));
   };
+
+  function handleZoomChart(idx) {
+    setZoomedChart(idx);
+  }
+
+  function handleUnzoom() {
+    setZoomedChart(null);
+  }
 
   function renderContent() {
     if (selectedView === 'checkups') {
@@ -150,66 +197,285 @@ export default function AdminDashboard() {
         </div>
       );
     }
+    if (selectedView === 'unsorted') {
+      return <div style={{ color: '#f1f5f9' }}><UnsortedMembers /></div>;
+    }
+    if (selectedView === 'patients') {
+      const selectedFamilyObj = selectedFamily
+        ? families.find(fam => fam.familyName === selectedFamily)
+        : null;
+
+      return (
+        <div style={{ color: '#f1f5f9' }}>
+          <h2 style={{ color: '#38bdf8', fontWeight: 700, fontSize: 28, textAlign: 'center', marginBottom: 24 }}>Patient Database</h2>
+          <div style={{ maxWidth: 900, margin: '0 auto' }}>
+            <div className="docdash-searchbar" style={{ marginBottom: 16 }}>
+              <Search size={16} className="docdash-search-icon" />
+              <input
+                type="text"
+                placeholder="Search Families"
+                className="docdash-search-input"
+                value={familySearchTerm}
+                onChange={e => setFamilySearchTerm(e.target.value)}
+                style={{ width: '100%', background: '#232a36', color: '#f1f5f9', border: '1px solid #334155', borderRadius: 8, padding: '8px 12px', marginLeft: 0 }}
+              />
+            </div>
+            <div className="docdash-views-row" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span className="docdash-views-label" style={{ marginRight: 8 }}>Views:</span>
+              <button
+                className={`docdash-viewbtn${viewMode === 'list' ? ' docdash-viewbtn-active' : ''}`}
+                onClick={() => setViewMode('list')}
+                style={{ background: viewMode === 'list' ? '#38bdf8' : 'transparent', color: viewMode === 'list' ? '#fff' : '#cbd5e1', border: 'none', borderRadius: 6, padding: 6, cursor: 'pointer' }}
+                aria-label="List view"
+              >
+                <List size={16} />
+              </button>
+              <button
+                className={`docdash-viewbtn${viewMode === 'grid' ? ' docdash-viewbtn-active' : ''}`}
+                onClick={() => setViewMode('grid')}
+                style={{ background: viewMode === 'grid' ? '#38bdf8' : 'transparent', color: viewMode === 'grid' ? '#fff' : '#cbd5e1', border: 'none', borderRadius: 6, padding: 6, cursor: 'pointer' }}
+                aria-label="Grid view"
+              >
+                <Grid size={16} />
+              </button>
+            </div>
+            {loadingFamilies ? (
+              <div style={{ textAlign: 'center', marginTop: 32 }}>Loading families...</div>
+            ) : !selectedFamily && (
+              <div className="docdash-family-list">
+                {families
+                  .filter(fam => fam.familyName.toLowerCase().includes(familySearchTerm.toLowerCase()))
+                  .map(family => (
+                    <div
+                      key={family.familyName}
+                      className={`docdash-family-item${selectedFamily === family.familyName ? ' docdash-family-item-active' : ''}${viewMode === 'grid' ? ' docdash-family-item-grid' : ''}`}
+                      onClick={() => setSelectedFamily(family.familyName)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 8 }}
+                    >
+                      <User size={18} style={{ color: '#38bdf8', marginRight: 8 }} />
+                      <span style={{ fontWeight: 600 }}>{family.familyName}</span>
+                      <ChevronRight size={16} />
+                    </div>
+                  ))}
+              </div>
+            )}
+            {selectedFamily && !selectedMember && selectedFamilyObj && (
+              <div>
+                <button onClick={() => setSelectedFamily(null)} style={{ marginBottom: 16, background: 'none', color: '#38bdf8', border: 'none', cursor: 'pointer' }}>&lt; Back to Families</button>
+                <h3 className="docdash-section-title">{selectedFamilyObj.familyName} Members</h3>
+                <div className={viewMode === 'grid' ? 'docdash-members-grid' : 'docdash-members-list'}>
+                  {selectedFamilyObj.members.map(member => (
+                    <div
+                      key={member.id}
+                      className={`docdash-member-card${viewMode === 'list' ? ' docdash-member-card-list' : ''}`}
+                      onClick={() => setSelectedMember(member)}
+                    >
+                      <div className="docdash-member-avatar"><User size={20} /></div>
+                      <div className="docdash-member-info">
+                        <p className="docdash-member-name">{member.name}</p>
+                      </div>
+                      <ChevronRight size={16} className="docdash-member-chevron" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {selectedMember && !actionView && (
+              <div>
+                <button onClick={() => setSelectedMember(null)} style={{ marginBottom: 16, background: 'none', color: '#38bdf8', border: 'none', cursor: 'pointer' }}>&lt; Back to Members</button>
+                <div className="docdash-member-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                  <h3 className="docdash-member-detail-title" style={{ fontSize: 24, fontWeight: 700 }}>{selectedMember.name}</h3>
+                  <button className="docdash-emailbtn" style={{ background: '#334155', color: '#f1f5f9', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>Email Family</button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 24 }}>
+                  <div style={{ background: '#232a36', borderRadius: 14, padding: '24px 24px 18px 24px', marginBottom: 0 }}>
+                    <h4 style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 18, marginBottom: 18 }}>Personal Information</h4>
+                    <div style={{ display: 'flex', gap: 24 }}>
+                      <div style={{ flex: 1, background: '#334155', borderRadius: 10, padding: '18px 20px', minHeight: 56, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <p style={{ color: '#cbd5e1', fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Age</p>
+                        <p style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 500 }}></p>
+                      </div>
+                      <div style={{ flex: 1, background: '#334155', borderRadius: 10, padding: '18px 20px', minHeight: 56, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <p style={{ color: '#cbd5e1', fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Gender</p>
+                        <p style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 500 }}></p>
+                      </div>
+                      <div style={{ flex: 1, background: '#334155', borderRadius: 10, padding: '18px 20px', minHeight: 56, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <p style={{ color: '#cbd5e1', fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Last Checkup</p>
+                        <p style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 500 }}></p>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ background: '#232a36', borderRadius: 14, padding: '24px 24px 18px 24px', marginBottom: 0 }}>
+                    <h4 style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 18, marginBottom: 18 }}>Contact Information</h4>
+                    <div style={{ display: 'flex', gap: 24 }}>
+                      <div style={{ flex: 1, background: '#334155', borderRadius: 10, padding: '18px 20px', minHeight: 56, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <p style={{ color: '#cbd5e1', fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Phone</p>
+                        <p style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 500 }}></p>
+                      </div>
+                      <div style={{ flex: 1, background: '#334155', borderRadius: 10, padding: '18px 20px', minHeight: 56, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <p style={{ color: '#cbd5e1', fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Email</p>
+                        <p style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 500 }}></p>
+                      </div>
+                      <div style={{ flex: 2, background: '#334155', borderRadius: 10, padding: '18px 20px', minHeight: 56, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <p style={{ color: '#cbd5e1', fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Address</p>
+                        <p style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 500 }}></p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18, marginBottom: 24 }}>
+                  <div className="docdash-action-card" onClick={() => setActionView('checkup')}><div className="docdash-action-avatar"><User size={20} /></div><div><h5 className="docdash-action-title">Check-up Profile</h5><p className="docdash-action-desc">Full examination details</p></div></div>
+                  <div className="docdash-action-card" onClick={() => setActionView('treatment')}><div className="docdash-action-avatar"><Activity size={20} /></div><div><h5 className="docdash-action-title">Individual Treatment Record</h5><p className="docdash-action-desc">Previous medical records</p></div></div>
+                  <div className="docdash-action-card" onClick={() => setActionView('schedule')}><div className="docdash-action-avatar"><AlarmClock size={20} /></div><div><h5 className="docdash-action-title">Schedule Visit</h5><p className="docdash-action-desc">Set up new appointment</p></div></div>
+                  <div className="docdash-action-card" onClick={() => setActionView('admitting')}><div className="docdash-action-avatar"><FileText size={20} /></div><div><h5 className="docdash-action-title">Admitting Data</h5><p className="docdash-action-desc">Admission and discharge info</p></div></div>
+                  <div className="docdash-action-card" onClick={() => setActionView('immunization')}><div className="docdash-action-avatar"><Shield size={20} /></div><div><h5 className="docdash-action-title">Immunization History</h5><p className="docdash-action-desc">Vaccination records</p></div></div>
+                  <div className="docdash-action-card" onClick={() => setActionView('referral')}><div className="docdash-action-avatar"><Activity size={20} /></div><div><h5 className="docdash-action-title">Referral</h5><p className="docdash-action-desc">Specialist referrals</p></div></div>
+                </div>
+              </div>
+            )}
+            {selectedMember && actionView === 'checkup' && (
+              <CKProfile member={selectedMember} onBack={() => setActionView(null)} />
+            )}
+            {selectedMember && actionView === 'treatment' && (
+              <TreatmentRecord member={selectedMember} onBack={() => setActionView(null)} canEdit={userRole === 'doctor'} />
+            )}
+            {selectedMember && actionView === 'admitting' && (
+              <AdmittingData member={selectedMember} onBack={() => setActionView(null)} canEdit={userRole === 'doctor'} />
+            )}
+            {selectedMember && actionView === 'immunization' && (
+              <ImmunisationH member={selectedMember} onBack={() => setActionView(null)} canEdit={userRole === 'doctor'} />
+            )}
+            {selectedMember && actionView === 'referral' && (
+              <Referral member={selectedMember} onBack={() => setActionView(null)} />
+            )}
+          </div>
+        </div>
+      );
+    }
     if (selectedView === 'manage') return <div style={{ color: '#f1f5f9' }}><Manage /></div>;
     if (selectedView === 'reports') return <div style={{ color: '#f1f5f9' }}><Reports /></div>;
     if (selectedView === 'settings') return <div style={{ color: '#f1f5f9' }}><Asettings /></div>;
+
+    const chartCards = [
+      {
+        title: 'Consultations (MTD)',
+        content: (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ background: '#3b82f6', height: 120, width: '100%', borderRadius: 8 }}></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 14 }}>
+              <span>0</span>
+              <span>75</span>
+            </div>
+          </div>
+        )
+      },
+      {
+        title: '10 Diagnostic Test (Month to Date)',
+        content: (
+          <div style={{ marginTop: 16 }}>
+            <PieChart colors={['#4C6EF5', '#12B886', '#FA5252', '#FAB005', '#7950F2', '#228BE6']} data={[25, 20, 15, 15, 15, 10]} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 16, fontSize: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#4C6EF5', display: 'inline-block', borderRadius: 2 }}></span>RAPID COVID/HEP/STI</div>
+              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#12B886', display: 'inline-block', borderRadius: 2 }}></span>COMPLETE BLOOD COUNT</div>
+              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FA5252', display: 'inline-block', borderRadius: 2 }}></span>BLOOD BIOCHEMISTRY</div>
+              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FAB005', display: 'inline-block', borderRadius: 2 }}></span>URINALYSIS</div>
+              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#7950F2', display: 'inline-block', borderRadius: 2 }}></span>OBSTETRICS PA GENES</div>
+              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#228BE6', display: 'inline-block', borderRadius: 2 }}></span>OTHER BIOCHEMISTRY</div>
+            </div>
+          </div>
+        )
+      },
+      {
+        title: '10 Diagnostic Test (Month to Date)',
+        content: (
+          <div style={{ marginTop: 16 }}>
+            <PieChart colors={['#FF6B6B', '#22B8CF', '#FD7E14', '#AE3EC9', '#51CF66']} data={[30, 25, 20, 15, 10]} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 4, marginTop: 16, fontSize: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FF6B6B', display: 'inline-block', borderRadius: 2 }}></span>FAMILY PLANNING IMMUNIZATION</div>
+              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#22B8CF', display: 'inline-block', borderRadius: 2 }}></span>ACUTE RESPIRATORY INFECTION</div>
+              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FD7E14', display: 'inline-block', borderRadius: 2 }}></span>CONTRACEPTIVE</div>
+              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#AE3EC9', display: 'inline-block', borderRadius: 2 }}></span>TB PULMONARY</div>
+              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#51CF66', display: 'inline-block', borderRadius: 2 }}></span>URINARY TRACT INFECTION</div>
+            </div>
+          </div>
+        )
+      },
+      {
+        title: '10 Diagnostic Test (Month to Date)',
+        content: (
+          <div style={{ marginTop: 16 }}>
+            <PieChart colors={['#339AF0', '#51CF66', '#FF922B', '#F06595', '#845EF7']} data={[35, 25, 20, 12, 8]} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 4, marginTop: 16, fontSize: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#339AF0', display: 'inline-block', borderRadius: 2 }}></span>LANOXIN 200 MCG/MSAL</div>
+              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#51CF66', display: 'inline-block', borderRadius: 2 }}></span>METOPROLOL (BETALOC/LOPRESOR)</div>
+              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FF922B', display: 'inline-block', borderRadius: 2 }}></span>FERROUS SULFATE</div>
+              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#F06595', display: 'inline-block', borderRadius: 2 }}></span>CEFUROXIME 125</div>
+              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#845EF7', display: 'inline-block', borderRadius: 2 }}></span>ASCORBIC ACID (CLAVULANIC ACID)</div>
+            </div>
+          </div>
+        )
+      }
+    ];
+
+    if (zoomedChart !== null) {
+      if (zoomedChart === 'trend') {
+        return (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(15,23,42,0.96)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '90vw', maxWidth: 1200, maxHeight: '90vh', overflow: 'auto' }}>
+              <DashboardCard title="Daily Trend Analysis" onClose={handleUnzoom}>
+                <div style={{ minHeight: 400, minWidth: 600 }}><LineChart /></div>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 32, marginTop: 18 }}>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ width: 12, height: 12, borderRadius: 6, background: '#EF4444', marginRight: 8, display: 'inline-block' }}></span>
+                    <span style={{ fontSize: 14 }}>Consultations</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ width: 12, height: 12, borderRadius: 6, background: '#3B82F6', marginRight: 8, display: 'inline-block' }}></span>
+                    <span style={{ fontSize: 14 }}>Diagnostic Tests</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ width: 12, height: 12, borderRadius: 6, background: '#10B981', marginRight: 8, display: 'inline-block' }}></span>
+                    <span style={{ fontSize: 14 }}>Medications</span>
+                  </div>
+                </div>
+              </DashboardCard>
+            </div>
+          </div>
+        );
+      }
+      if (typeof zoomedChart === 'number' && chartCards[zoomedChart]) {
+        const card = chartCards[zoomedChart];
+        return (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(15,23,42,0.96)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '90vw', maxWidth: 900, maxHeight: '90vh', overflow: 'auto' }}>
+              <DashboardCard title={card.title} onClose={handleUnzoom}>
+                <div style={{ minHeight: 320, minWidth: 320 }}>{card.content}</div>
+              </DashboardCard>
+            </div>
+          </div>
+        );
+      }
+    }
+
     return (
       <>
         <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 32, color: '#f1f5f9', letterSpacing: 0.2 }}>Analytics</h1>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, marginBottom: 32 }}>
-          <DashboardCard title="Consultations (MTD)">
-            <div style={{ marginTop: 16 }}>
-              <div style={{ background: '#3b82f6', height: 120, width: '100%', borderRadius: 8 }}></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 14 }}>
-                <span>0</span>
-                <span>75</span>
-              </div>
-            </div>
-          </DashboardCard>
-          <DashboardCard title="10 Diagnostic Test (Month to Date)">
-            <div style={{ marginTop: 16 }}>
-              <PieChart colors={['#4C6EF5', '#12B886', '#FA5252', '#FAB005', '#7950F2', '#228BE6']} data={[25, 20, 15, 15, 15, 10]} />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 16, fontSize: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#4C6EF5', display: 'inline-block', borderRadius: 2 }}></span>RAPID COVID/HEP/STI</div>
-                <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#12B886', display: 'inline-block', borderRadius: 2 }}></span>COMPLETE BLOOD COUNT</div>
-                <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FA5252', display: 'inline-block', borderRadius: 2 }}></span>BLOOD BIOCHEMISTRY</div>
-                <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FAB005', display: 'inline-block', borderRadius: 2 }}></span>URINALYSIS</div>
-                <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#7950F2', display: 'inline-block', borderRadius: 2 }}></span>OBSTETRICS PA GENES</div>
-                <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#228BE6', display: 'inline-block', borderRadius: 2 }}></span>OTHER BIOCHEMISTRY</div>
-              </div>
-            </div>
-          </DashboardCard>
-          <DashboardCard title="10 Diagnostic Test (Month to Date)">
-            <div style={{ marginTop: 16 }}>
-              <PieChart colors={['#FF6B6B', '#22B8CF', '#FD7E14', '#AE3EC9', '#51CF66']} data={[30, 25, 20, 15, 10]} />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 4, marginTop: 16, fontSize: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FF6B6B', display: 'inline-block', borderRadius: 2 }}></span>FAMILY PLANNING IMMUNIZATION</div>
-                <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#22B8CF', display: 'inline-block', borderRadius: 2 }}></span>ACUTE RESPIRATORY INFECTION</div>
-                <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FD7E14', display: 'inline-block', borderRadius: 2 }}></span>CONTRACEPTIVE</div>
-                <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#AE3EC9', display: 'inline-block', borderRadius: 2 }}></span>TB PULMONARY</div>
-                <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#51CF66', display: 'inline-block', borderRadius: 2 }}></span>URINARY TRACT INFECTION</div>
-              </div>
-            </div>
-          </DashboardCard>
-          <DashboardCard title="10 Diagnostic Test (Month to Date)">
-            <div style={{ marginTop: 16 }}>
-              <PieChart colors={['#339AF0', '#51CF66', '#FF922B', '#F06595', '#845EF7']} data={[35, 25, 20, 12, 8]} />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 4, marginTop: 16, fontSize: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#339AF0', display: 'inline-block', borderRadius: 2 }}></span>LANOXIN 200 MCG/MSAL</div>
-                <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#51CF66', display: 'inline-block', borderRadius: 2 }}></span>METOPROLOL (BETALOC/LOPRESOR)</div>
-                <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FF922B', display: 'inline-block', borderRadius: 2 }}></span>FERROUS SULFATE</div>
-                <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#F06595', display: 'inline-block', borderRadius: 2 }}></span>CEFUROXIME 125</div>
-                <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#845EF7', display: 'inline-block', borderRadius: 2 }}></span>ASCORBIC ACID (CLAVULANIC ACID)</div>
-              </div>
-            </div>
-          </DashboardCard>
+          {chartCards.map((card, idx) =>
+            <DashboardCard
+              key={idx}
+              title={card.title}
+              onZoom={() => handleZoomChart(idx)}
+            >
+              {card.content}
+            </DashboardCard>
+          )}
         </div>
-        <div style={{ background: '#1e293b', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', padding: 20, marginBottom: 32 }}>
+        <div style={{ background: '#1e293b', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', padding: 20, marginBottom: 32, position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
             <h2 style={{ fontSize: 17, fontWeight: 600, color: '#f1f5f9', letterSpacing: 0.2 }}>Daily Trend Analysis</h2>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button style={{ background: 'none', border: 'none', borderRadius: 6, padding: 6, color: '#fff', cursor: 'pointer' }}><Maximize size={16} /></button>
-              <button style={{ background: 'none', border: 'none', borderRadius: 6, padding: 6, color: '#fff', cursor: 'pointer' }}><X size={16} /></button>
+              <button style={{ background: 'none', border: 'none', borderRadius: 6, padding: 6, color: '#fff', cursor: 'pointer' }} onClick={() => setZoomedChart('trend')}><Maximize size={16} /></button>
             </div>
           </div>
           <div style={{ height: 260, width: '100%' }}>
@@ -230,6 +496,29 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+        {zoomedChart === 'trend' && (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(15,23,42,0.96)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '90vw', maxWidth: 1200, maxHeight: '90vh', overflow: 'auto' }}>
+              <DashboardCard title="Daily Trend Analysis" onClose={handleUnzoom}>
+                <div style={{ minHeight: 400, minWidth: 600 }}><LineChart /></div>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 32, marginTop: 18 }}>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ width: 12, height: 12, borderRadius: 6, background: '#EF4444', marginRight: 8, display: 'inline-block' }}></span>
+                    <span style={{ fontSize: 14 }}>Consultations</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ width: 12, height: 12, borderRadius: 6, background: '#3B82F6', marginRight: 8, display: 'inline-block' }}></span>
+                    <span style={{ fontSize: 14 }}>Diagnostic Tests</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ width: 12, height: 12, borderRadius: 6, background: '#10B981', marginRight: 8, display: 'inline-block' }}></span>
+                    <span style={{ fontSize: 14 }}>Medications</span>
+                  </div>
+                </div>
+              </DashboardCard>
+            </div>
+          </div>
+        )}
       </>
     );
   }
@@ -245,6 +534,8 @@ export default function AdminDashboard() {
           <SidebarItem icon={<BarChart2 size={18} />} label="Dashboard" active={selectedView === 'dashboard'} collapsed={collapsed} onClick={() => setSelectedView('dashboard')} />
           <SidebarItem icon={<Calendar size={18} />} label="Check Up Today" active={selectedView === 'checkups'} collapsed={collapsed} onClick={() => setSelectedView('checkups')} />
           <SidebarDropdown icon={<User size={18} />} label="Patient Management" collapsed={collapsed} isOpen={dropdowns.patientManagement} onClick={() => toggleDropdown('patientManagement')}>
+            <SidebarItem label="Unsorted Members" active={selectedView === 'unsorted'} collapsed={collapsed} indent onClick={() => setSelectedView('unsorted')} />
+            <SidebarItem label="Patient Database" active={selectedView === 'patients'} collapsed={collapsed} indent onClick={() => setSelectedView('patients')} />
             <SidebarItem label="Manage Patient Data" collapsed={collapsed} indent onClick={() => setSelectedView('manage')} />
           </SidebarDropdown>
           <SidebarDropdown icon={<BarChart2 size={18} />} label="Reports" collapsed={collapsed} isOpen={dropdowns.reports} onClick={() => toggleDropdown('reports')}>
@@ -262,18 +553,62 @@ export default function AdminDashboard() {
         </div>
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ height: 64, background: '#111827', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
+        <div style={{ height: 64, background: '#111827', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', fontSize: 14 }}>
             <span style={{ color: '#64748b', marginRight: 8 }}>YOU ARE HERE &gt;</span>
-            <span style={{ color: '#38bdf8', fontWeight: 600 }}>
-              {selectedView === 'dashboard' ? 'Dashboard' : selectedView === 'manage' ? 'Manage Patient Data' : selectedView === 'reports' ? 'Generate & Export' : selectedView === 'settings' ? 'Admin Settings' : 'Dashboard'}
-            </span>
+            {selectedView === 'patients' && (() => {
+              const familyObj = families.find(f => f.familyName === selectedFamily);
+              const breadcrumbStyle = { color: '#38bdf8', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', marginRight: 4 };
+              const sep = <span style={{ color: '#64748b', margin: '0 4px' }}>/</span>;
+              if (!selectedFamily) {
+                return <span style={{ color: '#38bdf8', fontWeight: 600 }}>Patient Database</span>;
+              }
+              if (selectedFamily && !selectedMember) {
+                return <>
+                  <span style={breadcrumbStyle} onClick={() => setSelectedFamily(null)}>Patient Database</span>
+                  {sep}
+                  <span style={{ color: '#38bdf8', fontWeight: 600 }}>{familyObj?.familyName}</span>
+                </>;
+              }
+              if (selectedMember && !actionView) {
+                return <>
+                  <span style={breadcrumbStyle} onClick={() => { setSelectedFamily(null); setSelectedMember(null); setActionView(null); }}>Patient Database</span>
+                  {sep}
+                  <span style={breadcrumbStyle} onClick={() => { setSelectedMember(null); setActionView(null); }}>{familyObj?.familyName}</span>
+                  {sep}
+                  <span style={{ color: '#38bdf8', fontWeight: 600 }}>{selectedMember.name}</span>
+                </>;
+              }
+              if (selectedMember && actionView) {
+                let actionLabel = '';
+                switch (actionView) {
+                  case 'checkup': actionLabel = 'Check-up Profile'; break;
+                  case 'treatment': actionLabel = 'Individual Treatment Record'; break;
+                  case 'schedule': actionLabel = 'Schedule Visit'; break;
+                  case 'admitting': actionLabel = 'Admitting Data'; break;
+                  case 'immunization': actionLabel = 'Immunization History'; break;
+                  case 'referral': actionLabel = 'Referral'; break;
+                  default: actionLabel = actionView;
+                }
+                return <>
+                  <span style={breadcrumbStyle} onClick={() => { setSelectedFamily(null); setSelectedMember(null); setActionView(null); }}>Patient Database</span>
+                  {sep}
+                  <span style={breadcrumbStyle} onClick={() => { setSelectedMember(null); setActionView(null); }}>{familyObj?.familyName}</span>
+                  {sep}
+                  <span style={breadcrumbStyle} onClick={() => { setActionView(null); }}>{selectedMember.name}</span>
+                  {sep}
+                  <span style={{ color: '#38bdf8', fontWeight: 600 }}>{actionLabel}</span>
+                </>;
+              }
+              return <span style={{ color: '#38bdf8', fontWeight: 600 }}>Patient Database</span>;
+            })()}
+            {selectedView !== 'patients' && (
+              <span style={{ color: '#38bdf8', fontWeight: 600 }}>
+                {selectedView === 'dashboard' ? 'Dashboard' : selectedView === 'unsorted' ? 'Unsorted Members' : selectedView === 'manage' ? 'Manage Patient Data' : selectedView === 'reports' ? 'Generate & Export' : selectedView === 'settings' ? 'Admin Settings' : 'Dashboard'}
+              </span>
+            )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-            <div style={{ position: 'relative' }}>
-              <input type="text" placeholder="Search" style={{ padding: '7px 14px 7px 32px', borderRadius: 6, background: '#1e293b', border: '1px solid #334155', color: '#fff', outline: 'none', fontSize: 14 }} />
-              <Search size={16} style={{ position: 'absolute', left: 8, top: 8, color: '#64748b' }} />
-            </div>
             <button style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: '#fff', cursor: 'pointer' }}><Bell size={18} /></button>
             <button style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: '#fff', cursor: 'pointer' }}><Settings size={18} /></button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

@@ -14,6 +14,8 @@ import TreatmentRecord from './TreatmentRecord';
 import AdmittingData from './AdmittingData';
 import ImmunisationH from './ImmunisationH';
 import Referral from './Referral';
+import SessionsList from './SessionsList';
+import ScheduleSession from './ScheduleSession';
 
 function SidebarItem({ icon, label, active, collapsed, indent, onClick }) {
   return (
@@ -142,24 +144,39 @@ function LineChart() {
 }
 
 export default function AdminDashboard() {
-  const [collapsed, setCollapsed] = useState(false);
-  const [dropdowns, setDropdowns] = useState({
+  const [collapsed, setCollapsed] = useState(false);  const [dropdowns, setDropdowns] = useState({
     patientManagement: false,
     reports: false,
-    management: false
+    management: false,
+    checkUp: false,
+    sessions: false
   });
   const [selectedView, setSelectedView] = useState('dashboard');
   const [zoomedChart, setZoomedChart] = useState(null);
   const navigate = useNavigate();
-
   const [selectedFamily, setSelectedFamily] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
   const [viewMode, setViewMode] = useState('list');
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [actionView, setActionView] = useState(null);
   const [familySearchTerm, setFamilySearchTerm] = useState('');
   const [families, setFamilies] = useState([]);
   const [loadingFamilies, setLoadingFamilies] = useState(true);
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'admin');
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (settingsOpen) {
+        const settingsButton = event.target.closest('button');
+        const settingsDropdown = event.target.closest('div[role="menu"]');
+        if (!settingsButton && !settingsDropdown) {
+          setSettingsOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [settingsOpen]);
 
   useEffect(() => {
     if (selectedView === 'patients') {
@@ -194,6 +211,22 @@ export default function AdminDashboard() {
         <div style={{ color: '#f1f5f9' }}>
           <h2 style={{ color: '#38bdf8', fontWeight: 700, fontSize: 28, textAlign: 'center', marginBottom: 24 }}>Check-Ups Scheduled for Today</h2>
           <CheckUpToday showDateTimePerPatient />
+        </div>
+      );
+    }
+    if (selectedView === 'scheduledSessions') {
+      return (
+        <div style={{ color: '#f1f5f9' }}>
+          <h2 style={{ color: '#38bdf8', fontWeight: 700, fontSize: 28, textAlign: 'center', marginBottom: 24 }}>Schedule New Session</h2>
+          <ScheduleSession />
+        </div>
+      );
+    }
+    if (selectedView === 'sessions') {
+      return (
+        <div style={{ color: '#f1f5f9' }}>
+          <h2 style={{ color: '#38bdf8', fontWeight: 700, fontSize: 28, textAlign: 'center', marginBottom: 24 }}>Session Management</h2>
+          <SessionsList userRole="admin" />
         </div>
       );
     }
@@ -280,9 +313,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
-            {selectedMember && !actionView && (
-              <div>
-                <button onClick={() => setSelectedMember(null)} style={{ marginBottom: 16, background: 'none', color: '#38bdf8', border: 'none', cursor: 'pointer' }}>&lt; Back to Members</button>
+            {selectedMember && !actionView && (              <div>
                 <div className="docdash-member-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                   <h3 className="docdash-member-detail-title" style={{ fontSize: 24, fontWeight: 700 }}>{selectedMember.name}</h3>
                   <button className="docdash-emailbtn" style={{ background: '#334155', color: '#f1f5f9', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>Email Family</button>
@@ -530,20 +561,16 @@ export default function AdminDashboard() {
           <img src={require('../images/maybunga.png')} alt="Maybunga Healthcare Center Logo" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', background: '#fff' }} />
           {!collapsed && <span style={{ fontWeight: 600, marginLeft: 10 }}>Maybunga Healthcare Center</span>}
         </div>
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          <SidebarItem icon={<BarChart2 size={18} />} label="Dashboard" active={selectedView === 'dashboard'} collapsed={collapsed} onClick={() => setSelectedView('dashboard')} />
-          <SidebarItem icon={<Calendar size={18} />} label="Check Up Today" active={selectedView === 'checkups'} collapsed={collapsed} onClick={() => setSelectedView('checkups')} />
+        <div style={{ flex: 1, overflowY: 'auto' }}>          <SidebarItem icon={<BarChart2 size={18} />} label="Dashboard" active={selectedView === 'dashboard'} collapsed={collapsed} onClick={() => setSelectedView('dashboard')} />
+          <SidebarDropdown icon={<Calendar size={18} />} label="Check Up" collapsed={collapsed} isOpen={dropdowns.checkUp} onClick={() => toggleDropdown('checkUp')}>            <SidebarItem label="Check Up Today" active={selectedView === 'checkups'} collapsed={collapsed} indent onClick={() => setSelectedView('checkups')} />
+            <SidebarItem label="Schedule a Session" active={selectedView === 'scheduledSessions'} collapsed={collapsed} indent onClick={() => setSelectedView('scheduledSessions')} />
+            <SidebarItem label="Sessions List" active={selectedView === 'sessions'} collapsed={collapsed} indent onClick={() => setSelectedView('sessions')} />
+          </SidebarDropdown>
           <SidebarDropdown icon={<User size={18} />} label="Patient Management" collapsed={collapsed} isOpen={dropdowns.patientManagement} onClick={() => toggleDropdown('patientManagement')}>
             <SidebarItem label="Unsorted Members" active={selectedView === 'unsorted'} collapsed={collapsed} indent onClick={() => setSelectedView('unsorted')} />
             <SidebarItem label="Patient Database" active={selectedView === 'patients'} collapsed={collapsed} indent onClick={() => setSelectedView('patients')} />
-            <SidebarItem label="Manage Patient Data" collapsed={collapsed} indent onClick={() => setSelectedView('manage')} />
-          </SidebarDropdown>
-          <SidebarDropdown icon={<BarChart2 size={18} />} label="Reports" collapsed={collapsed} isOpen={dropdowns.reports} onClick={() => toggleDropdown('reports')}>
+          </SidebarDropdown>          <SidebarDropdown icon={<BarChart2 size={18} />} label="Reports" collapsed={collapsed} isOpen={dropdowns.reports} onClick={() => toggleDropdown('reports')}>
             <SidebarItem label="Generate & Export" collapsed={collapsed} indent onClick={() => setSelectedView('reports')} />
-          </SidebarDropdown>
-          <SidebarDropdown icon={<Settings size={18} />} label="Management & Settings" collapsed={collapsed} isOpen={dropdowns.management} onClick={() => toggleDropdown('management')}>
-            <SidebarItem label="Admin Settings" collapsed={collapsed} indent onClick={() => setSelectedView('settings')} />
-            <SidebarItem label="Appearance" collapsed={collapsed} indent />
           </SidebarDropdown>
         </div>
         <div style={{ padding: 18, borderTop: '1px solid #1e293b', display: 'flex', justifyContent: 'center' }}>
@@ -608,9 +635,86 @@ export default function AdminDashboard() {
               </span>
             )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-            <button style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: '#fff', cursor: 'pointer' }}><Bell size={18} /></button>
-            <button style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: '#fff', cursor: 'pointer' }}><Settings size={18} /></button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>            <button 
+              style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: '#fff', cursor: 'pointer' }}
+            >
+              <Bell size={18} />
+            </button>
+
+            <div style={{ position: 'relative' }}>
+              <button 
+                onClick={() => setSettingsOpen(!settingsOpen)}
+                style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: settingsOpen ? '#38bdf8' : '#fff', cursor: 'pointer' }}
+              >
+                <Settings size={18} />
+              </button>
+              
+              {settingsOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: '8px',
+                  background: '#1e293b',
+                  border: '1px solid #334155',
+                  borderRadius: '0.5rem',
+                  width: '240px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  zIndex: 1000
+                }}>
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid #334155' }}>
+                    <h6 style={{ margin: 0, color: '#f1f5f9', fontWeight: 600 }}>Management & Settings</h6>
+                  </div>
+                  <div style={{ padding: '8px' }}>
+                    <button
+                      onClick={() => { setSelectedView('settings'); setSettingsOpen(false); }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        width: '100%',
+                        padding: '8px 12px',
+                        background: 'none',
+                        border: 'none',
+                        borderRadius: '4px',
+                        color: '#f1f5f9',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseOver={e => e.currentTarget.style.background = '#334155'}
+                      onMouseOut={e => e.currentTarget.style.background = 'none'}
+                    >
+                      <Shield size={16} />
+                      User Management
+                    </button>
+                    <button
+                      onClick={() => { setSettingsOpen(false); }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        width: '100%',
+                        padding: '8px 12px',
+                        background: 'none',
+                        border: 'none',
+                        borderRadius: '4px',
+                        color: '#f1f5f9',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseOver={e => e.currentTarget.style.background = '#334155'}
+                      onMouseOut={e => e.currentTarget.style.background = 'none'}
+                    >
+                      <Settings size={16} />
+                      System Configuration
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><User size={16} /></div>
               <span style={{ fontSize: 14 }}>Admin</span>

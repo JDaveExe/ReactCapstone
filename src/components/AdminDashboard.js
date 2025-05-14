@@ -16,6 +16,9 @@ import ImmunisationH from './ImmunisationH';
 import Referral from './Referral';
 import SessionsList from './SessionsList';
 import ScheduleSession from './ScheduleSession';
+import { getPatients } from '../services/api'; // Added import for getPatients
+import AddNewPatientForm from './AddNewPatientForm'; // Import AddNewPatientForm
+import { Button } from 'react-bootstrap'; // Import Button
 
 function SidebarItem({ icon, label, active, collapsed, indent, onClick }) {
   return (
@@ -144,7 +147,8 @@ function LineChart() {
 }
 
 export default function AdminDashboard() {
-  const [collapsed, setCollapsed] = useState(false);  const [dropdowns, setDropdowns] = useState({
+  const [collapsed, setCollapsed] = useState(false);
+  const [dropdowns, setDropdowns] = useState({
     patientManagement: false,
     reports: false,
     management: false,
@@ -160,9 +164,11 @@ export default function AdminDashboard() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [actionView, setActionView] = useState(null);
   const [familySearchTerm, setFamilySearchTerm] = useState('');
-  const [families, setFamilies] = useState([]);
-  const [loadingFamilies, setLoadingFamilies] = useState(true);
+  const [patients, setPatients] = useState([]);
+  const [loadingPatients, setLoadingPatients] = useState(false);
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'admin');
+  const [showAddNewPatientForm, setShowAddNewPatientForm] = useState(false); // New state for the form
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (settingsOpen) {
@@ -179,19 +185,19 @@ export default function AdminDashboard() {
   }, [settingsOpen]);
 
   useEffect(() => {
-    if (selectedView === 'patients') {
-      setLoadingFamilies(true);
-      axios.get('http://localhost:5000/api/sorted-families')
+    if (selectedView === 'patients' && !showAddNewPatientForm) { // Only fetch if not showing the form
+      setLoadingPatients(true);
+      getPatients()
         .then(res => {
-          setFamilies(res.data);
-          setLoadingFamilies(false);
+          setPatients(res.data);
+          setLoadingPatients(false);
           setSelectedFamily(null);
           setSelectedMember(null);
           setActionView(null);
         })
-        .catch(() => setLoadingFamilies(false));
+        .catch(() => setLoadingPatients(false));
     }
-  }, [selectedView]);
+  }, [selectedView, showAddNewPatientForm]); // Add showAddNewPatientForm to dependencies
 
   const toggleDropdown = (key) => {
     setDropdowns(prev => ({ ...prev, [key]: !prev[key] }));
@@ -234,151 +240,75 @@ export default function AdminDashboard() {
       return <div style={{ color: '#f1f5f9' }}><UnsortedMembers /></div>;
     }
     if (selectedView === 'patients') {
-      const selectedFamilyObj = selectedFamily
-        ? families.find(fam => fam.familyName === selectedFamily)
-        : null;
+      if (showAddNewPatientForm) {
+        return (
+          <AddNewPatientForm
+            onSuccess={() => {
+              setShowAddNewPatientForm(false);
+              // useEffect will trigger patient list refresh
+            }}
+            onCancel={() => {
+              setShowAddNewPatientForm(false);
+            }}
+          />
+        );
+      }
 
+      if (loadingPatients) {
+        return <div style={{ color: '#e5e7eb', textAlign: 'center', padding: '20px' }}>Loading patients...</div>;
+      }
+      if (patients.length === 0 && !loadingPatients) {
+        return (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#f1f5f9', margin: 0 }}>Patient Database</h1>
+              <Button
+                variant="primary"
+                onClick={() => setShowAddNewPatientForm(true)}
+                style={{ fontSize: '14px', fontWeight: '500', background: '#3b82f6', borderColor: '#3b82f6' }}
+              >
+                + New Patient
+              </Button>
+            </div>
+            <div style={{ color: '#e5e7eb', textAlign: 'center', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+              No patients found.
+            </div>
+          </>
+        );
+      }
       return (
-        <div style={{ color: '#f1f5f9' }}>
-          <h2 style={{ color: '#38bdf8', fontWeight: 700, fontSize: 28, textAlign: 'center', marginBottom: 24 }}>Patient Database</h2>
-          <div style={{ maxWidth: 900, margin: '0 auto' }}>
-            <div className="docdash-searchbar" style={{ marginBottom: 16 }}>
-              <Search size={16} className="docdash-search-icon" />
-              <input
-                type="text"
-                placeholder="Search Families"
-                className="docdash-search-input"
-                value={familySearchTerm}
-                onChange={e => setFamilySearchTerm(e.target.value)}
-                style={{ width: '100%', background: '#232a36', color: '#f1f5f9', border: '1px solid #334155', borderRadius: 8, padding: '8px 12px', marginLeft: 0 }}
-              />
-            </div>
-            <div className="docdash-views-row" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className="docdash-views-label" style={{ marginRight: 8 }}>Views:</span>
-              <button
-                className={`docdash-viewbtn${viewMode === 'list' ? ' docdash-viewbtn-active' : ''}`}
-                onClick={() => setViewMode('list')}
-                style={{ background: viewMode === 'list' ? '#38bdf8' : 'transparent', color: viewMode === 'list' ? '#fff' : '#cbd5e1', border: 'none', borderRadius: 6, padding: 6, cursor: 'pointer' }}
-                aria-label="List view"
-              >
-                <List size={16} />
-              </button>
-              <button
-                className={`docdash-viewbtn${viewMode === 'grid' ? ' docdash-viewbtn-active' : ''}`}
-                onClick={() => setViewMode('grid')}
-                style={{ background: viewMode === 'grid' ? '#38bdf8' : 'transparent', color: viewMode === 'grid' ? '#fff' : '#cbd5e1', border: 'none', borderRadius: 6, padding: 6, cursor: 'pointer' }}
-                aria-label="Grid view"
-              >
-                <Grid size={16} />
-              </button>
-            </div>
-            {loadingFamilies ? (
-              <div style={{ textAlign: 'center', marginTop: 32 }}>Loading families...</div>
-            ) : !selectedFamily && (
-              <div className="docdash-family-list">
-                {families
-                  .filter(fam => fam.familyName.toLowerCase().includes(familySearchTerm.toLowerCase()))
-                  .map(family => (
-                    <div
-                      key={family.familyName}
-                      className={`docdash-family-item${selectedFamily === family.familyName ? ' docdash-family-item-active' : ''}${viewMode === 'grid' ? ' docdash-family-item-grid' : ''}`}
-                      onClick={() => setSelectedFamily(family.familyName)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 8 }}
-                    >
-                      <User size={18} style={{ color: '#38bdf8', marginRight: 8 }} />
-                      <span style={{ fontWeight: 600 }}>{family.familyName}</span>
-                      <ChevronRight size={16} />
-                    </div>
-                  ))}
-              </div>
-            )}
-            {selectedFamily && !selectedMember && selectedFamilyObj && (
-              <div>
-                <button onClick={() => setSelectedFamily(null)} style={{ marginBottom: 16, background: 'none', color: '#38bdf8', border: 'none', cursor: 'pointer' }}>&lt; Back to Families</button>
-                <h3 className="docdash-section-title">{selectedFamilyObj.familyName} Members</h3>
-                <div className={viewMode === 'grid' ? 'docdash-members-grid' : 'docdash-members-list'}>
-                  {selectedFamilyObj.members.map(member => (
-                    <div
-                      key={member.id}
-                      className={`docdash-member-card${viewMode === 'list' ? ' docdash-member-card-list' : ''}`}
-                      onClick={() => setSelectedMember(member)}
-                    >
-                      <div className="docdash-member-avatar"><User size={20} /></div>
-                      <div className="docdash-member-info">
-                        <p className="docdash-member-name">{member.name}</p>
-                      </div>
-                      <ChevronRight size={16} className="docdash-member-chevron" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {selectedMember && !actionView && (              <div>
-                <div className="docdash-member-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                  <h3 className="docdash-member-detail-title" style={{ fontSize: 24, fontWeight: 700 }}>{selectedMember.name}</h3>
-                  <button className="docdash-emailbtn" style={{ background: '#334155', color: '#f1f5f9', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>Email Family</button>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 24 }}>
-                  <div style={{ background: '#232a36', borderRadius: 14, padding: '24px 24px 18px 24px', marginBottom: 0 }}>
-                    <h4 style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 18, marginBottom: 18 }}>Personal Information</h4>
-                    <div style={{ display: 'flex', gap: 24 }}>
-                      <div style={{ flex: 1, background: '#334155', borderRadius: 10, padding: '18px 20px', minHeight: 56, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                        <p style={{ color: '#cbd5e1', fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Age</p>
-                        <p style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 500 }}></p>
-                      </div>
-                      <div style={{ flex: 1, background: '#334155', borderRadius: 10, padding: '18px 20px', minHeight: 56, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                        <p style={{ color: '#cbd5e1', fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Gender</p>
-                        <p style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 500 }}></p>
-                      </div>
-                      <div style={{ flex: 1, background: '#334155', borderRadius: 10, padding: '18px 20px', minHeight: 56, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                        <p style={{ color: '#cbd5e1', fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Last Checkup</p>
-                        <p style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 500 }}></p>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ background: '#232a36', borderRadius: 14, padding: '24px 24px 18px 24px', marginBottom: 0 }}>
-                    <h4 style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 18, marginBottom: 18 }}>Contact Information</h4>
-                    <div style={{ display: 'flex', gap: 24 }}>
-                      <div style={{ flex: 1, background: '#334155', borderRadius: 10, padding: '18px 20px', minHeight: 56, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                        <p style={{ color: '#cbd5e1', fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Phone</p>
-                        <p style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 500 }}></p>
-                      </div>
-                      <div style={{ flex: 1, background: '#334155', borderRadius: 10, padding: '18px 20px', minHeight: 56, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                        <p style={{ color: '#cbd5e1', fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Email</p>
-                        <p style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 500 }}></p>
-                      </div>
-                      <div style={{ flex: 2, background: '#334155', borderRadius: 10, padding: '18px 20px', minHeight: 56, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                        <p style={{ color: '#cbd5e1', fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Address</p>
-                        <p style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 500 }}></p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18, marginBottom: 24 }}>
-                  <div className="docdash-action-card" onClick={() => setActionView('checkup')}><div className="docdash-action-avatar"><User size={20} /></div><div><h5 className="docdash-action-title">Check-up Profile</h5><p className="docdash-action-desc">Full examination details</p></div></div>
-                  <div className="docdash-action-card" onClick={() => setActionView('treatment')}><div className="docdash-action-avatar"><Activity size={20} /></div><div><h5 className="docdash-action-title">Individual Treatment Record</h5><p className="docdash-action-desc">Previous medical records</p></div></div>
-                  <div className="docdash-action-card" onClick={() => setActionView('schedule')}><div className="docdash-action-avatar"><AlarmClock size={20} /></div><div><h5 className="docdash-action-title">Schedule Visit</h5><p className="docdash-action-desc">Set up new appointment</p></div></div>
-                  <div className="docdash-action-card" onClick={() => setActionView('admitting')}><div className="docdash-action-avatar"><FileText size={20} /></div><div><h5 className="docdash-action-title">Admitting Data</h5><p className="docdash-action-desc">Admission and discharge info</p></div></div>
-                  <div className="docdash-action-card" onClick={() => setActionView('immunization')}><div className="docdash-action-avatar"><Shield size={20} /></div><div><h5 className="docdash-action-title">Immunization History</h5><p className="docdash-action-desc">Vaccination records</p></div></div>
-                  <div className="docdash-action-card" onClick={() => setActionView('referral')}><div className="docdash-action-avatar"><Activity size={20} /></div><div><h5 className="docdash-action-title">Referral</h5><p className="docdash-action-desc">Specialist referrals</p></div></div>
-                </div>
-              </div>
-            )}
-            {selectedMember && actionView === 'checkup' && (
-              <CKProfile member={selectedMember} onBack={() => setActionView(null)} />
-            )}
-            {selectedMember && actionView === 'treatment' && (
-              <TreatmentRecord member={selectedMember} onBack={() => setActionView(null)} canEdit={userRole === 'doctor'} />
-            )}
-            {selectedMember && actionView === 'admitting' && (
-              <AdmittingData member={selectedMember} onBack={() => setActionView(null)} canEdit={userRole === 'doctor'} />
-            )}
-            {selectedMember && actionView === 'immunization' && (
-              <ImmunisationH member={selectedMember} onBack={() => setActionView(null)} canEdit={userRole === 'doctor'} />
-            )}
-            {selectedMember && actionView === 'referral' && (
-              <Referral member={selectedMember} onBack={() => setActionView(null)} />
-            )}
+        <div className="patient-database-container" style={{ padding: '20px', color: '#e5e7eb' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#f1f5f9', margin: 0 }}>Patient Database</h1>
+            <Button
+              variant="primary"
+              onClick={() => setShowAddNewPatientForm(true)}
+              style={{ fontSize: '14px', fontWeight: '500', background: '#3b82f6', borderColor: '#3b82f6' }}
+            >
+              + New Patient
+            </Button>
+          </div>
+          <div style={{ background: '#1e293b', borderRadius: '8px', padding: '20px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #334155' }}>
+                  <th style={{ padding: '12px', textAlign: 'left', color: '#94a3b8' }}>Name</th>
+                  <th style={{ padding: '12px', textAlign: 'left', color: '#94a3b8' }}>Email</th>
+                  <th style={{ padding: '12px', textAlign: 'left', color: '#94a3b8' }}>Phone</th>
+                  <th style={{ padding: '12px', textAlign: 'left', color: '#94a3b8' }}>Membership Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {patients.map(patient => (
+                  <tr key={patient.id} style={{ borderBottom: '1px solid #334155' }}>
+                    <td style={{ padding: '12px' }}>{patient.firstName} {patient.lastName}</td>
+                    <td style={{ padding: '12px' }}>{patient.email}</td>
+                    <td style={{ padding: '12px' }}>{patient.phoneNumber}</td>
+                    <td style={{ padding: '12px' }}>{patient.membershipStatus}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       );
@@ -584,49 +514,8 @@ export default function AdminDashboard() {
           <div style={{ display: 'flex', alignItems: 'center', fontSize: 14 }}>
             <span style={{ color: '#64748b', marginRight: 8 }}>YOU ARE HERE &gt;</span>
             {selectedView === 'patients' && (() => {
-              const familyObj = families.find(f => f.familyName === selectedFamily);
               const breadcrumbStyle = { color: '#38bdf8', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', marginRight: 4 };
               const sep = <span style={{ color: '#64748b', margin: '0 4px' }}>/</span>;
-              if (!selectedFamily) {
-                return <span style={{ color: '#38bdf8', fontWeight: 600 }}>Patient Database</span>;
-              }
-              if (selectedFamily && !selectedMember) {
-                return <>
-                  <span style={breadcrumbStyle} onClick={() => setSelectedFamily(null)}>Patient Database</span>
-                  {sep}
-                  <span style={{ color: '#38bdf8', fontWeight: 600 }}>{familyObj?.familyName}</span>
-                </>;
-              }
-              if (selectedMember && !actionView) {
-                return <>
-                  <span style={breadcrumbStyle} onClick={() => { setSelectedFamily(null); setSelectedMember(null); setActionView(null); }}>Patient Database</span>
-                  {sep}
-                  <span style={breadcrumbStyle} onClick={() => { setSelectedMember(null); setActionView(null); }}>{familyObj?.familyName}</span>
-                  {sep}
-                  <span style={{ color: '#38bdf8', fontWeight: 600 }}>{selectedMember.name}</span>
-                </>;
-              }
-              if (selectedMember && actionView) {
-                let actionLabel = '';
-                switch (actionView) {
-                  case 'checkup': actionLabel = 'Check-up Profile'; break;
-                  case 'treatment': actionLabel = 'Individual Treatment Record'; break;
-                  case 'schedule': actionLabel = 'Schedule Visit'; break;
-                  case 'admitting': actionLabel = 'Admitting Data'; break;
-                  case 'immunization': actionLabel = 'Immunization History'; break;
-                  case 'referral': actionLabel = 'Referral'; break;
-                  default: actionLabel = actionView;
-                }
-                return <>
-                  <span style={breadcrumbStyle} onClick={() => { setSelectedFamily(null); setSelectedMember(null); setActionView(null); }}>Patient Database</span>
-                  {sep}
-                  <span style={breadcrumbStyle} onClick={() => { setSelectedMember(null); setActionView(null); }}>{familyObj?.familyName}</span>
-                  {sep}
-                  <span style={breadcrumbStyle} onClick={() => { setActionView(null); }}>{selectedMember.name}</span>
-                  {sep}
-                  <span style={{ color: '#38bdf8', fontWeight: 600 }}>{actionLabel}</span>
-                </>;
-              }
               return <span style={{ color: '#38bdf8', fontWeight: 600 }}>Patient Database</span>;
             })()}
             {selectedView !== 'patients' && (

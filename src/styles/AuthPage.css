@@ -16,22 +16,31 @@
 .auth-container {
   position: relative;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: url('../images/home.jpg') no-repeat center center;
+  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('../images/home.jpg') no-repeat center center;
   background-size: cover;
   background-attachment: fixed;
+  display: flex;
+  overflow: hidden;
 }
 
 .auth-card {
   background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
   width: 100%;
-  max-width: 750px;
-  min-width: 750px;
-  padding: 2.5rem 2.5rem 2rem 2.5rem;
+  max-width: 780px;
+  padding: 2rem;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.auth-card .card-body {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .auth-logo {
@@ -62,26 +71,30 @@
 .auth-tabs {
   width: 100%;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-bottom: 30px;
   display: flex;
-  border-bottom: 1.5px solid #e0e0e0;
-  gap: 32px;
+  border-bottom: 2px solid #e5e7eb;
+  gap: 40px;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 75%;
 }
 
 .auth-tabs .nav-item {
   flex: none;
   text-align: center;
+  width: 120px; /* Fixed width for consistent tab positioning */
 }
 
 /* Updated nav-link styling to fix hover issue */
 .auth-tabs .nav-link {
-  font-size: 22px;
-  font-weight: 500;
+  font-size: 20px;
+  font-weight: 600;
   color: #6c757d; /* Lighter gray for inactive state */
   border: none;
   border-bottom: 3px solid transparent;
   border-radius: 0;
-  padding: 0 0 6px 0;
+  padding: 10px 0;
   background: none;
   transition: all 0.2s ease;
   margin: 0 8px;
@@ -90,16 +103,32 @@
 
 /* Clean hover state */
 .auth-tabs .nav-link:hover {
-  color: #495057; /* Slightly darker on hover, but not blue */
-  border-bottom-color: transparent; /* No border on hover unless active */
+  color: #3b82f6; /* Blue on hover */
 }
 
 /* Active state */
 .auth-tabs .nav-link.active,
 .auth-tabs .nav-link.active:hover {
-  color: #007bff; /* Blue for active tab */
-  border-bottom-color: #007bff; /* Blue border for active tab */
+  color: #3b82f6; /* Blue for active tab */
+  border-bottom-color: #3b82f6; /* Blue border for active tab */
   background-color: transparent; /* No background color */
+}
+
+/* QR code styling improvements */
+.qr-scanner-container {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.qr-reader-wrapper {
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 /* You could also use these classes directly instead of nav-link */
@@ -134,10 +163,127 @@
 /* Login form styling */
 .login-form {
   width: 100%;
-  min-height: 260px;
+  min-height: 300px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Registration form styling - ensure both forms have the same structure */
+.registration-form {
+  width: 100%;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Common form container to maintain consistent positioning */
+.auth-form-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.auth-left {
+  background: rgba(0,0,0,0.4);
+  position: relative;
+  z-index: 1;
+  color: white;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.auth-right {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-message h1 {
+  font-weight: 700;
+  margin-bottom: 20px;
+  line-height: 1.2;
+}
+
+/* Form consistency fixes - ensure both login and registration forms have consistent positioning */
+.nav-tabs .nav-link {
+  text-align: center;
+  width: 100%;
+}
+
+/* Ensure Card.Body has consistent alignment */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* QR code specifically needs more control */
+.qr-scanner-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.logo-image {
+  width: 60px;
+  height: auto;
+}
+
+.form-floating > .form-control::placeholder {
+  color: transparent !important;
+}
+
+.form-control {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  transition: all 0.15s ease-in-out;
+}
+
+.form-control:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+}
+
+.password-toggle-icon {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #6c757d;
+  z-index: 5;
+}
+
+.btn-primary {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.forgot-password-link {
+  font-size: 0.9rem;
+  text-decoration: none;
 }
 
 .password-input-container {
@@ -152,6 +298,22 @@
   cursor: pointer;
   color: #6c757d;
   z-index: 10;
+}
+
+/* QR Code login button styling */
+.btn-outline-secondary {
+  color: #6c757d;
+  border-color: #ced4da;
+  background-color: #fff;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+  padding: 10px 20px;
+  border-radius: 5px;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #f8f9fa;
+  border-color: #6c757d;
 }
 
 .password-toggle-icon:hover {
@@ -284,3 +446,36 @@
 .bg-warning { background-color: #ffc107 !important; }
 .bg-info { background-color: #0dcaf0 !important; }
 .bg-success { background-color: #198754 !important; }
+
+/* Fix for form shifting issue */
+.login-form, .registration-form {
+  width: 100%;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-form > *, .registration-form > * {
+  width: 100%;
+}
+
+/* Ensure consistent width between forms */
+.auth-card .card-body {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Make tab navigation consistent */
+.auth-tabs {
+  justify-content: center !important;
+  margin-bottom: 30px;
+}
+
+.auth-tabs .nav-item {
+  min-width: 120px;
+  text-align: center;
+}

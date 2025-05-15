@@ -311,13 +311,6 @@ const AuthPage = () => {
         ...formData,
         street: value,
         barangay: ''
-      });    } else if (name === 'phoneNumber') {
-      // Limit phone number to 11 digits and allow only numeric characters
-      const numericValue = value.replace(/\D/g, '');
-      const limitedValue = numericValue.slice(0, 11);
-      setFormData({
-        ...formData,
-        [name]: limitedValue
       });
     } else {
       setFormData({
@@ -822,15 +815,15 @@ const AuthPage = () => {
                   </Form.Group>
                 </Col>
                 <Col md={6}>
-                  <Form.Group controlId="phoneNumber">                    <Form.Control
-                      type="tel"
+                  <Form.Group controlId="phoneNumber">
+                    <Form.Control
+                      type="text"
                       placeholder="Phone Number (e.g. 09XXXXXXXXX)"
                       name="phoneNumber"
                       value={formData.phoneNumber}
                       onChange={handleChange}
-                      maxLength={11}
-                      pattern="^09\d{9}$"
-                      title="Enter a valid Philippine phone number starting with 09"
+                      pattern="^(09|\+639)\d{9}$"
+                      title="Enter a valid Philippine phone number"
                     />
                   </Form.Group>
                 </Col>

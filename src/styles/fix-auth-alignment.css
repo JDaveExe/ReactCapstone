@@ -1,0 +1,113 @@
+/* Form container to prevent shifting */
+.form-container {
+  width: 100%;
+  max-width: 780px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Login and Registration form alignment fix */
+.login-form, .registration-form {
+  width: 100%;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-form .form-floating,
+.login-form .d-flex,
+.login-form button {
+  max-width: 100%;
+}
+
+.auth-form-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Ensure consistent form widths */
+.login-form .form-floating,
+.login-form .position-relative,
+.login-form .d-flex.justify-content-between {
+  width: 100%;
+}
+
+/* Card body consistency */
+.auth-card .card-body {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  padding: 2rem !important;
+}
+
+/* Tab consistent positioning */
+.auth-tabs {
+  margin-left: auto !important;
+  margin-right: auto !important;
+  width: 100% !important;
+  justify-content: center !important;
+  display: flex !important;
+}
+
+.auth-tabs .nav-item {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 120px !important;
+}
+
+.auth-tabs .nav-link {
+  width: 100% !important;
+  text-align: center !important;
+}
+
+/* QR code consistency */
+.qr-scanner-container,
+.qr-code-container {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+/* Additional fixes to prevent shifting */
+.card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+.login-form > .form-floating,
+.login-form > .position-relative,
+.login-form > div {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Override any floating or positioning issues */
+.login-form, .registration-form {
+  position: relative !important;
+  left: 0 !important;
+  transform: none !important;
+  margin: 0 auto !important;
+}
+
+/* Fix for the button container */
+.login-form .btn-outline-secondary,
+.registration-form .btn-outline-secondary {
+  margin: 0 auto !important;
+}
+
+/* Make sure both forms have the same layout space */
+.login-form,
+.registration-form {
+  max-width: 90% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}

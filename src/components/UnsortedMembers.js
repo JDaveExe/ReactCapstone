@@ -95,13 +95,13 @@ export default function UnsortedMembers() {
           </thead>
           <tbody>
             {members.map(m => (
-              <tr key={m.id}>
+              <tr key={m.unsorted_member_id}>
                 <td>{m.firstName} {m.lastName}</td>
                 <td>{m.email}</td>
                 <td>{m.phoneNumber}</td>
                 <td>{new Date(m.registrationTime).toLocaleString()}</td>
                 <td>
-                  {selectedId === m.id ? (
+                  {selectedId === m.unsorted_member_id ? (
                     <div className="assign-controls">
                       <select 
                         value={familyName}
@@ -124,13 +124,13 @@ export default function UnsortedMembers() {
                           disabled={assigning}
                         />
                       )}
-                      <button onClick={() => handleAssignFamily(m.id)} disabled={assigning || !familyName || familyName === '__NEW__'}>
+                      <button onClick={() => handleAssignFamily(m.unsorted_member_id)} disabled={assigning || !familyName || familyName === '__NEW__'}>
                         {assigning ? 'Assigning...' : 'Save'}
                       </button>
                       <button onClick={() => {setSelectedId(null); setMessage(''); setFamilyName(''); setShowNewFamilyInput(false);}} disabled={assigning}>Cancel</button>
                     </div>
                   ) : (
-                    <button onClick={() => handleSelectMemberToAssign(m.id)} className="assign-button">
+                    <button onClick={() => handleSelectMemberToAssign(m.unsorted_member_id)} className="assign-button">
                       Assign
                     </button>
                   )}

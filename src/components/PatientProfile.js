@@ -108,7 +108,7 @@ const PatientProfile = () => {
       <Container className="patient-profile-container">
         <Card className="patient-profile-card">
           <Card.Body>
-            <h2 className="profile-title">Patient Profile</h2>
+            <h2 className="profile-title">Profile</h2>
             
             {error && <Alert variant="danger">{error}</Alert>}
             {success && <Alert variant="success">{success}</Alert>}

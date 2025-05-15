@@ -13,7 +13,7 @@ export default function CKProfile({ member, onBack }) {
     <div className="ckprofile-root">
       <div className="ckprofile-header">
         <button className="ckprofile-backbtn" onClick={onBack}>&lt; Back</button>
-        <h2 className="ckprofile-title">Check-Up Profile</h2>
+        <h2 className="ckprofile-title">Profile</h2>
       </div>
       <div className="ckprofile-member-info">
         <h3>{member?.name}</h3>

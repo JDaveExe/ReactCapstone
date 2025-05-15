@@ -33,7 +33,7 @@ db.connect((err) => {
       middleName VARCHAR(100),
       lastName VARCHAR(100) NOT NULL,
       suffix VARCHAR(10),
-      email VARCHAR(100) NOT NULL UNIQUE,
+      email VARCHAR(100) NULL UNIQUE,
       phoneNumber VARCHAR(20),
       password VARCHAR(255) NOT NULL,
       houseNo VARCHAR(50),
@@ -47,6 +47,7 @@ db.connect((err) => {
       age INT,
       gender VARCHAR(10),
       civilStatus VARCHAR(20),
+      familyId INT NULL,
       createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `, (err, result) => {
@@ -89,7 +90,10 @@ db.connect((err) => {
     name VARCHAR(255),
     registrationTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     assignedFamily VARCHAR(255),
-    status VARCHAR(50) DEFAULT 'unsorted'
+    familyId INT NULL,
+    status VARCHAR(50) DEFAULT 'unsorted',
+    sortedBy VARCHAR(255) NULL,
+    sortedAt DATETIME NULL
   )`;
   db.query(createUnsortedTable, (err) => {
     if (err) {
@@ -98,6 +102,22 @@ db.connect((err) => {
       console.log('✓ unsorted_members table ready');
     }
   });
+
+  // Table for families
+  const createFamiliesTable = `
+  CREATE TABLE IF NOT EXISTS families (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    familyName VARCHAR(255) NOT NULL UNIQUE,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`;
+  db.query(createFamiliesTable, (err) => {
+    if (err) {
+      console.error('Error creating families table:', err);
+    } else {
+      console.log('✓ families table ready');
+    }
+  });
+
 });
 
 // Function to create default admin user

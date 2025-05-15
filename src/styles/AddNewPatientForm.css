@@ -1,0 +1,333 @@
+/* Form styles for AddNewPatientForm */
+
+.add-new-patient-form-container {
+  color: #e5e7eb;
+}
+
+.add-new-patient-form-container .form-control,
+.add-new-patient-form-container .form-select,
+.add-new-patient-form-container .react-datepicker__input-container input {
+  background-color: #334155;
+  border: 1px solid #475569;
+  color: #ffffff;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.add-new-patient-form-container .form-select option {
+  background-color: #1e293b;
+  color: #ffffff;
+  padding: 8px;
+}
+
+/* Password input styling */
+.add-new-patient-form-container .form-control[type="password"],
+.add-new-patient-form-container .form-control[type="text"][name="password"],
+.add-new-patient-form-container .form-control[type="text"][name="repeatPassword"] {
+  padding-right: 40px;
+  background-color: #334155;
+  color: #ffffff;
+  border: 1px solid #475569;
+  font-weight: 500;
+}
+
+/* Password toggle icon container */
+.add-new-patient-form-container div[style*="position: absolute"] {
+  color: #94a3b8;
+}
+
+.add-new-patient-form-container div[style*="position: absolute"]:hover {
+  color: #e5e7eb;
+}
+
+.add-new-patient-form-container .form-control::placeholder,
+.add-new-patient-form-container .form-select::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+.add-new-patient-form-container .form-control:focus,
+.add-new-patient-form-container .form-select:focus,
+.add-new-patient-form-container .react-datepicker__input-container input:focus {
+  background-color: #1e293b;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.4);
+  color: #ffffff;
+  outline: none;
+}
+
+.add-new-patient-form-container .form-control[readonly],
+.add-new-patient-form-container .form-select[readonly] {
+  background-color: #475569;
+  cursor: default;
+  opacity: 0.8;
+}
+
+.add-new-patient-form-container .form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px 12px;
+}
+
+.add-new-patient-form-container .form-label {
+  color: #e2e8f0;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+/* Password strength indicator */
+.password-strength-indicator {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  height: 5px;
+  width: 100%;
+}
+
+.strength-bar {
+  flex: 1;
+  height: 100%;
+  margin-right: 3px;
+  background: #334155;
+  border-radius: 2px;
+}
+
+.strength-bar:last-child {
+  margin-right: 0;
+}
+
+.password-strength-indicator.very-weak .strength-bar:nth-child(1) {
+  background-color: #ef4444;
+}
+
+.password-strength-indicator.weak .strength-bar:nth-child(1),
+.password-strength-indicator.weak .strength-bar:nth-child(2) {
+  background-color: #f97316;
+}
+
+.password-strength-indicator.medium .strength-bar:nth-child(1),
+.password-strength-indicator.medium .strength-bar:nth-child(2),
+.password-strength-indicator.medium .strength-bar:nth-child(3) {
+  background-color: #facc15;
+}
+
+.password-strength-indicator.strong .strength-bar:nth-child(1),
+.password-strength-indicator.strong .strength-bar:nth-child(2),
+.password-strength-indicator.strong .strength-bar:nth-child(3),
+.password-strength-indicator.strong .strength-bar:nth-child(4) {
+  background-color: #4ade80;
+}
+
+.password-strength-indicator.very-strong .strength-bar {
+  background-color: #22c55e;
+}
+
+/* Date picker custom styling */
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.react-datepicker__input-container {
+  width: 100%;
+}
+
+.date-picker-input {
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+.date-picker-input:focus {
+  background-color: #1e293b !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25) !important;
+}
+
+.react-datepicker {
+  font-family: inherit;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+.react-datepicker__header {
+  background-color: #0f172a;
+  border-bottom: 1px solid #334155;
+  color: #f8fafc;
+}
+
+.react-datepicker__current-month,
+.react-datepicker__day-name {
+  color: #f8fafc;
+}
+
+.react-datepicker__day {
+  color: #cbd5e1;
+}
+
+.react-datepicker__day:hover {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.react-datepicker__day--disabled {
+  color: #475569;
+}
+
+/* Year dropdown styling */
+.react-datepicker__year-dropdown {
+  background-color: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 4px;
+  padding: 8px 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.react-datepicker__year-dropdown-container {
+  color: #f8fafc;
+}
+
+.react-datepicker__year-option {
+  padding: 6px 12px;
+  color: #f1f5f9;
+  transition: all 0.15s ease;
+}
+
+.react-datepicker__year-option:hover {
+  background-color: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+.react-datepicker__year-option--selected {
+  background-color: #3b82f6;
+  color: white;
+  font-weight: bold;
+}
+
+.react-datepicker__year-option--selected_year {
+  color: white;
+  font-weight: 600;
+}
+
+.react-datepicker__year-dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.react-datepicker__year-dropdown::-webkit-scrollbar-track {
+  background: #334155;
+  border-radius: 4px;
+}
+
+.react-datepicker__year-dropdown::-webkit-scrollbar-thumb {
+  background: #64748b;
+  border-radius: 4px;
+}
+
+.react-datepicker__year-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.add-new-patient-form-container .form-text {
+  color: #94a3b8;
+}
+
+.add-new-patient-form-container .form-text-highlight {
+  color: #f1f5f9;
+  font-size: 0.875rem;
+  background-color: rgba(59, 130, 246, 0.15);
+  padding: 6px 10px;
+  border-radius: 4px;
+  border-left: 3px solid #3b82f6;
+  font-weight: 500;
+}
+
+.add-new-patient-form-container .strength-text {
+  display: block;
+  text-align: right;
+  font-size: 0.8rem;
+}
+
+.add-new-patient-form-container .strength-text {
+  color: #4ade80;
+}
+
+.password-strength-indicator.very-weak + .strength-text,
+.password-strength-indicator.weak + .strength-text {
+  color: #f87171;
+}
+
+.password-strength-indicator.medium + .strength-text {
+  color: #facc15;
+}
+
+/* Button styles */
+.add-new-patient-form-container .btn-primary {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.add-new-patient-form-container .btn-primary:hover:not(:disabled) {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.add-new-patient-form-container .btn-outline-light {
+  border-color: #64748b;
+  color: #e5e7eb;
+}
+
+.add-new-patient-form-container .btn-outline-light:hover:not(:disabled) {
+  background-color: #64748b;
+  color: white;
+}
+
+/* Date picker popper (dropdown) styling */
+.date-picker-popper {
+  z-index: 9999 !important;
+}
+
+/* Ensure year dropdown appears on top of other elements */
+.react-datepicker-popper {
+  z-index: 1000 !important;
+}
+
+/* Make the year dropdown clearly visible */
+.react-datepicker__year-read-view {
+  background-color: #334155;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #f8fafc;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.react-datepicker__year-read-view:hover {
+  background-color: #3b82f6;
+}
+
+.react-datepicker__year-read-view--down-arrow {
+  top: 5px;
+  border-color: #f8fafc transparent transparent;
+}
+
+/* Additional styling to ensure years are visible */
+.react-datepicker__year-option {
+  line-height: 1.4;
+  margin: 2px 0;
+}

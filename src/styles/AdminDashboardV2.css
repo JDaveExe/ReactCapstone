@@ -1,0 +1,278 @@
+/* Admin Dashboard CSS based on Doctor Dashboard styles */
+.admin-dashboard {
+  display: flex;
+  height: 100vh;
+  background: #181e29;
+  color: #fff;
+  overflow: hidden;
+}
+
+.admin-database-container {
+  padding: 20px;
+  color: #e5e7eb;
+}
+
+/* Sidebar styling */
+.sidebar {
+  width: 260px;
+  background: #23272f;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid #1e293b;
+}
+.sidebar.collapsed {
+  width: 64px !important;
+  min-width: 64px !important;
+  transition: width 0.3s;
+}
+
+/* Menu styling */
+.sidebar-item {
+  padding: 12px 24px;
+  color: #cbd5e1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 0.2s, color 0.2s;
+}
+.sidebar-item.active,
+.sidebar-item:hover {
+  background: #334155;
+  color: #38bdf8;
+}
+
+.sidebar-dropdown-toggle {
+  display: 'flex';
+  align-items: 'center';
+  justify-content: 'space-between';
+  padding: '12px 20px';
+  cursor: 'pointer';
+  transition: 'color 0.15s';
+}
+
+.sidebar-dropdown-content {
+  background: #172136;
+}
+
+/* Profile card styling */
+.patient-profile-card {
+  flex: 1;
+  min-width: 250px;
+  padding: 20px;
+  background: #1e293b;
+  border-radius: 8px;
+}
+
+.profile-card-label {
+  margin-bottom: 10px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 8px;
+  border: none;
+  color: white;
+  text-align: left;
+  cursor: pointer;
+}
+
+.action-button:hover {
+  background: #334155;
+  border: 1px solid #38bdf8;
+}
+
+.action-title {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.action-desc {
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+/* Profile container styling */
+.profile-container {
+  color: #e5e7eb; 
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 20px;
+  box-sizing: border-box;
+  height: auto;
+}
+
+.profile-container button {
+  transition: all 0.2s ease-in-out;
+}
+
+.profile-container button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Table styling */
+.member-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.member-table th {
+  padding: 16px;
+  text-align: left;
+  color: #94a3b8;
+  border-bottom: 1px solid #334155;
+}
+
+.member-table td {
+  padding: 16px;
+  border-bottom: 1px solid #334155;
+}
+
+.member-name {
+  font-weight: 500;
+  font-size: 15px;
+  color: #e2e8f0;
+}
+
+.view-button {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.view-button:hover {
+  background: #2563eb;
+}
+
+/* Family list styling */
+.family-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.family-button {
+  width: 100%;
+  padding: 16px;
+  background: #1e293b;
+  color: #e5e7eb;
+  border: none;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.family-button:hover {
+  background: #334155;
+}
+
+.family-name {
+  color: #38bdf8;
+}
+
+.family-members-count {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+/* Dashboard card styling */
+.dashboard-card {
+  background: #1e293b;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 20px;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: 0.2px;
+}
+
+/* Search input styling */
+.search-input {
+  width: 100%;
+  padding: 10px 15px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #e5e7eb;
+  font-size: 14px;
+}
+
+/* Back button styling */
+.back-button {
+  padding: 8px 16px;
+  background: #1e293b;
+  color: #e5e7eb;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.back-button:hover {
+  background: #334155;
+}
+
+/* Info section styling */
+.section-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #94a3b8;
+}
+
+.info-container {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+}
+
+/* Action buttons grid */
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 30px;
+}
+
+@media (max-width: 767.98px) {
+  .action-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .info-container {
+    flex-direction: column;
+  }
+}

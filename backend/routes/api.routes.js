@@ -272,12 +272,12 @@ router.post('/register', (req, res) => {
       console.log('User registered successfully:', email);
       console.log('User ID:', result.insertId);
 
-      // After successful registration, add to unsorted_members
-      db.query('INSERT INTO unsorted_members (userId, name) VALUES (?, ?)', [result.insertId, `${firstName} ${lastName}`], (err2) => {
+      // After successful registration, add to unsorted_members with status
+      db.query('INSERT INTO unsorted_members (userId, name, status) VALUES (?, ?, ?)', [result.insertId, `${firstName} ${lastName}`, 'unsorted'], (err2) => {
         if (err2) {
           console.error('Error adding to unsorted_members:', err2);
         } else {
-          console.log('User added to unsorted_members');
+          console.log('User added to unsorted_members with status "unsorted"');
         }
       });
 
@@ -491,40 +491,148 @@ router.post('/unsorted', (req, res) => {
 
 // Get unsorted members
 router.get('/unsorted', (req, res) => {
-  db.query('SELECT * FROM unsorted_members WHERE status = "unsorted"', (err, results) => {
-    if (err) return res.status(500).json({ error: 'Failed to fetch unsorted members' });
+  const query = `
+    SELECT 
+      um.id AS unsorted_member_id, 
+      um.registrationTime, 
+      um.status,
+      u.id AS userId, 
+      u.firstName, 
+      u.lastName, 
+      u.email, 
+      u.phoneNumber 
+    FROM unsorted_members um
+    JOIN users u ON um.userId = u.id
+    WHERE um.status = "unsorted"
+  `;
+  db.query(query, (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to fetch unsorted members', details: err.message });
+    }
     res.json(results);
   });
 });
 
 // Assign family and mark as sorted
 router.patch('/unsorted/:id/assign-family', (req, res) => {
-  const { id } = req.params;
-  const { assignedFamily } = req.body;
-  db.query('UPDATE unsorted_members SET assignedFamily = ?, status = "sorted" WHERE id = ?', [assignedFamily, id], (err) => {
-    if (err) return res.status(500).json({ error: 'Failed to assign family' });
-    res.json({ message: 'Family assigned and member sorted' });
+  const { id } = req.params; // This is unsorted_member_id
+  const { familyName: rawFamilyName, sortedBy } = req.body; // familyName is expected, sortedBy is optional
+  const familyName = rawFamilyName ? rawFamilyName.trim() : ''; // Trimmed familyName
+
+  if (!familyName || familyName === '') { // Use trimmed familyName for validation
+    return res.status(400).json({ error: 'Family name is required.' });
+  }
+
+  db.query('SELECT userId FROM unsorted_members WHERE id = ?', [id], (err, umResults) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error finding unsorted member.', details: err.message });
+    }
+    if (umResults.length === 0) {
+      return res.status(404).json({ error: 'Unsorted member not found.' });
+    }
+    const userId = umResults[0].userId;
+
+    // Define the function that handles updating user and unsorted_member records
+    const updateMemberAndUserRecords = (currentFamilyId) => {
+      // Step 1: Update users table
+      db.query('UPDATE users SET familyId = ? WHERE id = ?', [currentFamilyId, userId], (userUpdateErr) => {
+        if (userUpdateErr) {
+          return res.status(500).json({ error: 'Failed to update user record.', details: userUpdateErr.message });
+        }
+
+        const finalSortedBy = sortedBy || 'admin'; // Default to 'admin' if not provided
+        
+        // Step 2: Update unsorted_members table
+        db.query(
+          'UPDATE unsorted_members SET status = "sorted", familyId = ?, assignedFamily = ?, sortedBy = ?, sortedAt = NOW() WHERE id = ?',
+          [currentFamilyId, familyName, finalSortedBy, id],
+          (umUpdateErr) => {
+            if (umUpdateErr) {
+              return res.status(500).json({ error: 'Failed to update unsorted_member record.', details: umUpdateErr.message });
+            }
+            res.json({ message: 'Family assigned and member sorted successfully' });
+          }
+        );
+      });
+    };
+
+    // Find or create family
+    db.query('SELECT id FROM families WHERE familyName = ?', [familyName], (famErr, famResults) => {
+      if (famErr) {
+        return res.status(500).json({ error: 'Database error checking family.', details: famErr.message });
+      }
+
+      if (famResults.length > 0) {
+        // Family exists
+        const existingFamilyId = famResults[0].id;
+        updateMemberAndUserRecords(existingFamilyId);
+      } else {
+        // Family does not exist, create new family
+        db.query('INSERT INTO families (familyName) VALUES (?)', [familyName], (newFamErr, newFamResult) => {
+          if (newFamErr) {
+            return res.status(500).json({ error: 'Database error creating family.', details: newFamErr.message });
+          }
+          // More robust check for insertId
+          if (!newFamResult || typeof newFamResult.insertId !== 'number' || newFamResult.insertId <= 0) {
+            return res.status(500).json({ error: 'Failed to get a valid ID for new family.' });
+          }
+          const newFamilyId = newFamResult.insertId;
+          updateMemberAndUserRecords(newFamilyId);
+        });
+      }
+    });
   });
 });
 
 // Get all sorted families and their members
 router.get('/sorted-families', (req, res) => {
-  db.query('SELECT * FROM unsorted_members WHERE status = "sorted"', (err, results) => {
-    if (err) return res.status(500).json({ error: 'Failed to fetch sorted members' });
-    // Group by assignedFamily
-    const families = {};
-    results.forEach(row => {
-      if (!families[row.assignedFamily]) {
-        families[row.assignedFamily] = [];
+  // First, get all families
+  db.query('SELECT id, familyName FROM families', (err, familiesResults) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to fetch families', details: err.message });
+    }
+
+    // If no families, return empty array
+    if (!familiesResults || familiesResults.length === 0) {
+      return res.json([]);
+    }
+
+    // Get all users with their family info
+    db.query(`
+      SELECT 
+        u.id, 
+        u.firstName, 
+        u.lastName, 
+        u.familyId,
+        CONCAT(u.firstName, ' ', u.lastName) as name
+      FROM 
+        users u
+      WHERE 
+        u.familyId IS NOT NULL
+    `, (err, usersResults) => {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to fetch users with family data', details: err.message });
       }
-      families[row.assignedFamily].push({ id: row.userId, name: row.name });
+
+      // Create array of family objects with their members
+      const familiesWithMembers = familiesResults.map(family => {
+        // Find all users belonging to this family
+        const familyMembers = usersResults.filter(user => 
+          user.familyId === family.id
+        );
+
+        return {
+          id: family.id, // Ensure family ID is included at the top level of the family object
+          familyName: family.familyName,
+          members: familyMembers.map(member => ({
+            id: member.id,
+            name: member.name // This was already correctly concatenating firstName and lastName
+          }))
+        };
+      });
+
+      res.json(familiesWithMembers);
     });
-    // Convert to array
-    const familyArr = Object.keys(families).map(famName => ({
-      familyName: famName,
-      members: families[famName] // Corrected this line
-    }));
-    res.json(familyArr);
   });
 });
 
@@ -540,7 +648,6 @@ router.get('/patients', (req, res) => {
 
   db.query(query, (err, results) => {
     if (err) {
-      console.error('Error fetching patients:', err);
       return res.status(500).json({ error: 'Failed to fetch patients', details: err.message });
     }
     // Remove password before sending
@@ -554,171 +661,177 @@ router.get('/patients', (req, res) => {
 
 // Endpoint to get all unique family names
 router.get('/families', (req, res) => {
-  const query = "SELECT DISTINCT assignedFamily FROM unsorted_members WHERE status = 'sorted' AND assignedFamily IS NOT NULL AND assignedFamily != '' ORDER BY assignedFamily ASC";
-
-  db.query(query, (err, results) => {
+  db.query('SELECT id, familyName FROM families ORDER BY familyName ASC', (err, results) => {
     if (err) {
-      console.error('Error fetching families:', err);
-      return res.status(500).json({ error: 'Failed to fetch families', details: err.message });
+      return res.status(500).json({ error: 'Failed to fetch families' });
     }
-    const families = results.map(row => row.assignedFamily);
-    res.json(families);
+    
+    // Ensure each family has a numeric ID and proper formatting
+    const formattedResults = results.map(f => ({ 
+      id: parseInt(f.id, 10), // Ensure ID is a number
+      familyName: f.familyName.trim() // Trim any whitespace
+    }));
+    
+    res.json(formattedResults);
+  });
+});
+
+// Endpoint to get members of a specific family by familyId
+router.get('/families/:familyId/members', (req, res) => {
+  const { familyId } = req.params;
+
+  if (!familyId) {
+    return res.status(400).json({ error: 'Family ID is required.' });
+  }
+
+  // Convert familyId to a number for comparison (if it's a numeric string)
+  const familyIdNum = parseInt(familyId, 10);
+  
+  // Updated query with better debugging and explicit parameter binding to the right type
+  const query = `
+    SELECT u.id, u.firstName, u.lastName, u.email, u.phoneNumber, u.membershipStatus, 
+           u.familyId, f.familyName, f.id as actualFamilyId
+    FROM users u
+    JOIN families f ON u.familyId = f.id
+    WHERE u.familyId = ?
+  `;
+  
+  db.query(query, [familyIdNum], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error fetching family members.', details: err.message });
+    }
+    if (results.length === 0) {
+      // Check if the family exists
+      const familyCheckQuery = `SELECT * FROM families WHERE id = ?`;
+      db.query(familyCheckQuery, [familyIdNum], (famErr, famResults) => {
+        res.json([]); // Return empty array as no members found
+      });
+    } else {
+      const members = results.map(member => {
+        const { password, ...memberWithoutPassword } = member;
+        return memberWithoutPassword;
+      });
+      res.json(members);
+    }
   });
 });
 
 // Endpoint for Admin to add a new patient and assign to a family directly
-router.post('/admin/add-patient', (req, res) => {
-  console.log('==== /api/admin/add-patient endpoint hit ====');
+router.post('/admin/add-patient', async (req, res) => {
   const {
-    firstName,
-    middleName,
-    lastName,
-    suffix,
-    email,
-    phoneNumber,
-    password, // Should be hashed in production
-    houseNo,
-    street,
-    barangay,
-    city,
-    region,
-    philHealthNumber,
-    membershipStatus, // e.g., 'member', 'nonmember' - admin should set this appropriately
-    dateOfBirth,
-    age,
-    gender,
-    civilStatus,
-    assignedFamily // New field for this endpoint
+    firstName, middleName, lastName, suffix, email, phoneNumber, password,
+    houseNo, street, barangay, city, region, philHealthNumber,
+    membershipStatus, dateOfBirth, age, gender, civilStatus,
+    familyName: rawFamilyName // familyName is expected from the frontend
   } = req.body;
+  const familyName = rawFamilyName ? rawFamilyName.trim() : ''; // Trimmed familyName
 
-  console.log('Admin add patient payload received:', {
-    ...req.body,
-    password: '******', // Mask password in logs
-  });
-
-  // Validate required fields
-  if (!firstName || !lastName || !password || !assignedFamily || !membershipStatus) {
-    return res.status(400).json({
-      error: 'Missing required fields',
-      details: 'First name, last name, password, membership status, and assigned family are required.'
-    });
+  if (!firstName || !lastName || !password || !membershipStatus || !familyName) { // Use trimmed familyName for validation
+    return res.status(400).json({ error: 'Missing required fields: firstName, lastName, password, membershipStatus, or familyName are required.' });
   }
-
-  // Require at least one of email or phoneNumber
   if (!email && !phoneNumber) {
-    return res.status(400).json({
-      error: 'Either email or phone number is required'
-    });
+    return res.status(400).json({ error: 'Either email or phone number is required.' });
   }
-
-  // Validate email format if provided
   if (email && !validateEmail(email)) {
-    return res.status(400).json({ error: 'Invalid email format' });
+    return res.status(400).json({ error: 'Invalid email format.' });
   }
-
-  // Validate Philippine phone number if provided
   if (phoneNumber) {
     const phPhoneRegex = /^(\+639|09)\d{9}$/;
     if (!phPhoneRegex.test(phoneNumber)) {
-      return res.status(400).json({
-        error: 'Invalid Philippine phone number format. Use +639XXXXXXXXX or 09XXXXXXXXX.'
-      });
+      return res.status(400).json({ error: 'Invalid Philippine phone number format. Use +639XXXXXXXXX or 09XXXXXXXXX.' });
     }
   }
 
-  // Check for existing email or phone number
-  let checkQuery;
-  let checkValues;
+  let checkExistingQuery = 'SELECT id, email, phoneNumber FROM users WHERE';
+  const existingParams = [];
   if (email && phoneNumber) {
-    checkQuery = 'SELECT id, email, phoneNumber FROM users WHERE email = ? OR phoneNumber = ?';
-    checkValues = [email.toLowerCase(), phoneNumber];
+    checkExistingQuery += ' (LOWER(email) = LOWER(?) OR phoneNumber = ?)';
+    existingParams.push(email, phoneNumber);
   } else if (email) {
-    checkQuery = 'SELECT id, email FROM users WHERE email = ?';
-    checkValues = [email.toLowerCase()];
+    checkExistingQuery += ' LOWER(email) = LOWER(?)';
+    existingParams.push(email);
   } else {
-    checkQuery = 'SELECT id, phoneNumber FROM users WHERE phoneNumber = ?';
-    checkValues = [phoneNumber];
+    checkExistingQuery += ' phoneNumber = ?';
+    existingParams.push(phoneNumber);
   }
 
-  db.query(checkQuery, checkValues, (err, results) => {
+  db.query(checkExistingQuery, existingParams, (err, existingUserResults) => {
     if (err) {
-      console.error('Error checking existing user (admin add):', err);
-      return res.status(500).json({ error: 'Database error during user check', details: err.message });
+      return res.status(500).json({ error: 'Database error during user check.' });
     }
-
-    let duplicateEmail = false;
-    let duplicatePhone = false;
-    if (results.length > 0) {
-      results.forEach(row => {
-        if (email && row.email && row.email.toLowerCase() === email.toLowerCase()) duplicateEmail = true;
-        if (phoneNumber && row.phoneNumber === phoneNumber) duplicatePhone = true;
-      });
-    }
-
-    if (duplicateEmail) {
-      return res.status(409).json({ error: 'Email already registered' });
-    }
-    if (duplicatePhone) {
-      return res.status(409).json({ error: 'Phone number already registered' });
-    }
-
-    let formattedDate = null;
-    if (dateOfBirth) {
-      try {
-        formattedDate = new Date(dateOfBirth).toISOString().split('T')[0];
-      } catch (e) {
-        console.error('Error parsing date (admin add):', e);
-        // Potentially return an error or use null
+    if (existingUserResults.length > 0) {
+      let msg = '';
+      if (email && existingUserResults.some(u => u.email && u.email.toLowerCase() === email.toLowerCase())) {
+        msg = 'Email already registered.';
       }
+      if (phoneNumber && existingUserResults.some(u => u.phoneNumber === phoneNumber)) {
+        msg += (msg ? ' ' : '') + 'Phone number already registered.';
+      }
+      return res.status(409).json({ error: msg || 'User with this email or phone number already exists.' });
     }
 
-    const userInsertQuery = `INSERT INTO users (
-      firstName, middleName, lastName, suffix, email, phoneNumber, password, 
-      houseNo, street, barangay, city, region, 
-      philHealthNumber, membershipStatus, dateOfBirth, age, gender, civilStatus
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-
-    const userValues = [
-      firstName, middleName || null, lastName, suffix || null, email ? email.toLowerCase() : null, 
-      phoneNumber || null, password, houseNo || null, street || null, barangay || null, city || null, 
-      region || null, philHealthNumber || null, membershipStatus, formattedDate, age || null, 
-      gender || null, civilStatus || null
-    ];
-
-    db.query(userInsertQuery, userValues, (userErr, userResult) => {
-      if (userErr) {
-        console.error('Error inserting user (admin add):', userErr);
-        return res.status(500).json({ error: 'Failed to register patient', details: userErr.message });
+    db.query('SELECT id FROM families WHERE familyName = ?', [familyName], (famErr, famResults) => {
+      if (famErr) {
+        return res.status(500).json({ error: 'Database error checking family.' });
       }
 
-      const newUserId = userResult.insertId;
-      const patientName = `${firstName} ${lastName}`;
-      console.log('Patient registered by admin successfully:', newUserId);
+      const insertUserWithFamily = (family_id) => {
+        const formattedDOB = dateOfBirth ? new Date(dateOfBirth).toISOString().split('T')[0] : null;
+        const userQuery = `INSERT INTO users (
+            firstName, middleName, lastName, suffix, email, phoneNumber, password,
+            houseNo, street, barangay, city, region, philHealthNumber,
+            membershipStatus, dateOfBirth, age, gender, civilStatus, familyId 
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        
+        const userValues = [
+            firstName, middleName || null, lastName, suffix || null, email ? email.toLowerCase() : null,
+            phoneNumber || null, password,
+            houseNo || null, street || null, barangay || null, city || 'Pasig',
+            region || 'Metro Manila', philHealthNumber || null, membershipStatus, formattedDOB, age || null,
+            gender || null, civilStatus || null, family_id
+        ];
 
-      // Add to unsorted_members but as 'sorted' and with the assigned family
-      const unsortedInsertQuery = 'INSERT INTO unsorted_members (userId, name, assignedFamily, status) VALUES (?, ?, ?, ?)';
-      const unsortedValues = [newUserId, patientName, assignedFamily, 'sorted'];
-
-      db.query(unsortedInsertQuery, unsortedValues, (unsortedErr, unsortedResult) => {
-        if (unsortedErr) {
-          console.error('Error adding to unsorted_members as sorted (admin add):', unsortedErr);
-          // This is a tricky situation: user is created, but family assignment failed.
-          // For now, we'll return success for user creation but log the error.
-          // A more robust solution might involve a transaction or a cleanup process.
-          return res.status(201).json({
-            message: 'Patient registered successfully, but failed to assign to family immediately. Please check unsorted members.',
-            userId: newUserId,
-            warning: 'Family assignment failed.'
-          });
-        }
-        console.log('Patient added to family by admin successfully:', newUserId, 'to', assignedFamily);
-        res.status(201).json({
-          message: 'Patient registered and assigned to family successfully!',
-          userId: newUserId,
-          assignedFamily: assignedFamily
+        db.query(userQuery, userValues, (userErr, userResult) => {
+          if (userErr) {
+            return res.status(500).json({ error: 'Failed to add new patient.', details: userErr.message });
+          }
+          res.status(201).json({ message: 'Patient added successfully by admin!', userId: userResult.insertId, familyId: family_id });
         });
-      });
+      };
+
+      if (famResults.length > 0) {
+        const familyIdToUse = famResults[0].id;
+        insertUserWithFamily(familyIdToUse);
+      } else {
+        db.query('INSERT INTO families (familyName) VALUES (?)', [familyName], (newFamErr, newFamResult) => {
+          if (newFamErr) {
+            return res.status(500).json({ error: 'Database error creating family.' });
+          }
+          const familyIdToUse = newFamResult.insertId;
+          insertUserWithFamily(familyIdToUse);
+        });
+      }
     });
+  });
+});
+
+// Endpoint to add a new surname (family)
+router.post('/add-surname', (req, res) => {
+  const { familyName } = req.body;
+
+  if (!familyName || typeof familyName !== 'string') {
+    return res.status(400).json({ error: 'Invalid or missing familyName' });
+  }
+
+  const query = 'INSERT INTO families (familyName) VALUES (?)';
+
+  db.query(query, [familyName], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to add new surname', details: err.message });
+    }
+
+    console.log('Insert result:', result); // Debug log to check the insertId
+    res.status(201).json({ message: 'New surname added successfully', familyId: result.insertId });
   });
 });
 

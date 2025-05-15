@@ -1,0 +1,107 @@
+/* Fix for horizontal shifting between login and register forms */
+
+/* Make sure both forms have consistent width */
+.login-form, 
+.registration-form {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Ensure all children elements maintain 100% width */
+.login-form > *, 
+.registration-form > * {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Auth form container consistent width */
+.auth-form-container {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+/* Ensure inputs and containers have consistent width */
+.login-form .form-floating,
+.login-form .position-relative,
+.login-form .form-control,
+.login-form .d-flex,
+.registration-form .form-control {
+  width: 100% !important;
+}
+
+/* Card should maintain consistent width */
+.auth-card {
+  width: 100% !important;
+  max-width: 780px !important;
+}
+
+.auth-card .card-body {
+  width: 100% !important;
+  padding: 2rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+/* Form container for both forms */
+.form-container {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+/* Tab navigation centered and fixed width */
+.auth-tabs {
+  width: 280px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  justify-content: center !important;
+}
+
+.auth-tabs .nav-item {
+  width: 140px !important;
+  text-align: center !important;
+}
+
+/* Fix positioning on main layout */
+.auth-right {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Fix QR scanner alignment */
+.qr-scanner-container {
+  max-width: 400px !important;
+  margin: 0 auto !important;
+}
+
+/* Ensure all form groups use the same width calculations */
+.form-group, .mb-4 {
+  width: 100% !important;
+}
+
+/* Fix for login buttons */
+.login-form button {
+  margin: 0 auto !important;
+}
+
+/* Auth card body sizing */
+.auth-card .card-body {
+  width: 100% !important;
+  padding: 2rem !important;
+}
+
+/* Container for form alignment */
+.form-container {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}

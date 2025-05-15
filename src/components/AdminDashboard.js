@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Search, Settings, Bell, LogOut, User, Menu, X, 
 import { useNavigate } from 'react-router-dom';
 import '../styles/DashboardAdm.css';
 import '../styles/SidebarAdmin.css';
+import '../styles/AdminDashboardV2.css'; // Added for enhanced styling
 import Manage from './Manage';
 import Reports from './Reports';
 import Asettings from './Asettings';
@@ -16,7 +17,8 @@ import ImmunisationH from './ImmunisationH';
 import Referral from './Referral';
 import SessionsList from './SessionsList';
 import ScheduleSession from './ScheduleSession';
-import { getPatients } from '../services/api'; // Added import for getPatients
+import ScheduleVisit from './ScheduleVisit'; 
+import { getPatients, getFamilies, getFamilyMembers, getSortedFamilies, addSurname } from '../services/api'; // Removed debugFamilyMembers and added addSurname
 import AddNewPatientForm from './AddNewPatientForm'; // Import AddNewPatientForm
 import { Button } from 'react-bootstrap'; // Import Button
 
@@ -151,7 +153,6 @@ export default function AdminDashboard() {
   const [dropdowns, setDropdowns] = useState({
     patientManagement: false,
     reports: false,
-    management: false,
     checkUp: false,
     sessions: false
   });
@@ -162,12 +163,18 @@ export default function AdminDashboard() {
   const [selectedMember, setSelectedMember] = useState(null);
   const [viewMode, setViewMode] = useState('list');
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [actionView, setActionView] = useState(null);
   const [familySearchTerm, setFamilySearchTerm] = useState('');
   const [patients, setPatients] = useState([]);
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'admin');
-  const [showAddNewPatientForm, setShowAddNewPatientForm] = useState(false); // New state for the form
+  const [showAddNewPatientForm, setShowAddNewPatientForm] = useState(false);
+  const [actionView, setActionView] = useState(null); // Added for member profile view
+
+  const [families, setFamilies] = useState([]);
+  const [members, setMembers] = useState([]); // This will now store members of the selected family from the nested structure
+  const [loadingFamilies, setLoadingFamilies] = useState(false);
+  const [loadingMembers, setLoadingMembers] = useState(false); // May not be needed if members are fetched with families
+  const [currentSearchTerm, setCurrentSearchTerm] = useState(''); // General search term
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -185,19 +192,65 @@ export default function AdminDashboard() {
   }, [settingsOpen]);
 
   useEffect(() => {
-    if (selectedView === 'patients' && !showAddNewPatientForm) { // Only fetch if not showing the form
-      setLoadingPatients(true);
-      getPatients()
-        .then(res => {
-          setPatients(res.data);
-          setLoadingPatients(false);
-          setSelectedFamily(null);
-          setSelectedMember(null);
-          setActionView(null);
-        })
-        .catch(() => setLoadingPatients(false));
+    if (selectedView === 'patients' && !showAddNewPatientForm) {
+      fetchFamiliesWithMembers(); // Changed to fetch families with nested members
     }
-  }, [selectedView, showAddNewPatientForm]); // Add showAddNewPatientForm to dependencies
+    
+    // Clear actionView and selectedMember when changing views
+    if (selectedView !== 'patients') {
+      setActionView(null);
+      setSelectedMember(null);
+    }
+  }, [selectedView, showAddNewPatientForm]);
+
+  const fetchFamiliesWithMembers = async () => {
+    setLoadingFamilies(true);
+    try {
+      const res = await getSortedFamilies();
+      console.log('AdminDashboard: Raw sorted families data from API (res.data):', res.data); // LOG 1
+      
+      if (!Array.isArray(res.data)) {
+        console.error('AdminDashboard: API response for sorted families is not an array!', res.data);
+        setFamilies([]); 
+        setLoadingFamilies(false);
+        return;
+      }
+
+      const processedFamilies = res.data.map(family => ({
+        ...family,
+        id: parseInt(family.id, 10), // Will be NaN if family.id is null or not a number
+        members: Array.isArray(family.members) ? family.members.map(member => ({ 
+          ...member,
+          id: parseInt(member.id, 10)
+        })) : []
+      }));
+      console.log('AdminDashboard: Processed families (before setFamilies):', processedFamilies); // LOG 2
+      
+      setFamilies(processedFamilies);
+
+    } catch (error) {
+      console.error("Error fetching sorted families:", error);
+      setFamilies([]);
+    }
+    setLoadingFamilies(false);
+  };
+
+  const handleFamilyClick = (family) => {
+    console.log(`Clicking on family: ${JSON.stringify(family)}`);
+    setSelectedFamily(family);
+    // Members are already part of the family object, so just set them
+    setMembers(family.members || []); 
+    setCurrentSearchTerm(''); // Reset search term when a new family is clicked
+    // No need for a separate API call to fetch members
+    setLoadingMembers(false); // Ensure loading state is off
+  };
+  const handleBackToFamilies = () => {
+    setSelectedFamily(null);
+    setSelectedMember(null);
+    setActionView(null);
+    setMembers([]);
+    setCurrentSearchTerm(''); // Clear search term
+  };
 
   const toggleDropdown = (key) => {
     setDropdowns(prev => ({ ...prev, [key]: !prev[key] }));
@@ -211,7 +264,165 @@ export default function AdminDashboard() {
     setZoomedChart(null);
   }
 
+  const handleAddNewSurname = async () => {
+    let surname = prompt('Enter the new surname:');
+    if (!surname) return;
+
+    // Capitalize the first letter of the surname
+    surname = surname.charAt(0).toUpperCase() + surname.slice(1).toLowerCase();
+
+    try {
+      const response = await addSurname({ familyName: surname });
+      console.log('Response from addSurname:', response); // Debug log to verify response structure
+      
+      // The response now contains the data directly from the backend
+      const familyId = response.familyId;
+      alert(`New surname added successfully with ID: ${familyId}`);
+      fetchFamiliesWithMembers(); // Refresh the families list
+    } catch (error) {
+      console.error('Error adding new surname:', error);
+      alert('Failed to add new surname. Please try again.');
+    }
+  };
   function renderContent() {
+    if (actionView && selectedMember) {
+      switch (actionView) {        case 'ck-profile': 
+          return (
+            <div className="profile-container" style={{ 
+              color: '#e5e7eb', 
+              width: '100%',
+              maxWidth: '100%',
+              padding: '20px',
+              boxSizing: 'border-box'
+            }}>
+              <button
+                onClick={handleBackToFamilies}
+                style={{
+                  padding: '8px 16px',
+                  background: '#1e293b',
+                  color: '#e5e7eb',
+                  border: '1px solid #334155',
+                  borderRadius: '4px',
+                  marginBottom: '16px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <ChevronRight style={{ transform: 'rotate(180deg)' }} size={16} />
+                Back to Families
+              </button>              <h2 style={{ 
+                fontSize: '24px', 
+                fontWeight: 'bold', 
+                marginBottom: '20px', 
+                color: '#38bdf8', /* Brighter blue color for better readability */
+                textShadow: '0px 1px 2px rgba(0, 0, 0, 0.3)' /* Text shadow for better contrast */
+              }}>
+                {selectedMember.name || `${selectedMember.firstName || ''} ${selectedMember.lastName || ''}`}
+              </h2>
+                <div style={{ marginBottom: '30px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px', color: '#94a3b8' }}>Personal Information</h3>                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', width: '100%', maxWidth: '100%' }}>
+                  <div style={{ flex: '1', minWidth: '200px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Age</div>
+                    <div>{selectedMember.age || '40'} years</div>
+                  </div>
+                  <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Gender</div>
+                    <div>{selectedMember.gender || 'Male'}</div>
+                  </div>
+                  <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Last Checkup</div>
+                    <div>{selectedMember.lastCheckup || '2025-03-20'}</div>
+                  </div>
+                </div>
+              </div>              <div style={{ marginBottom: '30px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px', color: '#94a3b8' }}>Contact Information</h3>
+                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Phone</div>
+                    <div>{selectedMember.phoneNumber || '(555) 567-8901'}</div>
+                  </div>
+                  <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Email</div>
+                    <div>{selectedMember.email || 'robert@example.com'}</div>
+                  </div>
+                  <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Address</div>
+                    <div>{selectedMember.address || '456 Oak Ave, Townsville'}</div>
+                  </div>
+                </div>
+              </div>
+              {/* 6 Action buttons in a 3x2 grid, matching DoctorDashboard style */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '20px',
+                marginTop: '30px',
+                marginBottom: '20px',
+                maxWidth: '100%',
+                width: '100%'
+              }}>
+                <button className="action-button" onClick={() => setActionView('ck-profile')}>
+                  <User size={28} style={{ marginBottom: 8 }} />
+                  <div>
+                    <div className="action-title">CHECK UP HISTORY</div>
+                    <div className="action-desc">Full examination details</div>
+                  </div>
+                </button>
+                <button className="action-button" onClick={() => setActionView('treatment')}>
+                  <Activity size={28} style={{ marginBottom: 8 }} />
+                  <div>
+                    <div className="action-title">INDIVIDUAL TREATMENT RECORD</div>
+                    <div className="action-desc">Previous medical records</div>
+                  </div>
+                </button>
+                <button className="action-button" onClick={() => setActionView('schedule')}>
+                  <Calendar size={28} style={{ marginBottom: 8 }} />
+                  <div>
+                    <div className="action-title">SCHEDULE VISIT</div>
+                    <div className="action-desc">Set up new appointment</div>
+                  </div>
+                </button>
+                <button className="action-button" onClick={() => setActionView('admitting')}>
+                  <FileText size={28} style={{ marginBottom: 8 }} />
+                  <div>
+                    <div className="action-title">ADMITTING DATA</div>
+                    <div className="action-desc">Admission and discharge info</div>
+                  </div>
+                </button>
+                <button className="action-button" onClick={() => setActionView('immunization')}>
+                  <Shield size={28} style={{ marginBottom: 8 }} />
+                  <div>
+                    <div className="action-title">IMMUNIZATION HISTORY</div>
+                    <div className="action-desc">Vaccination records</div>
+                  </div>
+                </button>
+                <button className="action-button" onClick={() => setActionView('referral')}>
+                  <Activity size={28} style={{ marginBottom: 8 }} />
+                  <div>
+                    <div className="action-title">REFERRAL</div>
+                    <div className="action-desc">Specialist referrals</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          );
+        case 'treatment': 
+          return <TreatmentRecord member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
+        case 'admitting': 
+          return <AdmittingData member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
+        case 'immunization': 
+          return <ImmunisationH member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
+        case 'referral': 
+          return <Referral member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
+        case 'schedule': 
+          return <ScheduleVisit member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
+        default: 
+          setActionView(null);
+      }
+    }
+    
     if (selectedView === 'checkups') {
       return (
         <div style={{ color: '#f1f5f9' }}>
@@ -238,14 +449,13 @@ export default function AdminDashboard() {
     }
     if (selectedView === 'unsorted') {
       return <div style={{ color: '#f1f5f9' }}><UnsortedMembers /></div>;
-    }
-    if (selectedView === 'patients') {
+    }      if (selectedView === 'patients') {
       if (showAddNewPatientForm) {
         return (
           <AddNewPatientForm
             onSuccess={() => {
               setShowAddNewPatientForm(false);
-              // useEffect will trigger patient list refresh
+              fetchFamiliesWithMembers(); // Refresh families/patients list
             }}
             onCancel={() => {
               setShowAddNewPatientForm(false);
@@ -254,66 +464,161 @@ export default function AdminDashboard() {
         );
       }
 
-      if (loadingPatients) {
-        return <div style={{ color: '#e5e7eb', textAlign: 'center', padding: '20px' }}>Loading patients...</div>;
-      }
-      if (patients.length === 0 && !loadingPatients) {
-        return (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#f1f5f9', margin: 0 }}>Patient Database</h1>
+      // Log families state directly inside the render logic for 'patients' view
+      console.log('AdminDashboard: Current `families` state in renderContent:', families); // LOG 3
+
+      const filteredFamilies = Array.isArray(families) ? families.filter(family =>
+        family && family.familyName && // Add checks for family and familyName
+        family.familyName.toLowerCase().includes(currentSearchTerm.toLowerCase())
+      ) : [];
+      console.log('AdminDashboard: `filteredFamilies` in renderContent:', filteredFamilies); // LOG 4
+      console.log('AdminDashboard: `currentSearchTerm` for families:', currentSearchTerm); // LOG 5
+
+      return (
+        <div className="patient-database-container" style={{ padding: '20px', color: '#e5e7eb' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#f1f5f9', margin: 0 }}>
+              {selectedFamily ? `Family: ${selectedFamily.familyName}` : 'Patient Database (Families)'}
+            </h1>
+            <div style={{ display: 'flex', gap: '10px' }}>
               <Button
                 variant="primary"
                 onClick={() => setShowAddNewPatientForm(true)}
                 style={{ fontSize: '14px', fontWeight: '500', background: '#3b82f6', borderColor: '#3b82f6' }}
               >
-                + New Patient
+                + Add New Patient
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleAddNewSurname}
+                style={{ fontSize: '14px', fontWeight: '500', background: '#64748b', borderColor: '#64748b' }}
+              >
+                + Add New Surname
               </Button>
             </div>
-            <div style={{ color: '#e5e7eb', textAlign: 'center', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
-              No patients found.
-            </div>
-          </>
-        );
-      }
-      return (
-        <div className="patient-database-container" style={{ padding: '20px', color: '#e5e7eb' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#f1f5f9', margin: 0 }}>Patient Database</h1>
-            <Button
-              variant="primary"
-              onClick={() => setShowAddNewPatientForm(true)}
-              style={{ fontSize: '14px', fontWeight: '500', background: '#3b82f6', borderColor: '#3b82f6' }}
-            >
-              + New Patient
-            </Button>
           </div>
-          <div style={{ background: '#1e293b', borderRadius: '8px', padding: '20px' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #334155' }}>
-                  <th style={{ padding: '12px', textAlign: 'left', color: '#94a3b8' }}>Name</th>
-                  <th style={{ padding: '12px', textAlign: 'left', color: '#94a3b8' }}>Email</th>
-                  <th style={{ padding: '12px', textAlign: 'left', color: '#94a3b8' }}>Phone</th>
-                  <th style={{ padding: '12px', textAlign: 'left', color: '#94a3b8' }}>Membership Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {patients.map(patient => (
-                  <tr key={patient.id} style={{ borderBottom: '1px solid #334155' }}>
-                    <td style={{ padding: '12px' }}>{patient.firstName} {patient.lastName}</td>
-                    <td style={{ padding: '12px' }}>{patient.email}</td>
-                    <td style={{ padding: '12px' }}>{patient.phoneNumber}</td>
-                    <td style={{ padding: '12px' }}>{patient.membershipStatus}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+
+          <input
+            type="text"
+            placeholder={selectedFamily ? "Search members..." : "Search families..."}
+            value={currentSearchTerm}
+            onChange={(e) => setCurrentSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '10px 15px',
+              marginBottom: '20px',
+              borderRadius: '6px',
+              border: '1px solid #334155',
+              background: '#1e293b',
+              color: '#e5e7eb',
+              fontSize: '14px'
+            }}
+          />          {loadingFamilies && !selectedFamily ? <p>Loading families...</p> : 
+            selectedFamily ? (
+              <div>
+                {!selectedFamily.members || selectedFamily.members.length === 0 ? (
+                  <div>
+                    <p>{currentSearchTerm ? 'No members match your search.' : 'No members found for this family.'}</p>
+                    <p style={{color: '#64748b', marginTop: '10px'}}>Debug info: Family ID = {selectedFamily.id}, Family Name = {selectedFamily.familyName}</p>
+                    <button
+                      onClick={() => fetchFamiliesWithMembers()} // Refetch all sorted families
+                      style={{
+                        padding: '8px 16px',
+                        background: '#3b82f6',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '4px',
+                        marginTop: '12px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Refresh Families Data
+                    </button>
+                  </div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', background: '#1e293b', borderRadius: '8px', overflow: 'hidden' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #334155' }}>
+                        <th style={{ padding: '16px', textAlign: 'left', color: '#94a3b8' }}>Name</th>
+                        <th style={{ padding: '16px', textAlign: 'left', color: '#94a3b8' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedFamily.members.map(member => (
+                        <tr key={member.id} style={{ borderBottom: '1px solid #334155' }}>
+                          <td style={{ 
+                              padding: '16px',
+                              fontWeight: '500',
+                              fontSize: '15px',
+                              color: '#e2e8f0' /* Lighter color for better readability */
+                          }}>{member.name}</td>
+                          <td style={{ padding: '16px' }}>
+                            <button 
+                              onClick={() => { 
+                                setSelectedMember(member);
+                                setActionView('ck-profile');
+                                setSelectedView('patients');
+                              }}
+                              style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer' }}
+                            >
+                              View Profile
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            ) : (
+              <div>
+                {/* This is the section that lists families */}
+                {filteredFamilies.length === 0 ? (
+                  <p>{currentSearchTerm ? 'No families match your search.' : 'No families found. (Is `families` state populated?)'}</p>
+                ) : (
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                    {filteredFamilies.map((fam, index) => (
+                      // Using familyName as key for stability if IDs are null/NaN
+                      // It's generally better to have a truly unique ID from the backend for keys.
+                      <li key={fam.familyName || index} style={{ marginBottom: '10px' }}>
+                        <button 
+                          onClick={() => handleFamilyClick(fam)} 
+                          style={{
+                            width: '100%', 
+                            padding: '16px', 
+                            background: '#1e293b', 
+                            color: '#e5e7eb', 
+                            border: 'none', 
+                            borderRadius: '8px', 
+                            textAlign: 'left', 
+                            cursor: 'pointer', 
+                            fontSize: '16px',
+                            fontWeight: '500',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <span style={{ 
+                              fontWeight: '500', 
+                              fontSize: '16px',
+                              color: '#e2e8f0' /* Lighter color for better readability */
+                          }}>
+                            <span style={{ color: '#38bdf8' }}>{fam.familyName}</span> 
+                            <span style={{ color: '#94a3b8', fontSize: '14px' }}> (Members: {Array.isArray(fam.members) ? fam.members.length : 'N/A'})</span>
+                          </span>
+                          <ChevronRight size={20} color="#64748b" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )
+          }
         </div>
       );
     }
-    if (selectedView === 'manage') return <div style={{ color: '#f1f5f9' }}><Manage /></div>;
     if (selectedView === 'reports') return <div style={{ color: '#f1f5f9' }}><Reports /></div>;
     if (selectedView === 'settings') return <div style={{ color: '#f1f5f9' }}><Asettings /></div>;
 
@@ -485,133 +790,265 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#0f172a', color: '#fff' }}>
-      <div style={{ width: collapsed ? 64 : 260, background: '#111827', borderRight: '1px solid #1e293b', display: 'flex', flexDirection: 'column', transition: 'width 0.3s' }}>
-        <div style={{ padding: 18, display: 'flex', alignItems: 'center', borderBottom: '1px solid #1e293b' }}>
-          <img src={require('../images/maybunga.png')} alt="Maybunga Healthcare Center Logo" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', background: '#fff' }} />
-          {!collapsed && <span style={{ fontWeight: 600, marginLeft: 10 }}>Maybunga Healthcare Center</span>}
-        </div>
-        <div style={{ flex: 1, overflowY: 'auto' }}>          <SidebarItem icon={<BarChart2 size={18} />} label="Dashboard" active={selectedView === 'dashboard'} collapsed={collapsed} onClick={() => setSelectedView('dashboard')} />
-          <SidebarDropdown icon={<Calendar size={18} />} label="Check Up" collapsed={collapsed} isOpen={dropdowns.checkUp} onClick={() => toggleDropdown('checkUp')}>            <SidebarItem label="Check Up Today" active={selectedView === 'checkups'} collapsed={collapsed} indent onClick={() => setSelectedView('checkups')} />
-            <SidebarItem label="Schedule a Session" active={selectedView === 'scheduledSessions'} collapsed={collapsed} indent onClick={() => setSelectedView('scheduledSessions')} />
-            <SidebarItem label="Sessions List" active={selectedView === 'sessions'} collapsed={collapsed} indent onClick={() => setSelectedView('sessions')} />
-          </SidebarDropdown>
-          <SidebarDropdown icon={<User size={18} />} label="Patient Management" collapsed={collapsed} isOpen={dropdowns.patientManagement} onClick={() => toggleDropdown('patientManagement')}>
-            <SidebarItem label="Unsorted Members" active={selectedView === 'unsorted'} collapsed={collapsed} indent onClick={() => setSelectedView('unsorted')} />
-            <SidebarItem label="Patient Database" active={selectedView === 'patients'} collapsed={collapsed} indent onClick={() => setSelectedView('patients')} />
-          </SidebarDropdown>          <SidebarDropdown icon={<BarChart2 size={18} />} label="Reports" collapsed={collapsed} isOpen={dropdowns.reports} onClick={() => toggleDropdown('reports')}>
-            <SidebarItem label="Generate & Export" collapsed={collapsed} indent onClick={() => setSelectedView('reports')} />
-          </SidebarDropdown>
-        </div>
-        <div style={{ padding: 18, borderTop: '1px solid #1e293b', display: 'flex', justifyContent: 'center' }}>
-          <button onClick={() => setCollapsed(!collapsed)} style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 8, color: '#fff', cursor: 'pointer' }}>
-            {collapsed ? <Menu size={18} /> : <X size={18} />}
+    <div className={`admin-dashboard ${collapsed ? 'collapsed' : ''}`} style={{ display: 'flex', height: '100vh', background: '#0f172a', color: '#fff' }}>
+      {/* Sidebar */}
+      <div className="sidebar" style={{ minWidth: collapsed ? 68 : 260, background: '#131e31', height: '100vh', position: 'fixed', left: 0, top: 0, zIndex: 10, transition: 'min-width 0.3s' }}>
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', padding: '20px', borderBottom: '1px solid #1e3256' }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#1d4ed8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>M</span>
+          </div>
+          {!collapsed && (
+            <div style={{ marginLeft: 12 }}>
+              <h1 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#f1f5f9' }}>Maybunga Healthcare</h1>
+              <p style={{ margin: 0, fontSize: 12, color: '#94a3b8' }}>Center</p>
+            </div>
+          )}
+          <button
+            style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <Menu size={20} /> : <X size={20} />}
           </button>
         </div>
-      </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ height: 64, background: '#111827', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', marginBottom: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', fontSize: 14 }}>
-            <span style={{ color: '#64748b', marginRight: 8 }}>YOU ARE HERE &gt;</span>
-            {selectedView === 'patients' && (() => {
-              const breadcrumbStyle = { color: '#38bdf8', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', marginRight: 4 };
-              const sep = <span style={{ color: '#64748b', margin: '0 4px' }}>/</span>;
-              return <span style={{ color: '#38bdf8', fontWeight: 600 }}>Patient Database</span>;
-            })()}
-            {selectedView !== 'patients' && (
-              <span style={{ color: '#38bdf8', fontWeight: 600 }}>
-                {selectedView === 'dashboard' ? 'Dashboard' : selectedView === 'unsorted' ? 'Unsorted Members' : selectedView === 'manage' ? 'Manage Patient Data' : selectedView === 'reports' ? 'Generate & Export' : selectedView === 'settings' ? 'Admin Settings' : 'Dashboard'}
-              </span>
-            )}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>            <button 
-              style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: '#fff', cursor: 'pointer' }}
-            >
-              <Bell size={18} />
-            </button>
 
-            <div style={{ position: 'relative' }}>
-              <button 
-                onClick={() => setSettingsOpen(!settingsOpen)}
-                style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: settingsOpen ? '#38bdf8' : '#fff', cursor: 'pointer' }}
+        {/* Menu */}
+        <div style={{ marginTop: 12 }}>
+          <SidebarItem
+            icon={<BarChart2 size={20} />}
+            label="Dashboard"
+            active={selectedView === 'dashboard'}
+            collapsed={collapsed}
+            onClick={() => setSelectedView('dashboard')}
+          />
+          <SidebarDropdown
+            icon={<Calendar size={20} />}
+            label="Check Up"
+            collapsed={collapsed}
+            isOpen={dropdowns.checkUp}
+            onClick={() => toggleDropdown('checkUp')}
+          >
+            <SidebarItem
+              icon={<Circle size={18} />}
+              label="Check-Ups Today"
+              active={selectedView === 'checkups'}
+              collapsed={false}
+              indent
+              onClick={() => setSelectedView('checkups')}
+            />
+          </SidebarDropdown>
+
+          <SidebarDropdown
+            icon={<User size={20} />}
+            label="Patient Management"
+            collapsed={collapsed}
+            isOpen={dropdowns.patientManagement}
+            onClick={() => toggleDropdown('patientManagement')}
+          >
+            <SidebarItem
+              icon={<Circle size={18} />}
+              label="Unsorted Members"
+              active={selectedView === 'unsorted'}
+              collapsed={false}
+              indent
+              onClick={() => setSelectedView('unsorted')}
+            />
+            <SidebarItem
+              icon={<Circle size={18} />}
+              label="Patient Database"
+              active={selectedView === 'patients'}
+              collapsed={false}
+              indent
+              onClick={() => {
+                setSelectedView('patients');
+                setSelectedFamily(null); // Reset to family list view
+              }}
+            />
+          </SidebarDropdown>
+
+          <SidebarDropdown
+            icon={<Activity size={20} />}
+            label="Reports"
+            collapsed={collapsed}
+            isOpen={dropdowns.reports}
+            onClick={() => toggleDropdown('reports')}
+          >
+            <SidebarItem
+              icon={<Circle size={18} />}
+              label="General Reports"
+              active={selectedView === 'reports'}
+              collapsed={false}
+              indent
+              onClick={() => setSelectedView('reports')}
+            />
+          </SidebarDropdown>
+
+          <SidebarDropdown
+            icon={<AlarmClock size={20} />}
+            label="Sessions"
+            collapsed={collapsed}
+            isOpen={dropdowns.sessions}
+            onClick={() => toggleDropdown('sessions')}
+          >
+            <SidebarItem
+              icon={<Circle size={18} />}
+              label="Schedule Session"
+              active={selectedView === 'scheduledSessions'}
+              collapsed={false}
+              indent
+              onClick={() => setSelectedView('scheduledSessions')}
+            />
+            <SidebarItem
+              icon={<Circle size={18} />}
+              label="Sessions List"
+              active={selectedView === 'sessions'}
+              collapsed={false}
+              indent
+              onClick={() => setSelectedView('sessions')}
+            />
+          </SidebarDropdown>
+
+          <SidebarItem
+            icon={<Settings size={20} />}
+            label="Settings"
+            active={selectedView === 'settings'}
+            collapsed={collapsed}
+            onClick={() => setSelectedView('settings')}
+          />
+        </div>
+      </div>      {/* Main content */}
+      <div className="main-content" style={{ marginLeft: collapsed ? 68 : 260, transition: 'margin-left 0.3s', flexGrow: 1, padding: '0px', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        {/* Topbar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e3256', padding: '16px 32px', position: 'sticky', top: 0, background: '#0f172a', zIndex: 5 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', fontSize: 14, color: '#94a3b8' }}>
+              <span>YOU ARE HERE</span>
+              <ChevronRight size={16} style={{ margin: '0 4px' }} />
+              <span 
+                style={{ color: '#38bdf8', cursor: 'pointer' }}
+                onClick={() => {
+                  if (selectedView === 'patients') {
+                    setSelectedFamily(null); // Go back to family list
+                  }
+                }}
               >
-                <Settings size={18} />
+                {selectedView === 'dashboard' ? 'Dashboard' : 
+                 selectedView === 'patients' ? 'Patient Database' :
+                 selectedView === 'checkups' ? 'Check-Ups Today' :
+                 selectedView === 'unsorted' ? 'Unsorted Members' :
+                 selectedView === 'scheduledSessions' ? 'Schedule Session' :
+                 selectedView === 'sessions' ? 'Sessions List' :
+                 selectedView === 'reports' ? 'Reports' :
+                 selectedView === 'settings' ? 'Settings' : 'Dashboard'}
+              </span>
+              {selectedFamily && !selectedMember && (
+                <>
+                  <ChevronRight size={16} style={{ margin: '0 4px' }} />
+                  <span style={{ color: '#38bdf8' }}>{selectedFamily.familyName}</span>
+                </>
+              )}
+              {selectedFamily && selectedMember && actionView && (
+                <>
+                  <ChevronRight size={16} style={{ margin: '0 4px' }} />
+                  <span 
+                    style={{ color: '#38bdf8', cursor: 'pointer' }}
+                    onClick={() => {
+                      setSelectedMember(null);
+                      setActionView(null);
+                    }}
+                  >
+                    {selectedFamily.familyName}
+                  </span>
+                  <ChevronRight size={16} style={{ margin: '0 4px' }} />
+                  <span style={{ color: '#38bdf8' }}>
+                    {selectedMember.name}
+                  </span>
+                  <ChevronRight size={16} style={{ margin: '0 4px' }} />                  <span style={{ color: '#38bdf8' }}>
+                    {actionView === 'ck-profile' ? 'Profile' : 
+                     actionView === 'treatment' ? 'Individual Treatment Record' : 
+                     actionView === 'admitting' ? 'Admitting Data' : 
+                     actionView === 'immunization' ? 'Immunization History' : 
+                     actionView === 'referral' ? 'Referral' : actionView}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ position: 'relative', marginRight: 16 }}>
+              <Bell size={20} style={{ cursor: 'pointer' }} />
+              <span style={{ position: 'absolute', top: -6, right: -6, width: 16, height: 16, borderRadius: '50%', background: '#ef4444', color: 'white', fontSize: 10, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>2</span>
+            </div>
+            <div style={{ position: 'relative' }}>
+              <button
+                style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', cursor: 'pointer', color: '#e5e7eb', padding: 0 }}
+                onClick={() => setSettingsOpen(!settingsOpen)}
+                aria-haspopup="true"
+                aria-expanded={settingsOpen}
+              >
+                <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#1e3a8a', marginRight: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f1f5f9', fontWeight: 'bold' }}>
+                  A
+                </div>
+                {!collapsed && <span style={{ marginRight: 8 }}>Admin</span>}
+                <Settings size={16} />
               </button>
               
               {settingsOpen && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  marginTop: '8px',
-                  background: '#1e293b',
-                  border: '1px solid #334155',
-                  borderRadius: '0.5rem',
-                  width: '240px',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                  zIndex: 1000
-                }}>
-                  <div style={{ padding: '12px 16px', borderBottom: '1px solid #334155' }}>
-                    <h6 style={{ margin: 0, color: '#f1f5f9', fontWeight: 600 }}>Management & Settings</h6>
+                <div
+                  role="menu"
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: 8,
+                    background: '#1e3256',
+                    borderRadius: 8,
+                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                    zIndex: 10,
+                    minWidth: 180,
+                  }}
+                >
+                  <div
+                    role="menuitem"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '10px 14px',
+                      color: '#e5e7eb',
+                      cursor: 'pointer',
+                      borderBottom: '1px solid #334155',
+                    }}
+                    onClick={() => {
+                      // Handle profile click
+                    }}
+                  >
+                    <User size={16} style={{ marginRight: 8 }} />
+                    <span>Profile</span>
                   </div>
-                  <div style={{ padding: '8px' }}>
-                    <button
-                      onClick={() => { setSelectedView('settings'); setSettingsOpen(false); }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        width: '100%',
-                        padding: '8px 12px',
-                        background: 'none',
-                        border: 'none',
-                        borderRadius: '4px',
-                        color: '#f1f5f9',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseOver={e => e.currentTarget.style.background = '#334155'}
-                      onMouseOut={e => e.currentTarget.style.background = 'none'}
-                    >
-                      <Shield size={16} />
-                      User Management
-                    </button>
-                    <button
-                      onClick={() => { setSettingsOpen(false); }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        width: '100%',
-                        padding: '8px 12px',
-                        background: 'none',
-                        border: 'none',
-                        borderRadius: '4px',
-                        color: '#f1f5f9',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseOver={e => e.currentTarget.style.background = '#334155'}
-                      onMouseOut={e => e.currentTarget.style.background = 'none'}
-                    >
-                      <Settings size={16} />
-                      System Configuration
-                    </button>
+                  <div
+                    role="menuitem"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '10px 14px',
+                      color: '#e5e7eb',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => {
+                      localStorage.removeItem('userRole');
+                      navigate('/');
+                    }}
+                  >
+                    <LogOut size={16} style={{ marginRight: 8 }} />
+                    <span>Sign Out</span>
                   </div>
                 </div>
               )}
             </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><User size={16} /></div>
-              <span style={{ fontSize: 14 }}>Admin</span>
-            </div>
-            <button style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: '#fff', cursor: 'pointer' }} onClick={() => { localStorage.clear(); navigate('/'); }}><LogOut size={18} /></button>
           </div>
-        </div>
-        <div style={{ flex: 1, overflow: 'auto', padding: 32, background: '#0f172a' }}>
+        </div>        {/* Main dashboard content */}
+        <div style={{ padding: 24, flex: 1, overflowY: 'auto', height: 'calc(100vh - 65px)' }}>
           {renderContent()}
         </div>
       </div>

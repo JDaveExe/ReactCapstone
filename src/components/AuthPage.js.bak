@@ -9,7 +9,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'react-datepicker/dist/react-datepicker.css';
 import '../styles/AuthPage.css';
-import '../styles/auth-alignment-fix.css';
+import '../styles/fix-auth-alignment.css';
 import logoImage from '../images/maybunga.png';
  
 const AuthPage = () => {
@@ -81,9 +81,10 @@ const AuthPage = () => {
     'F. Legaspi Bridge': ['San Joaquin', 'Kalawaan', 'Malinao'],
     'San Guillermo Street': ['San Jose', 'Pineda', 'Palatiw'],
     'Dr. Sixto Antonio Avenue': ['Kapasigan', 'Bagong Ilog', 'Caniogan']
-  };
+  }
  
   // ===== PASSWORD STRENGTH CHECKER =====
+  // Modified to be less punishing
   const checkPasswordStrength = (password) => {
     if (!password) return "";
    
@@ -311,13 +312,6 @@ const AuthPage = () => {
         ...formData,
         street: value,
         barangay: ''
-      });    } else if (name === 'phoneNumber') {
-      // Limit phone number to 11 digits and allow only numeric characters
-      const numericValue = value.replace(/\D/g, '');
-      const limitedValue = numericValue.slice(0, 11);
-      setFormData({
-        ...formData,
-        [name]: limitedValue
       });
     } else {
       setFormData({
@@ -582,135 +576,129 @@ const AuthPage = () => {
         </div>
       </div>
     );
-  };
-
-  // Render login form
-  const renderLoginForm = () => {
+  };   const renderLoginForm = () => {
     return (
       <div className="login-form">
-        {loginError && <div className="alert alert-danger">{loginError}</div>}
-       
-        {!isQrLogin ? (
-          // Regular login form
-          <div className="auth-form-container w-100">
-            <div className="form-floating mb-4 w-100">
-              <input
-                type="text"
-                id="username"
-                className="form-control"
-                value={emailOrPhone}
-                onChange={(e) => setEmailOrPhone(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Email or Phone Number"
-              />
-              <label htmlFor="username">Email or Phone Number</label>
-              <div className="form-text text-muted mt-1">Enter your registered email or phone</div>
-            </div>
- 
-            <div className="form-floating mb-4 position-relative w-100">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                className="form-control"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Password"
-              />
-              <label htmlFor="password">Password</label>
-              <span
-                className="password-toggle-icon"
-                onClick={togglePasswordVisibility}
-              >
-                {showPassword ?
-                  <i className="bi bi-eye-fill"></i> :
-                  <i className="bi bi-eye-slash-fill"></i>
-                }
-              </span>
-            </div>
- 
-            <div className="d-flex justify-content-between align-items-center mb-4 w-100">
-              <div className="form-check">
+        <div className="w-100">
+          {loginError && <div className="alert alert-danger">{loginError}</div>}
+        
+          {!isQrLogin ? (
+            // Regular login form
+            <div className="auth-form-container w-100">
+              <div className="form-floating mb-4 w-100">
                 <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="rememberMe"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
+                  type="text"
+                  id="username"
+                  className="form-control"
+                  value={emailOrPhone}
+                  onChange={(e) => setEmailOrPhone(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Email or Phone Number"
                 />
-                <label className="form-check-label" htmlFor="rememberMe">
-                  Remember me
-                </label>
+                <label htmlFor="username">Email or Phone Number</label>
+                <div className="form-text text-muted mt-1">Enter your registered email or phone</div>
               </div>
-              <a href="#" className="text-primary forgot-password-link">Forgot password?</a>
+  
+              <div className="form-floating mb-4 position-relative w-100">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  className="form-control"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Password"
+                />
+                <label htmlFor="password">Password</label>
+                <span
+                  className="password-toggle-icon"
+                  onClick={togglePasswordVisibility}
+                >
+                  {showPassword ?
+                    <i className="bi bi-eye-fill"></i> :
+                    <i className="bi bi-eye-slash-fill"></i>
+                  }
+                </span>
+              </div>
+  
+              <div className="d-flex justify-content-between align-items-center mb-4 w-100">
+                <div className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="rememberMe"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
+                  <label className="form-check-label" htmlFor="rememberMe">
+                    Remember me
+                  </label>
+                </div>
+                <a href="#" className="text-primary forgot-password-link">Forgot password?</a>
+              </div>            <button
+                className="btn btn-primary w-100 py-3 fw-bold mb-4"
+                onClick={handleLogin}
+                style={{fontSize: "1.1rem", marginTop: "10px"}}
+              >
+                Log In
+              </button>
             </div>
+          ) : (
+            // QR Code login form
+            <div className="qr-scanner-container text-center w-100">
+              <h4 className="mb-3">Scan Your QR Code to Login</h4>
             
+              {showQrScanner && (
+                <div className="qr-reader-wrapper mb-3">
+                  <QrReader
+                    constraints={{ facingMode: 'environment' }}
+                    onResult={(result) => {
+                      if (result) {
+                        setQrData(result.text);
+                        handleQrLogin(result.text);
+                        setShowQrScanner(false);
+                      }
+                    }}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              )}
+            
+              <div className="text-center">
+                <p className="text-muted">
+                  Position your QR code within the camera frame
+                </p>
+              </div>
+            </div>
+          )}        <div className="text-center mt-3 w-100">
             <button
-              className="btn btn-primary w-100 py-3 fw-bold mb-4"
-              onClick={handleLogin}
-              style={{fontSize: "1.1rem", marginTop: "10px"}}
+              className="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center"
+              onClick={toggleQrLogin}
+              style={{maxWidth: "400px", margin: "0 auto", padding: "10px", fontWeight: "500"}}
             >
-              Log In
+              {isQrLogin ? (
+                <>Login with Password</>
+              ) : (
+                <>
+                  <span className="me-2">
+                    <i className="bi bi-qr-code" style={{fontSize: "18px"}}></i>
+                  </span>
+                  Login with QR Code
+                </>
+              )}
             </button>
           </div>
-        ) : (
-          // QR Code login form
-          <div className="qr-scanner-container text-center w-100">
-            <h4 className="mb-3">Scan Your QR Code to Login</h4>
-           
-            {showQrScanner && (
-              <div className="qr-reader-wrapper mb-3">
-                <QrReader
-                  constraints={{ facingMode: 'environment' }}
-                  onResult={(result) => {
-                    if (result) {
-                      setQrData(result.text);
-                      handleQrLogin(result.text);
-                      setShowQrScanner(false);
-                    }
-                  }}
-                  style={{ width: '100%' }}
-                />
-              </div>
-            )}
-           
-            <div className="text-center">
-              <p className="text-muted">
-                Position your QR code within the camera frame
-              </p>
-            </div>
+  
+          <div className="text-center mt-3 w-100">
+            <a href="#" className="forgot-password">
+              Forgot password?
+            </a>
           </div>
-        )}
-        
-        <div className="text-center mt-3 w-100">
-          <button
-            className="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center"
-            onClick={toggleQrLogin}
-            style={{maxWidth: "400px", margin: "0 auto", padding: "10px", fontWeight: "500"}}
-          >
-            {isQrLogin ? (
-              <>Login with Password</>
-            ) : (
-              <>
-                <span className="me-2">
-                  <i className="bi bi-qr-code" style={{fontSize: "18px"}}></i>
-                </span>
-                Login with QR Code
-              </>
-            )}
-          </button>
-        </div>
- 
-        <div className="text-center mt-3 w-100">
-          <a href="#" className="forgot-password">
-            Forgot password?
-          </a>
         </div>
       </div>
     );
   };
  
-  // Render registration form
   const renderRegistrationForm = () => {
     return (
       <div className="registration-form">
@@ -754,297 +742,294 @@ const AuthPage = () => {
         ) : (
           <div className="auth-form-container w-100">
             <Form onSubmit={handleSubmit} className="w-100">
-              <Row className="mb-3">
-                <Col md={3}>
-                  <Form.Group controlId="firstName">
-                    <Form.Control
-                      type="text"
-                      placeholder="First Name"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      required
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={3}>
-                  <Form.Group controlId="middleName">
-                    <Form.Control
-                      type="text"
-                      placeholder="Middle Name"
-                      name="middleName"
-                      value={formData.middleName}
-                      onChange={handleChange}
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={3}>
-                  <Form.Group controlId="lastName">
-                    <Form.Control
-                      type="text"
-                      placeholder="Last Name"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      required
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={3}>
-                  <Form.Group controlId="suffix">
-                    <Form.Select name="suffix" value={formData.suffix} onChange={handleChange}>
-                      <option value="" disabled>
-                        Suffix
+            <Row className="mb-3">
+              <Col md={3}>
+                <Form.Group controlId="firstName">
+                  <Form.Control
+                    type="text"
+                    placeholder="First Name"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="middleName">
+                  <Form.Control
+                    type="text"
+                    placeholder="Middle Name"
+                    name="middleName"
+                    value={formData.middleName}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="lastName">
+                  <Form.Control
+                    type="text"
+                    placeholder="Last Name"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="suffix">
+                  <Form.Select name="suffix" value={formData.suffix} onChange={handleChange}>
+                    <option value="" disabled>
+                      Suffix
+                    </option>
+                    {suffixOptions.map((option, idx) => (
+                      <option key={idx} value={option}>
+                        {option || 'None'}
                       </option>
-                      {suffixOptions.map((option, idx) => (
-                        <option key={idx} value={option}>
-                          {option || 'None'}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-              </Row>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
 
-              <Row className="mb-3">
-                <Col md={6}>
-                  <Form.Group controlId="email">
-                    <Form.Control
-                      type="email"
-                      placeholder="Email (optional if phone number is provided)"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                    />
-                    <Form.Text className="text-muted">
-                      Provide either an email or a phone number.
-                    </Form.Text>
-                  </Form.Group>
-                </Col>
-                <Col md={6}>
-                  <Form.Group controlId="phoneNumber">                    <Form.Control
-                      type="tel"
-                      placeholder="Phone Number (e.g. 09XXXXXXXXX)"
-                      name="phoneNumber"
-                      value={formData.phoneNumber}
-                      onChange={handleChange}
-                      maxLength={11}
-                      pattern="^09\d{9}$"
-                      title="Enter a valid Philippine phone number starting with 09"
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-   
-              <Row className="mb-3">
-                <Col md={6}>
-                  <Form.Group controlId="password">
-                    <div className="position-relative">
-                      <Form.Control
-                        type={showRegPassword ? "text" : "password"}
-                        placeholder="Password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        required
-                      />
-                      <span
-                        className="position-absolute top-50 end-0 translate-middle-y me-2"
-                        style={{ cursor: 'pointer' }}
-                        onClick={toggleRegPasswordVisibility}
-                      >
-                        {showRegPassword ?
-                          <i className="bi bi-eye-fill"></i> :
-                          <i className="bi bi-eye-slash-fill"></i>
-                        }
-                      </span>
-                    </div>
-                    <PasswordStrengthIndicator strength={regPasswordStrength} />
-                  </Form.Group>
-                </Col>
-                <Col md={6}>
-                  <Form.Group controlId="repeatPassword">
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group controlId="email">
+                  <Form.Control
+                    type="email"
+                    placeholder="Email (optional if phone number is provided)"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                  />
+                  <Form.Text className="text-muted">
+                    Provide either an email or a phone number.
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group controlId="phoneNumber">
+                  <Form.Control
+                    type="text"
+                    placeholder="Phone Number (e.g. 09XXXXXXXXX)"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleChange}
+                    pattern="^(09|\+639)\d{9}$"
+                    title="Enter a valid Philippine phone number"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+ 
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group controlId="password">
+                  <div className="position-relative">
                     <Form.Control
                       type={showRegPassword ? "text" : "password"}
-                      placeholder="Repeat Password"
-                      name="repeatPassword"
-                      value={formData.repeatPassword}
+                      placeholder="Password"
+                      name="password"
+                      value={formData.password}
                       onChange={handleChange}
                       required
                     />
-                  </Form.Group>
-                </Col>
-              </Row>
-   
-              <Row className="mb-3 align-items-center">
-                <Col md={4} className="d-flex align-items-center gap-4">
-                  <Form.Group controlId="membershipStatus" className="mb-0">
-                    <Row className="flex-nowrap">
-                      <Col xs="auto">
-                        <Form.Check
-                          type="radio"
-                          id="member"
-                          name="membershipStatus"
-                          value="member"
-                          checked={formData.membershipStatus === 'member'}
-                          onChange={handleChange}
-                          label={<span style={{whiteSpace: 'nowrap'}}>Member</span>}
-                          className="me-3"
-                        />
-                      </Col>
-                      <Col xs="auto">
-                        <Form.Check
-                          type="radio"
-                          id="nonmember"
-                          name="membershipStatus"
-                          value="nonmember"
-                          checked={formData.membershipStatus === 'nonmember'}
-                          onChange={handleChange}
-                          label={<span style={{whiteSpace: 'nowrap'}}>Non-Member</span>}
-                        />
-                      </Col>
-                    </Row>
-                  </Form.Group>
-                  <Form.Group controlId="philHealthNumber" className="mb-0 flex-grow-1">
-                    <Form.Control
-                      type="text"
-                      placeholder="PhilHealth Number"
-                      name="philHealthNumber"
-                      value={formData.philHealthNumber}
-                      onChange={handleChange}
-                      disabled={formData.membershipStatus === 'nonmember'}
-                      style={{ minWidth: 200 }}
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-   
-              <Row className="mb-3">
-                <Col md={2}>
-                  <Form.Group controlId="houseNo">
-                    <Form.Control
-                      type="text"
-                      placeholder="House No."
-                      name="houseNo"
-                      value={formData.houseNo}
-                      onChange={handleChange}
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={3}>
-                  <Form.Group controlId="street">
-                    <Form.Select name="street" value={formData.street} onChange={handleChange} required>
-                      <option value="" disabled>
-                        Street
-                      </option>
-                      {pasigStreets.map((street, idx) => (
-                        <option key={idx} value={street}>
-                          {street}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-                <Col md={3}>
-                  <Form.Group controlId="barangay">
-                    <Form.Select
-                      name="barangay"
-                      value={formData.barangay}
-                      onChange={handleChange}
-                      disabled={!formData.street}
-                      required
+                    <span
+                      className="position-absolute top-50 end-0 translate-middle-y me-2"
+                      style={{ cursor: 'pointer' }}
+                      onClick={toggleRegPasswordVisibility}
                     >
-                      <option value="" disabled>
-                        Barangay
+                      {showRegPassword ?
+                        <i className="bi bi-eye-fill"></i> :
+                        <i className="bi bi-eye-slash-fill"></i>
+                      }
+                    </span>
+                  </div>
+                  <PasswordStrengthIndicator strength={regPasswordStrength} />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group controlId="repeatPassword">
+                  <Form.Control
+                    type={showRegPassword ? "text" : "password"}
+                    placeholder="Repeat Password"
+                    name="repeatPassword"
+                    value={formData.repeatPassword}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+ 
+            <Row className="mb-3 align-items-center">
+              <Col md={4} className="d-flex align-items-center gap-4">
+                <Form.Group controlId="membershipStatus" className="mb-0">
+                  <Row className="flex-nowrap">
+                    <Col xs="auto">
+                      <Form.Check
+                        type="radio"
+                        id="member"
+                        name="membershipStatus"
+                        value="member"
+                        checked={formData.membershipStatus === 'member'}
+                        onChange={handleChange}
+                        label={<span style={{whiteSpace: 'nowrap'}}>Member</span>}
+                        className="me-3"
+                      />
+                    </Col>
+                    <Col xs="auto">
+                      <Form.Check
+                        type="radio"
+                        id="nonmember"
+                        name="membershipStatus"
+                        value="nonmember"
+                        checked={formData.membershipStatus === 'nonmember'}
+                        onChange={handleChange}
+                        label={<span style={{whiteSpace: 'nowrap'}}>Non-Member</span>}
+                      />
+                    </Col>
+                  </Row>
+                </Form.Group>
+                <Form.Group controlId="philHealthNumber" className="mb-0 flex-grow-1">
+                  <Form.Control
+                    type="text"
+                    placeholder="PhilHealth Number"
+                    name="philHealthNumber"
+                    value={formData.philHealthNumber}
+                    onChange={handleChange}
+                    disabled={formData.membershipStatus === 'nonmember'}
+                    style={{ minWidth: 200 }}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+ 
+            <Row className="mb-3">
+              <Col md={2}>
+                <Form.Group controlId="houseNo">
+                  <Form.Control
+                    type="text"
+                    placeholder="House No."
+                    name="houseNo"
+                    value={formData.houseNo}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="street">
+                  <Form.Select name="street" value={formData.street} onChange={handleChange} required>
+                    <option value="" disabled>
+                      Street
+                    </option>
+                    {pasigStreets.map((street, idx) => (
+                      <option key={idx} value={street}>
+                        {street}
                       </option>
-                      {getAvailableBarangays().map((barangay, idx) => (
-                        <option key={idx} value={barangay}>
-                          {barangay}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-                <Col md={2}>
-                  <Form.Group controlId="city">
-                    <Form.Control type="text" placeholder="City" name="city" value={formData.city} readOnly />
-                  </Form.Group>
-                </Col>
-                <Col md={2}>
-                  <Form.Group controlId="region">
-                    <Form.Control type="text" placeholder="Region" name="region" value={formData.region} readOnly />
-                  </Form.Group>
-                </Col>
-              </Row>
-   
-              <Row className="mb-3">
-                <Col md={4}>
-                  <Form.Group controlId="dateOfBirth">
-                    <DatePicker
-                      selected={formData.dateOfBirth}
-                      onChange={handleDateChange}
-                      dateFormat="MM/dd/yyyy"
-                      placeholderText="Date of Birth"
-                      className="form-control"
-                      maxDate={new Date()}
-                      showYearDropdown
-                      scrollableYearDropdown
-                      yearDropdownItemNumber={100}
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={2}>
-                  <Form.Group controlId="age">
-                    <Form.Control
-                      type="text"
-                      placeholder="Age"
-                      name="age"
-                      value={formData.age}
-                      readOnly
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={3}>
-                  <Form.Group controlId="gender">
-                    <Form.Select name="gender" value={formData.gender} onChange={handleChange} required>
-                      <option value="" disabled>
-                        Gender
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="barangay">
+                  <Form.Select
+                    name="barangay"
+                    value={formData.barangay}
+                    onChange={handleChange}
+                    disabled={!formData.street}
+                    required
+                  >
+                    <option value="" disabled>
+                      Barangay
+                    </option>
+                    {getAvailableBarangays().map((barangay, idx) => (
+                      <option key={idx} value={barangay}>
+                        {barangay}
                       </option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-                <Col md={3}>
-                  <Form.Group controlId="civilStatus">
-                    <Form.Select name="civilStatus" value={formData.civilStatus} onChange={handleChange} required>
-                      <option value="" disabled>
-                        Civil Status
-                      </option>
-                      <option value="Single">Single</option>
-                      <option value="Married">Married</option>
-                      <option value="Divorced">Divorced</option>
-                      <option value="Widowed">Widowed</option>
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-              </Row>
-   
-              <div className="text-center mt-4">
-                <Button variant="primary" type="submit" className="w-100">
-                  Register
-                </Button>
-              </div>
-            </Form>
-          </div>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={2}>
+                <Form.Group controlId="city">
+                  <Form.Control type="text" placeholder="City" name="city" value={formData.city} readOnly />
+                </Form.Group>
+              </Col>
+              <Col md={2}>
+                <Form.Group controlId="region">
+                  <Form.Control type="text" placeholder="Region" name="region" value={formData.region} readOnly />
+                </Form.Group>
+              </Col>
+            </Row>
+ 
+            <Row className="mb-3">
+              <Col md={4}>
+                <Form.Group controlId="dateOfBirth">
+                  <DatePicker
+                    selected={formData.dateOfBirth}
+                    onChange={handleDateChange}
+                    dateFormat="MM/dd/yyyy"
+                    placeholderText="Date of Birth"
+                    className="form-control"
+                    maxDate={new Date()}
+                    showYearDropdown
+                    scrollableYearDropdown
+                    yearDropdownItemNumber={100}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={2}>
+                <Form.Group controlId="age">
+                  <Form.Control
+                    type="text"
+                    placeholder="Age"
+                    name="age"
+                    value={formData.age}
+                    readOnly
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="gender">
+                  <Form.Select name="gender" value={formData.gender} onChange={handleChange} required>
+                    <option value="" disabled>
+                      Gender
+                    </option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group controlId="civilStatus">
+                  <Form.Select name="civilStatus" value={formData.civilStatus} onChange={handleChange} required>
+                    <option value="" disabled>
+                      Civil Status
+                    </option>
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Divorced">Divorced</option>
+                    <option value="Widowed">Widowed</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+ 
+            <div className="text-center mt-4">
+              <Button variant="primary" type="submit" className="w-100">
+                Register
+              </Button>
+            </div>
+          </Form>
         )}
       </div>
     );
   };
-  
-  // Main component render
-  return (
+   return (
     <Container fluid className="auth-container p-0">
       <Row className="m-0 h-100">
         <Col lg={6} className="auth-left d-flex flex-column justify-content-center p-4 p-lg-5">
@@ -1056,8 +1041,7 @@ const AuthPage = () => {
             <h1 className="display-4 fw-bold text-white">Welcome to the Official Health Care System</h1>
             <p className="subtitle text-white fs-5 mt-3">Register or log in to access your health records and services</p>
           </div>
-        </Col>
-        <Col lg={6} className="auth-right d-flex align-items-center justify-content-center p-4">
+        </Col>        <Col lg={6} className="auth-right d-flex align-items-center justify-content-center p-4">
           <Card className="auth-card border-0 shadow">
             <Card.Body className="p-4 d-flex flex-column align-items-center">
               <div className="form-container w-100 d-flex flex-column align-items-center">

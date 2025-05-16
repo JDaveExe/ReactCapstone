@@ -149,12 +149,14 @@ function LineChart() {
 }
 
 export default function AdminDashboard() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);  
   const [dropdowns, setDropdowns] = useState({
     patientManagement: false,
     reports: false,
     checkUp: false,
-    sessions: false
+    sessions: false,
+    personalInfo: true, // For profile section
+    contactInfo: true   // For profile section
   });
   const [selectedView, setSelectedView] = useState('dashboard');
   const [zoomedChart, setZoomedChart] = useState(null);
@@ -169,6 +171,9 @@ export default function AdminDashboard() {
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'admin');
   const [showAddNewPatientForm, setShowAddNewPatientForm] = useState(false);
   const [actionView, setActionView] = useState(null); // Added for member profile view
+  const [managePatientDropdownOpen, setManagePatientDropdownOpen] = useState(false);
+  const [deleteStep, setDeleteStep] = useState(null); // null, 'initial', 'cooldown', 'final'
+  const [cooldownTimer, setCooldownTimer] = useState(0);
 
   const [families, setFamilies] = useState([]);
   const [members, setMembers] = useState([]); // This will now store members of the selected family from the nested structure
@@ -190,6 +195,16 @@ export default function AdminDashboard() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [settingsOpen]);
+
+  useEffect(() => {
+    let timer;
+    if (deleteStep === 'cooldown' && cooldownTimer > 0) {
+      timer = setTimeout(() => setCooldownTimer(prev => prev - 1), 1000);
+    } else if (deleteStep === 'cooldown' && cooldownTimer === 0) {
+      setDeleteStep('final'); // Move to final confirmation step
+    }
+    return () => clearTimeout(timer);
+  }, [deleteStep, cooldownTimer]);
 
   useEffect(() => {
     if (selectedView === 'patients' && !showAddNewPatientForm) {
@@ -250,6 +265,17 @@ export default function AdminDashboard() {
     setActionView(null);
     setMembers([]);
     setCurrentSearchTerm(''); // Clear search term
+    setManagePatientDropdownOpen(false); // Close dropdown if open
+    setDeleteStep(null); // Reset delete process
+    setCooldownTimer(0);
+  };
+
+  const handleDeletePatientData = () => {
+    // Actual deletion logic will go here
+    alert(`Deleting data for ${selectedMember?.name || selectedMember?.firstName + ' ' + selectedMember?.lastName}`);
+    setDeleteStep(null);
+    // Potentially navigate back or refresh data
+    handleBackToFamilies(); // Go back to family list after deletion
   };
 
   const toggleDropdown = (key) => {
@@ -311,95 +337,455 @@ export default function AdminDashboard() {
                 }}
               >
                 <ChevronRight style={{ transform: 'rotate(180deg)' }} size={16} />
-                Back to Families
-              </button>              <h2 style={{ 
-                fontSize: '24px', 
-                fontWeight: 'bold', 
-                marginBottom: '20px', 
-                color: '#38bdf8', /* Brighter blue color for better readability */
-                textShadow: '0px 1px 2px rgba(0, 0, 0, 0.3)' /* Text shadow for better contrast */
-              }}>
-                {selectedMember.name || `${selectedMember.firstName || ''} ${selectedMember.lastName || ''}`}
-              </h2>
-                <div style={{ marginBottom: '30px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px', color: '#94a3b8' }}>Personal Information</h3>                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', width: '100%', maxWidth: '100%' }}>
-                  <div style={{ flex: '1', minWidth: '200px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
-                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Age</div>
-                    <div>{selectedMember.age || '40'} years</div>
-                  </div>
-                  <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
-                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Gender</div>
-                    <div>{selectedMember.gender || 'Male'}</div>
-                  </div>
-                  <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
-                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Last Checkup</div>
-                    <div>{selectedMember.lastCheckup || '2025-03-20'}</div>
-                  </div>
-                </div>
-              </div>              <div style={{ marginBottom: '30px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px', color: '#94a3b8' }}>Contact Information</h3>
-                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                  <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
-                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Phone</div>
-                    <div>{selectedMember.phoneNumber || '(555) 567-8901'}</div>
-                  </div>
-                  <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
-                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Email</div>
-                    <div>{selectedMember.email || 'robert@example.com'}</div>
-                  </div>
-                  <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
-                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Address</div>
-                    <div>{selectedMember.address || '456 Oak Ave, Townsville'}</div>
-                  </div>
+                Back to Families              </button>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2 style={{ 
+                  fontSize: '24px', 
+                  fontWeight: 'bold',
+                  margin: 0, 
+                  color: '#38bdf8', /* Brighter blue color for better readability */
+                  textShadow: '0px 1px 2px rgba(0, 0, 0, 0.3)' /* Text shadow for better contrast */
+                }}>
+                  {selectedMember.name || `${selectedMember.firstName || ''} ${selectedMember.lastName || ''}`}
+                </h2>
+                
+                <div style={{ display: 'flex', gap: '16px', position: 'relative' }}> {/* Added position: 'relative' for dropdown positioning */}
+                  {/* Manage Patient Dropdown Button */}
+                  <button 
+                    style={{
+                      background: '#3b82f6', // Blue background
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '10px 16px',
+                      cursor: 'pointer',
+                      fontWeight: '500',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                    onClick={() => setManagePatientDropdownOpen(prev => !prev)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/> {/* Edit icon */}
+                    </svg>
+                    Manage Patient
+                    {/* Simple caret down icon */}
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {managePatientDropdownOpen && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%', // Position below the button
+                      right: 0, // Align to the right of the button
+                      background: '#1e293b', // Dark background for dropdown
+                      border: '1px solid #334155', // Border for dropdown
+                      borderRadius: '4px',
+                      zIndex: 10, // Ensure dropdown is above other content
+                      minWidth: '220px', // Increased width for better readability
+                      marginTop: '4px' // Small gap between button and dropdown
+                    }}>
+                      <button 
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          padding: '10px 16px',
+                          textAlign: 'left',
+                          background: 'none',
+                          border: 'none',
+                          color: '#e5e7eb', // Light text color
+                          cursor: 'pointer',
+                          borderBottom: '1px solid #334155' // Separator line
+                        }}
+                        onClick={() => { alert('Notify functionality to be implemented'); setManagePatientDropdownOpen(false); }}
+                      >
+                        Notify
+                      </button>
+                      <button 
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          padding: '10px 16px',
+                          textAlign: 'left',
+                          background: 'none',
+                          border: 'none',
+                          color: '#e5e7eb',
+                          cursor: 'pointer',
+                           borderBottom: '1px solid #334155' // Separator line
+                        }}
+                        onClick={() => { alert('Assign to a different family functionality to be implemented'); setManagePatientDropdownOpen(false); }}
+                      >
+                        Assign to a different family
+                      </button>
+                      <button 
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          padding: '10px 16px',
+                          textAlign: 'left',
+                          background: 'none',
+                          border: 'none',
+                          color: '#ef4444', // Red color for delete action
+                          cursor: 'pointer',
+                          fontWeight: 'bold'
+                        }}
+                        onClick={() => { setDeleteStep('initial'); setManagePatientDropdownOpen(false); }}
+                      >
+                        Delete patient data
+                      </button>
+                    </div>
+                  )}
+                  
+                  <button
+                    style={{
+                      background: '#1e293b',
+                      color: '#e5e7eb',
+                      border: '1px solid #334155',
+                      borderRadius: '4px',
+                      padding: '10px 16px',
+                      cursor: 'pointer',
+                      fontWeight: '500',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                    onClick={() => alert('View full profile functionality to be implemented')}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <circle cx="12" cy="10" r="3"/>
+                      <path d="M12 21.7C17 20 22 16.4 22 10c0-5.5-4.5-10-10-10S2 4.5 2 10c0 6.4 5 10 10 11.7z"/>
+                    </svg>
+                    View Full Profile
+                  </button>
                 </div>
               </div>
+              
+              {/* Delete Confirmation Modals/Dialogs */}
+              {deleteStep === 'initial' && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+                  <div style={{ background: '#1e293b', padding: '30px', borderRadius: '8px', color: '#e5e7eb', textAlign: 'center', maxWidth: '400px' }}>
+                    <h3 style={{ color: '#ef4444', marginTop: 0, marginBottom: '15px' }}>Delete Patient Data?</h3>
+                    <p>This action is irreversible. Are you sure you want to delete all data for {selectedMember?.name || `${selectedMember?.firstName || ''} ${selectedMember?.lastName || ''}`}?</p>
+                    <div style={{ marginTop: '25px', display: 'flex', justifyContent: 'space-around' }}>
+                      <button 
+                        onClick={() => { setDeleteStep('cooldown'); setCooldownTimer(10); }}
+                        style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        Yes, Proceed
+                      </button>
+                      <button 
+                        onClick={() => setDeleteStep(null)}
+                        style={{ background: '#334155', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {deleteStep === 'cooldown' && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+                  <div style={{ background: '#1e293b', padding: '30px', borderRadius: '8px', color: '#e5e7eb', textAlign: 'center', maxWidth: '400px' }}>
+                    <h3 style={{ color: '#f97316', marginTop: 0, marginBottom: '15px' }}>Cooldown Active</h3>
+                    <p>Please wait for {cooldownTimer} seconds before final confirmation.</p>
+                    <p style={{fontSize: '12px', color: '#94a3b8'}}>This is a safety measure to prevent accidental deletion.</p>
+                    <div style={{ marginTop: '25px' }}>
+                      <button 
+                        onClick={() => { setDeleteStep(null); setCooldownTimer(0); }}
+                        style={{ background: '#334155', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        Cancel Deletion
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {deleteStep === 'final' && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+                  <div style={{ background: '#1e293b', padding: '30px', borderRadius: '8px', color: '#e5e7eb', textAlign: 'center', maxWidth: '400px' }}>
+                    <h3 style={{ color: '#ef4444', marginTop: 0, marginBottom: '15px' }}>Final Confirmation</h3>
+                    <p>Are you absolutely sure you want to permanently delete all data for {selectedMember?.name || `${selectedMember?.firstName || ''} ${selectedMember?.lastName || ''}`}?</p>
+                    <div style={{ marginTop: '25px', display: 'flex', justifyContent: 'space-around' }}>
+                      <button 
+                        onClick={handleDeletePatientData}
+                        style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        Confirm Delete
+                      </button>
+                      <button 
+                        onClick={() => setDeleteStep(null)}
+                        style={{ background: '#334155', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Personal Information with dropdown toggle */}
+                <div style={{ marginBottom: '30px' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    marginBottom: '15px',
+                    background: '#1e293b',
+                    padding: '10px 15px',
+                    borderRadius: '8px'
+                  }}
+                  onClick={() => setDropdowns(prev => ({ ...prev, personalInfo: !prev.personalInfo }))}
+                  >
+                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#94a3b8', margin: 0 }}>Personal Information</h3>
+                    <div style={{ 
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '30px',
+                      height: '30px',
+                      background: dropdowns.personalInfo ? '#38bdf8' : '#334155',
+                      borderRadius: '50%',
+                      transition: 'background 0.2s'
+                    }}>
+                      {dropdowns.personalInfo ? 
+                        <ChevronUp size={18} color="#fff" /> : 
+                        <ChevronDown size={18} color="#fff" />
+                      }
+                    </div>
+                  </div>
+                  
+                  {dropdowns.personalInfo && (
+                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', width: '100%', maxWidth: '100%' }}>
+                      <div style={{ flex: '1', minWidth: '200px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                        <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Age</div>
+                        <div>{selectedMember.age || '40'} years</div>
+                      </div>
+                      <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                        <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Gender</div>
+                        <div>{selectedMember.gender || 'Male'}</div>
+                      </div>
+                      <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                        <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Last Checkup</div>
+                        <div>{selectedMember.lastCheckup || '2025-03-20'}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Contact Information with dropdown toggle */}
+                <div style={{ marginBottom: '30px' }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    marginBottom: '15px',
+                    background: '#1e293b',
+                    padding: '10px 15px',
+                    borderRadius: '8px'
+                  }}
+                  onClick={() => setDropdowns(prev => ({ ...prev, contactInfo: !prev.contactInfo }))}
+                  >
+                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#94a3b8', margin: 0 }}>Contact Information</h3>
+                    <div style={{ 
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '30px',
+                      height: '30px',
+                      background: dropdowns.contactInfo ? '#38bdf8' : '#334155',
+                      borderRadius: '50%',
+                      transition: 'background 0.2s'
+                    }}>
+                      {dropdowns.contactInfo ? 
+                        <ChevronUp size={18} color="#fff" /> : 
+                        <ChevronDown size={18} color="#fff" />
+                      }
+                    </div>
+                  </div>
+                  
+                  {dropdowns.contactInfo && (
+                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                      <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                        <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Phone</div>
+                        <div>{selectedMember.phoneNumber || '(555) 567-8901'}</div>
+                      </div>
+                      <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                        <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Email</div>
+                        <div>{selectedMember.email || 'robert@example.com'}</div>
+                      </div>
+                      <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                        <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Address</div>
+                        <div>{selectedMember.address || '456 Oak Ave, Townsville'}</div>
+                      </div>
+                    </div>
+                  )}                
+                </div>
+                
+                {/* Patient Actions Section Title */}
+                <div style={{ 
+                  marginTop: '30px', 
+                  marginBottom: '15px',
+                  background: '#1e293b',
+                  padding: '15px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <h3 style={{ 
+                    fontSize: '18px', 
+                    fontWeight: 'bold', 
+                    color: '#38bdf8', 
+                    margin: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}>
+                    <div style={{ 
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '30px',
+                      height: '30px',
+                      background: '#38bdf8',
+                      borderRadius: '50%'
+                    }}>
+                      <Activity size={16} color="#fff" />
+                    </div>
+                    Patient Actions
+                  </h3>
+                  <div style={{ color: '#94a3b8', fontSize: '14px' }}>Select an action to perform</div>
+                </div>
+              
               {/* 6 Action buttons in a 3x2 grid, matching DoctorDashboard style */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(3, 1fr)',
                 gap: '20px',
-                marginTop: '30px',
+                marginTop: '10px',
                 marginBottom: '20px',
                 maxWidth: '100%',
                 width: '100%'
               }}>
                 <button className="action-button" onClick={() => setActionView('ck-profile')}>
-                  <User size={28} style={{ marginBottom: 8 }} />
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '40px',
+                    height: '40px',
+                    minWidth: '40px',
+                    background: '#38bdf8',
+                    borderRadius: '8px',
+                    marginBottom: 8
+                  }}>
+                    <User size={22} color="#fff" />
+                  </div>
                   <div>
                     <div className="action-title">CHECK UP HISTORY</div>
                     <div className="action-desc">Full examination details</div>
                   </div>
                 </button>
                 <button className="action-button" onClick={() => setActionView('treatment')}>
-                  <Activity size={28} style={{ marginBottom: 8 }} />
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '40px',
+                    height: '40px',
+                    minWidth: '40px',
+                    background: '#38bdf8',
+                    borderRadius: '8px',
+                    marginBottom: 8
+                  }}>
+                    <Activity size={22} color="#fff" />
+                  </div>
                   <div>
                     <div className="action-title">INDIVIDUAL TREATMENT RECORD</div>
                     <div className="action-desc">Previous medical records</div>
                   </div>
                 </button>
                 <button className="action-button" onClick={() => setActionView('schedule')}>
-                  <Calendar size={28} style={{ marginBottom: 8 }} />
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '40px',
+                    height: '40px',
+                    minWidth: '40px',
+                    background: '#38bdf8',
+                    borderRadius: '8px',
+                    marginBottom: 8
+                  }}>
+                    <Calendar size={22} color="#fff" />
+                  </div>
                   <div>
                     <div className="action-title">SCHEDULE VISIT</div>
                     <div className="action-desc">Set up new appointment</div>
                   </div>
                 </button>
                 <button className="action-button" onClick={() => setActionView('admitting')}>
-                  <FileText size={28} style={{ marginBottom: 8 }} />
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '40px',
+                    height: '40px',
+                    minWidth: '40px',
+                    background: '#38bdf8',
+                    borderRadius: '8px',
+                    marginBottom: 8
+                  }}>
+                    <FileText size={22} color="#fff" />
+                  </div>
                   <div>
                     <div className="action-title">ADMITTING DATA</div>
                     <div className="action-desc">Admission and discharge info</div>
                   </div>
                 </button>
                 <button className="action-button" onClick={() => setActionView('immunization')}>
-                  <Shield size={28} style={{ marginBottom: 8 }} />
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '40px',
+                    height: '40px',
+                    minWidth: '40px',
+                    background: '#38bdf8',
+                    borderRadius: '8px',
+                    marginBottom: 8
+                  }}>
+                    <Shield size={22} color="#fff" />
+                  </div>
                   <div>
                     <div className="action-title">IMMUNIZATION HISTORY</div>
                     <div className="action-desc">Vaccination records</div>
                   </div>
                 </button>
                 <button className="action-button" onClick={() => setActionView('referral')}>
-                  <Activity size={28} style={{ marginBottom: 8 }} />
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '40px',
+                    height: '40px',
+                    minWidth: '40px',
+                    background: '#38bdf8',
+                    borderRadius: '8px',
+                    marginBottom: 8
+                  }}>
+                    <Activity size={22} color="#fff" />
+                  </div>
                   <div>
                     <div className="action-title">REFERRAL</div>
                     <div className="action-desc">Specialist referrals</div>

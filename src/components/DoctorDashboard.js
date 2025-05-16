@@ -81,10 +81,11 @@ export default function DoctorDashboard() {
   const [activeSection, setActiveSection] = useState('patients');
   const [selectedFamily, setSelectedFamily] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
-  const [actionView, setActionView] = useState(null);
-  const [dropdowns, setDropdowns] = useState({
+  const [actionView, setActionView] = useState(null);  const [dropdowns, setDropdowns] = useState({
     checkUp: false,
-    patientManagement: true
+    patientManagement: true,
+    personalInfo: true, // For profile section
+    contactInfo: true   // For profile section
   });
   const [patients, setPatients] = useState([]);
   const [loadingPatients, setLoadingPatients] = useState(false);
@@ -418,45 +419,168 @@ export default function DoctorDashboard() {
                 fontWeight: 'bold', 
                 marginBottom: '20px', 
                 color: '#38bdf8', /* Brighter blue color for better readability */
-                textShadow: '0px 1px 2px rgba(0, 0, 0, 0.3)' /* Text shadow for better contrast */
+                textShadow: '0px 1px 2px rgba(0, 0, 0, 0.3)', /* Text shadow for better contrast */
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
               }}>
-                {selectedMember.name || `${selectedMember.firstName || ''} ${selectedMember.lastName || ''}`}
+                <span>{selectedMember.name || `${selectedMember.firstName || ''} ${selectedMember.lastName || ''}`}</span>
+                <button
+                  style={{
+                    background: '#1e293b',
+                    color: '#e5e7eb',
+                    border: '1px solid #334155',
+                    borderRadius: '4px',
+                    padding: '10px 16px',
+                    cursor: 'pointer',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '14px'
+                  }}
+                  onClick={() => alert('View full profile functionality to be implemented')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="10" r="3"/>
+                    <path d="M12 21.7C17 20 22 16.4 22 10c0-5.5-4.5-10-10-10S2 4.5 2 10c0 6.4 5 10 10 11.7z"/>
+                  </svg>
+                  View Full Profile
+                </button>
               </h2>
-              
-              <div style={{ marginBottom: '30px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px', color: '#94a3b8' }}>Personal Information</h3>
-                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                  <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
-                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Age</div>
-                    <div>{selectedMember.age || '40'} years</div>
-                  </div>
-                  <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
-                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Gender</div>
-                    <div>{selectedMember.gender || 'Male'}</div>
-                  </div>
-                  <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
-                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Last Checkup</div>
-                    <div>{selectedMember.lastCheckup || '2025-03-20'}</div>
+                <div style={{ marginBottom: '30px' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  marginBottom: '15px',
+                  background: '#1e293b',
+                  padding: '10px 15px',
+                  borderRadius: '8px'
+                }}
+                onClick={() => setDropdowns(prev => ({ ...prev, personalInfo: !prev.personalInfo }))}
+                >
+                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#94a3b8', margin: 0 }}>Personal Information</h3>
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '30px',
+                    height: '30px',
+                    background: dropdowns.personalInfo ? '#38bdf8' : '#334155',
+                    borderRadius: '50%',
+                    transition: 'background 0.2s'
+                  }}>
+                    {dropdowns.personalInfo ? 
+                      <ChevronUp size={18} color="#fff" /> : 
+                      <ChevronDown size={18} color="#fff" />
+                    }
                   </div>
                 </div>
+                
+                {dropdowns.personalInfo && (
+                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                      <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Age</div>
+                      <div>{selectedMember.age || '40'} years</div>
+                    </div>
+                    <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                      <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Gender</div>
+                      <div>{selectedMember.gender || 'Male'}</div>
+                    </div>
+                    <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                      <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Last Checkup</div>
+                      <div>{selectedMember.lastCheckup || '2025-03-20'}</div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div style={{ marginBottom: '30px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px', color: '#94a3b8' }}>Contact Information</h3>
-                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                  <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
-                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Phone</div>
-                    <div>{selectedMember.phoneNumber || '(555) 567-8901'}</div>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  marginBottom: '15px',
+                  background: '#1e293b',
+                  padding: '10px 15px',
+                  borderRadius: '8px'
+                }}
+                onClick={() => setDropdowns(prev => ({ ...prev, contactInfo: !prev.contactInfo }))}
+                >
+                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#94a3b8', margin: 0 }}>Contact Information</h3>
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '30px',
+                    height: '30px',
+                    background: dropdowns.contactInfo ? '#38bdf8' : '#334155',
+                    borderRadius: '50%',
+                    transition: 'background 0.2s'
+                  }}>
+                    {dropdowns.contactInfo ? 
+                      <ChevronUp size={18} color="#fff" /> : 
+                      <ChevronDown size={18} color="#fff" />
+                    }
                   </div>
-                  <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
-                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Email</div>
-                    <div>{selectedMember.email || 'robert@example.com'}</div>
+                </div>
+                
+                {dropdowns.contactInfo && (
+                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                      <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Phone</div>
+                      <div>{selectedMember.phoneNumber || '(555) 567-8901'}</div>
+                    </div>
+                    <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                      <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Email</div>
+                      <div>{selectedMember.email || 'robert@example.com'}</div>
+                    </div>
+                    <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                      <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Address</div>
+                      <div>{selectedMember.address || '456 Oak Ave, Townsville'}</div>
+                    </div>              </div>
+                )}
+              </div>
+              
+              {/* Patient Actions Section Title */}
+              <div style={{ 
+                marginTop: '30px', 
+                marginBottom: '15px',
+                background: '#1e293b',
+                padding: '15px',
+                borderRadius: '8px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <h3 style={{ 
+                  fontSize: '18px', 
+                  fontWeight: 'bold', 
+                  color: '#38bdf8', 
+                  margin: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}>
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '30px',
+                    height: '30px',
+                    background: '#38bdf8',
+                    borderRadius: '50%'
+                  }}>
+                    <Activity size={16} color="#fff" />
                   </div>
-                  <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
-                    <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Address</div>
-                    <div>{selectedMember.address || '456 Oak Ave, Townsville'}</div>
-                  </div>
-                </div>              </div>
+                  Patient Actions
+                </h3>
+                <div style={{ color: '#94a3b8', fontSize: '14px' }}>Select an action to perform</div>
+              </div>
               
               {/* First row of buttons */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginTop: '30px', marginBottom: '20px' }}>
@@ -465,7 +589,7 @@ export default function DoctorDashboard() {
                   style={{ 
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
+                    gap: '15px',
                     background: '#1e293b', 
                     padding: '20px',
                     borderRadius: '8px',
@@ -475,7 +599,18 @@ export default function DoctorDashboard() {
                     cursor: 'pointer'
                   }}
                 >
-                  <User size={24} />
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '40px',
+                    height: '40px',
+                    minWidth: '40px',
+                    background: '#38bdf8',
+                    borderRadius: '8px',
+                  }}>
+                    <User size={22} color="#fff" />
+                  </div>
                   <div>
                     <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>CHECK UP HISTORY</div>
                     <div style={{ fontSize: '14px', color: '#94a3b8' }}>Full examination details</div>
@@ -487,7 +622,7 @@ export default function DoctorDashboard() {
                   style={{ 
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
+                    gap: '15px',
                     background: '#1e293b', 
                     padding: '20px',
                     borderRadius: '8px',
@@ -497,7 +632,18 @@ export default function DoctorDashboard() {
                     cursor: 'pointer'
                   }}
                 >
-                  <Activity size={24} />
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '40px',
+                    height: '40px',
+                    minWidth: '40px',
+                    background: '#38bdf8',
+                    borderRadius: '8px',
+                  }}>
+                    <Activity size={22} color="#fff" />
+                  </div>
                   <div>
                     <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>INDIVIDUAL TREATMENT RECORD</div>
                     <div style={{ fontSize: '14px', color: '#94a3b8' }}>Previous medical records</div>
@@ -509,7 +655,7 @@ export default function DoctorDashboard() {
                   style={{ 
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
+                    gap: '15px',
                     background: '#1e293b', 
                     padding: '20px',
                     borderRadius: '8px',
@@ -519,7 +665,18 @@ export default function DoctorDashboard() {
                     cursor: 'pointer'
                   }}
                 >
-                  <Calendar size={24} />
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '40px',
+                    height: '40px',
+                    minWidth: '40px',
+                    background: '#38bdf8',
+                    borderRadius: '8px',
+                  }}>
+                    <Calendar size={22} color="#fff" />
+                  </div>
                   <div>
                     <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>SCHEDULE VISIT</div>
                     <div style={{ fontSize: '14px', color: '#94a3b8' }}>Set up new appointment</div>
@@ -534,7 +691,7 @@ export default function DoctorDashboard() {
                   style={{ 
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
+                    gap: '15px',
                     background: '#1e293b', 
                     padding: '20px',
                     borderRadius: '8px',
@@ -544,7 +701,18 @@ export default function DoctorDashboard() {
                     cursor: 'pointer'
                   }}
                 >
-                  <FileText size={24} />
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '40px',
+                    height: '40px',
+                    minWidth: '40px',
+                    background: '#38bdf8',
+                    borderRadius: '8px',
+                  }}>
+                    <FileText size={22} color="#fff" />
+                  </div>
                   <div>
                     <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>ADMITTING DATA</div>
                     <div style={{ fontSize: '14px', color: '#94a3b8' }}>Admission and discharge info</div>
@@ -556,7 +724,7 @@ export default function DoctorDashboard() {
                   style={{ 
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
+                    gap: '15px',
                     background: '#1e293b', 
                     padding: '20px',
                     borderRadius: '8px',
@@ -566,7 +734,18 @@ export default function DoctorDashboard() {
                     cursor: 'pointer'
                   }}
                 >
-                  <Shield size={24} />
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '40px',
+                    height: '40px',
+                    minWidth: '40px',
+                    background: '#38bdf8',
+                    borderRadius: '8px',
+                  }}>
+                    <Shield size={22} color="#fff" />
+                  </div>
                   <div>
                     <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>IMMUNIZATION HISTORY</div>
                     <div style={{ fontSize: '14px', color: '#94a3b8' }}>Vaccination records</div>
@@ -578,7 +757,7 @@ export default function DoctorDashboard() {
                   style={{ 
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
+                    gap: '15px',
                     background: '#1e293b', 
                     padding: '20px',
                     borderRadius: '8px',
@@ -588,7 +767,18 @@ export default function DoctorDashboard() {
                     cursor: 'pointer'
                   }}
                 >
-                  <Activity size={24} />
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '40px',
+                    height: '40px',
+                    minWidth: '40px',
+                    background: '#38bdf8',
+                    borderRadius: '8px',
+                  }}>
+                    <Activity size={22} color="#fff" />
+                  </div>
                   <div>
                     <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>REFERRAL</div>
                     <div style={{ fontSize: '14px', color: '#94a3b8' }}>Specialist referrals</div>

@@ -1,0 +1,285 @@
+// filepath: c:\Users\dolfo\ReactCapstone\src\components\Sessions.js
+import React, { useState, useEffect } from 'react';
+import { Clock, Calendar, User, Check, Edit, Save, FileText } from 'lucide-react';
+import '../styles/Sessions.css';
+
+const Sessions = ({ userRole = 'doctor' }) => {
+  const [activeTab, setActiveTab] = useState('ongoing');
+  const [sessions, setSessions] = useState({
+    ongoing: [],
+    finished: []
+  });
+  const [loading, setLoading] = useState(true);
+  const [notes, setNotes] = useState({});
+  const [editingNotes, setEditingNotes] = useState(null);
+
+  // Fetch sessions on component mount
+  useEffect(() => {
+    // Simulating API call to fetch sessions
+    const fetchSessions = async () => {
+      setLoading(true);
+      try {
+        // In a real application, this would be an API call
+        // const response = await axios.get('/api/doctor/sessions');
+        // setSessions(response.data);
+        
+        // Temporary mock data
+        const mockData = {
+          ongoing: [
+            { 
+              id: 1, 
+              patientName: 'John Doe', 
+              date: '2025-05-17', 
+              time: '10:00', 
+              purpose: 'Initial consultation',
+              queueNumber: 1,
+              notes: '',
+              status: 'ongoing'
+            },
+            { 
+              id: 2, 
+              patientName: 'Jane Smith', 
+              date: '2025-05-17', 
+              time: '14:30', 
+              purpose: 'Follow-up',
+              queueNumber: 2,
+              notes: '',
+              status: 'ongoing'
+            },
+          ],
+          finished: [
+            { 
+              id: 3, 
+              patientName: 'Mike Johnson', 
+              date: '2025-05-17', 
+              time: '09:00', 
+              purpose: 'Final checkup',
+              queueNumber: 3,
+              notes: 'Patient is recovering well. Prescribed medication for another week.',
+              status: 'finished',
+              completedAt: '2025-05-17T09:45:00'
+            },
+            { 
+              id: 4, 
+              patientName: 'Sarah Williams', 
+              date: '2025-05-17', 
+              time: '16:00', 
+              purpose: 'Therapy session',
+              queueNumber: 4,
+              notes: 'Follow-up appointment scheduled for next week.',
+              status: 'finished',
+              completedAt: '2025-05-17T16:45:00'
+            },
+          ]
+        };
+        
+        setSessions(mockData);
+        
+        // Initialize notes state
+        const initialNotes = {};
+        [...mockData.ongoing, ...mockData.finished].forEach(session => {
+          initialNotes[session.id] = session.notes || '';
+        });
+        setNotes(initialNotes);
+        
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching sessions:", error);
+        setLoading(false);
+      }
+    };
+    
+    fetchSessions();
+  }, []);
+
+  const handleNotesChange = (sessionId, value) => {
+    setNotes({
+      ...notes,
+      [sessionId]: value
+    });
+  };
+
+  const saveNotes = async (sessionId) => {
+    try {
+      // In a real application, this would save to an API
+      // await axios.patch(`/api/sessions/${sessionId}/notes`, { notes: notes[sessionId] });
+      
+      // Update local state
+      setSessions(prev => ({
+        ongoing: prev.ongoing.map(session => 
+          session.id === sessionId ? { ...session, notes: notes[sessionId] } : session
+        ),
+        finished: prev.finished.map(session => 
+          session.id === sessionId ? { ...session, notes: notes[sessionId] } : session
+        )
+      }));
+      
+      setEditingNotes(null);
+      console.log(`Notes saved for session ${sessionId}`);
+    } catch (error) {
+      console.error("Error saving notes:", error);
+      alert("Failed to save notes. Please try again.");
+    }
+  };
+
+  const finishSession = async (sessionId) => {
+    try {
+      // In a real application, this would be an API call to update the session status
+      // await axios.patch(`/api/sessions/${sessionId}/finish`, { 
+      //   status: 'finished',
+      //   completedAt: new Date().toISOString()
+      // });
+      
+      // Get the session to move
+      const sessionToMove = sessions.ongoing.find(s => s.id === sessionId);
+      if (!sessionToMove) return;
+      
+      // Add completion timestamp
+      const updatedSession = { 
+        ...sessionToMove, 
+        status: 'finished', 
+        completedAt: new Date().toISOString(),
+        notes: notes[sessionId] || ''
+      };
+      
+      // Update session status and move to finished tab
+      setSessions({
+        ongoing: sessions.ongoing.filter(s => s.id !== sessionId),
+        finished: [updatedSession, ...sessions.finished]
+      });
+      
+      // In a real application, also update the check-ups status
+      // await axios.patch(`/api/checkups/${sessionToMove.checkupId}`, { status: 'Finished' });
+      
+      console.log(`Session ${sessionId} completed`);
+    } catch (error) {
+      console.error("Error finishing session:", error);
+      alert("Failed to finish session. Please try again.");
+    }
+  };
+
+  // Session Card Component
+  const SessionCard = ({ session, type }) => (
+    <div className="session-card">
+      <div className="card-header">
+        <div className="patient-info">
+          <div className="queue-number">#{session.queueNumber}</div>
+          <div className="patient-name">{session.patientName}</div>
+        </div>
+        <div className="patient-progress">
+          {session.status === 'ongoing' ? 'In Progress' : 'Completed'}
+        </div>
+      </div>
+      
+      <div className="card-content">
+        <div className="session-details">
+          <div className="detail-item">
+            <Calendar size={16} />
+            <span>{session.date}</span>
+          </div>
+          <div className="detail-item">
+            <Clock size={16} />
+            <span>{session.time}</span>
+          </div>
+          <div className="detail-item purpose">
+            <span>Purpose: <strong>{session.purpose}</strong></span>
+          </div>
+        </div>
+        
+        <div className="session-notes">
+          <div className="notes-header">
+            <div className="notes-title">
+              <FileText size={16} />
+              <span>Notes</span>
+            </div>
+            
+            {type === 'ongoing' && (
+              <button 
+                className="edit-button"
+                onClick={() => setEditingNotes(editingNotes === session.id ? null : session.id)}
+              >
+                {editingNotes === session.id ? <Save size={16} /> : <Edit size={16} />}
+                {editingNotes === session.id ? 'Save' : 'Edit'}
+              </button>
+            )}
+          </div>
+          
+          {editingNotes === session.id ? (
+            <textarea
+              className="notes-textarea"
+              value={notes[session.id] || ''}
+              onChange={(e) => handleNotesChange(session.id, e.target.value)}
+              placeholder="Add notes about the patient..."
+            ></textarea>
+          ) : (
+            <div className="notes-content">
+              {notes[session.id] ? notes[session.id] : <span className="no-notes">No notes yet</span>}
+            </div>
+          )}
+        </div>
+        
+        {type === 'ongoing' ? (
+          <div className="session-actions">
+            {editingNotes === session.id && (
+              <button 
+                className="save-button"
+                onClick={() => saveNotes(session.id)}
+              >
+                <Save size={16} />
+                Save Notes
+              </button>
+            )}
+            
+            <button 
+              className="finish-button"
+              onClick={() => finishSession(session.id)}
+            >
+              <Check size={16} />
+              Finish Session
+            </button>
+          </div>
+        ) : (
+          <div className="completion-time">
+            Completed at: {new Date(session.completedAt).toLocaleTimeString()}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="sessions-container">
+      <div className="sessions-header">
+        <h1>Session Management</h1>
+        <div className="sessions-tabs">
+          <button 
+            className={`tab-button ${activeTab === 'ongoing' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('ongoing')}
+          >
+            Ongoing Sessions
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'finished' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('finished')}
+          >
+            Finished Sessions
+          </button>
+        </div>
+      </div>
+      
+      {loading ? (
+        <div className="loading-container">Loading sessions...</div>
+      ) : sessions[activeTab].length === 0 ? (
+        <div className="empty-sessions">No {activeTab} sessions found.</div>
+      ) : (
+        <div className="sessions-list">
+          {sessions[activeTab].map(session => (
+            <SessionCard key={session.id} session={session} type={activeTab} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Sessions;

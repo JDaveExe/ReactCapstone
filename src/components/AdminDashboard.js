@@ -16,9 +16,11 @@ import AdmittingData from './AdmittingData';
 import ImmunisationH from './ImmunisationH';
 import Referral from './Referral';
 import SessionsList from './SessionsList';
+import Sessions from './Sessions';
 import ScheduleSession from './ScheduleSession';
 import ScheduleVisit from './ScheduleVisit'; 
 import RegisteredProfile from './RegisteredProfile';
+import SessionHistory from './SessionHistory'; // Import the SessionHistory component
 import { getPatients, getFamilies, getFamilyMembers, getSortedFamilies, addSurname } from '../services/api'; // Removed debugFamilyMembers and added addSurname
 import AddNewPatientForm from './AddNewPatientForm'; // Import AddNewPatientForm
 import { Button } from 'react-bootstrap'; // Import Button
@@ -150,8 +152,7 @@ function LineChart() {
 }
 
 export default function AdminDashboard() {
-  const [collapsed, setCollapsed] = useState(false);  
-  const [dropdowns, setDropdowns] = useState({
+  const [collapsed, setCollapsed] = useState(false);    const [dropdowns, setDropdowns] = useState({
     patientManagement: false,
     reports: false,
     checkUp: false,
@@ -828,12 +829,19 @@ export default function AdminDashboard() {
           <ScheduleSession />
         </div>
       );
-    }
-    if (selectedView === 'sessions') {
+    }    if (selectedView === 'sessions') {
       return (
         <div style={{ color: '#f1f5f9' }}>
           <h2 style={{ color: '#38bdf8', fontWeight: 700, fontSize: 28, textAlign: 'center', marginBottom: 24 }}>Session Management</h2>
-          <SessionsList userRole="admin" />
+          <Sessions userRole="admin" />
+        </div>
+      );
+    }
+    if (selectedView === 'sessionHistory') {
+      return (
+        <div style={{ color: '#f1f5f9' }}>
+          <h2 style={{ color: '#38bdf8', fontWeight: 700, fontSize: 28, textAlign: 'center', marginBottom: 24 }}>Session History</h2>
+          <SessionHistory userRole="admin" />
         </div>
       );
     }
@@ -1272,9 +1280,7 @@ export default function AdminDashboard() {
               indent
               onClick={() => setSelectedView('reports')}
             />
-          </SidebarDropdown>
-
-          <SidebarDropdown
+          </SidebarDropdown>          <SidebarDropdown
             icon={<AlarmClock size={20} />}
             label="Sessions"
             collapsed={collapsed}
@@ -1291,11 +1297,19 @@ export default function AdminDashboard() {
             />
             <SidebarItem
               icon={<Circle size={18} />}
-              label="Sessions List"
+              label="Sessions"
               active={selectedView === 'sessions'}
               collapsed={false}
               indent
               onClick={() => setSelectedView('sessions')}
+            />
+            <SidebarItem
+              icon={<Circle size={18} />}
+              label="Session History"
+              active={selectedView === 'sessionHistory'}
+              collapsed={false}
+              indent
+              onClick={() => setSelectedView('sessionHistory')}
             />
           </SidebarDropdown>
 

@@ -14,6 +14,9 @@ import ScheduleSession from './ScheduleSession';
 import SessionsList from './SessionsList';
 import UnsortedMembers from './UnsortedMembers';
 import RegisteredProfile from './RegisteredProfile';
+import YourCheckUpsToday from './YourCheckUpsToday';
+import Sessions from './Sessions';
+import SessionHistory from './SessionHistory';
 import { getPatients, getFamilies, getFamilyMembers, getSortedFamilies } from '../services/api';
 import { Button } from 'react-bootstrap';
 
@@ -84,6 +87,7 @@ export default function DoctorDashboard() {
   const [selectedMember, setSelectedMember] = useState(null);
   const [actionView, setActionView] = useState(null);  const [dropdowns, setDropdowns] = useState({
     checkUp: false,
+    sessions: false,
     patientManagement: true,
     personalInfo: true, // For profile section
     contactInfo: true   // For profile section
@@ -794,19 +798,19 @@ export default function DoctorDashboard() {
         case 'registered-profile': return <RegisteredProfile patient={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
         default: setActionView(null);
       }
-    }
-
-    switch (activeSection) {
+    }      switch (activeSection) {
       case 'patients':
         return renderPatientList();
       case 'unsorted':
         return <UnsortedMembers />;
-      case 'checkups':
-        return <CheckupRecords />;
+      case 'yourCheckups':
+        return <YourCheckUpsToday />;
       case 'scheduledSessions':
         return <ScheduleSession />;
       case 'sessions':
-        return <SessionsList onScheduleNew={() => setActiveSection('scheduledSessions')} />;
+        return <Sessions userRole="doctor" />;
+      case 'sessionHistory':
+        return <SessionHistory userRole="doctor" />;
       default:
         return renderPatientList();
     }
@@ -818,12 +822,14 @@ export default function DoctorDashboard() {
         <div style={{ padding: 18, display: 'flex', alignItems: 'center', borderBottom: '1px solid #1e293b' }}>
           <img src={require('../images/maybunga.png')} alt="Maybunga Healthcare Center Logo" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', background: '#fff' }} />
           {!sidebarCollapsed && <span style={{ fontWeight: 600, marginLeft: 10 }}>Maybunga Healthcare Center</span>}
-        </div>
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          <SidebarDropdown icon={<Calendar size={18} />} label="Check Up" collapsed={sidebarCollapsed} isOpen={dropdowns.checkUp} onClick={() => setDropdowns(prev => ({ ...prev, checkUp: !prev.checkUp }))}>
-            <SidebarItem label="Check Up Today" active={activeSection === 'checkups'} collapsed={sidebarCollapsed} indent onClick={() => handleSectionChange('checkups')} />
+        </div>        <div style={{ flex: 1, overflowY: 'auto' }}>          <SidebarDropdown icon={<Calendar size={18} />} label="Check Up" collapsed={sidebarCollapsed} isOpen={dropdowns.checkUp} onClick={() => setDropdowns(prev => ({ ...prev, checkUp: !prev.checkUp }))}>
+            <SidebarItem label="Your Check Ups Today" active={activeSection === 'yourCheckups'} collapsed={sidebarCollapsed} indent onClick={() => handleSectionChange('yourCheckups')} />
             <SidebarItem label="Schedule a Session" active={activeSection === 'scheduledSessions'} collapsed={sidebarCollapsed} indent onClick={() => handleSectionChange('scheduledSessions')} />
-            <SidebarItem label="Sessions List" active={activeSection === 'sessions'} collapsed={sidebarCollapsed} indent onClick={() => handleSectionChange('sessions')} />
+          </SidebarDropdown>
+          
+          <SidebarDropdown icon={<AlarmClock size={18} />} label="Sessions" collapsed={sidebarCollapsed} isOpen={dropdowns.sessions} onClick={() => setDropdowns(prev => ({ ...prev, sessions: !prev.sessions }))}>
+            <SidebarItem label="Ongoing & Finished" active={activeSection === 'sessions'} collapsed={sidebarCollapsed} indent onClick={() => handleSectionChange('sessions')} />
+            <SidebarItem label="Session History" active={activeSection === 'sessionHistory'} collapsed={sidebarCollapsed} indent onClick={() => handleSectionChange('sessionHistory')} />
           </SidebarDropdown>
           <SidebarDropdown icon={<User size={18} />} label="Patient Management" collapsed={sidebarCollapsed} isOpen={dropdowns.patientManagement} onClick={() => setDropdowns(prev => ({ ...prev, patientManagement: !prev.patientManagement }))}>
             <SidebarItem label="Unsorted Members" active={activeSection === 'unsorted'} collapsed={sidebarCollapsed} indent onClick={() => handleSectionChange('unsorted')} />
@@ -892,16 +898,16 @@ export default function DoctorDashboard() {
                       default: actionLabel = actionView;
                     }
                     path.push(<span key="action" style={baseStyle}>{actionLabel}</span>);
-                  }
-                }
-              } else if (activeSection === 'unsorted') {
+                  }                }                } else if (activeSection === 'unsorted') {
                 path.push(<span key="unsorted" style={baseStyle}>Unsorted Members</span>);
-              } else if (activeSection === 'checkups') {
-                path.push(<span key="checkups" style={baseStyle}>Check Ups Today</span>);
+              } else if (activeSection === 'yourCheckups') {
+                path.push(<span key="your-checkups" style={baseStyle}>Your Check Ups Today</span>);
               } else if (activeSection === 'scheduledSessions') {
                 path.push(<span key="schedule" style={baseStyle}>Schedule Session</span>);
               } else if (activeSection === 'sessions') {
-                path.push(<span key="sessions" style={baseStyle}>Sessions List</span>);
+                path.push(<span key="sessions" style={baseStyle}>Sessions</span>);
+              } else if (activeSection === 'sessionHistory') {
+                path.push(<span key="session-history" style={baseStyle}>Session History</span>);
               }
               return path;
             })()}

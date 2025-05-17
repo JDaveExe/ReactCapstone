@@ -1,0 +1,298 @@
+.sessions-container {
+  padding: 20px;
+  color: #f1f5f9;
+}
+
+.sessions-container h1 {
+  color: #38bdf8;
+  font-weight: 600;
+  font-size: 1.75rem;
+  margin-bottom: 16px;
+}
+
+.sessions-header {
+  margin-bottom: 24px;
+}
+
+.sessions-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.filter-toggle {
+  display: flex;
+  background-color: #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #334155;
+}
+
+.filter-btn {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  color: #94a3b8;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn.active {
+  background-color: #0e7490;
+  color: white;
+}
+
+.search-input {
+  padding: 10px 16px;
+  border-radius: 6px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #fff;
+  outline: none;
+  font-size: 14px;
+  min-width: 220px;
+}
+
+.session-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.session-card {
+  background-color: #1e293b;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+.session-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.session-card.completed {
+  border-left: 4px solid #064e3b;
+}
+
+.session-card.in-progress {
+  border-left: 4px solid #854d0e;
+}
+
+.session-card.waiting {
+  border-left: 4px solid #0c4a6e;
+}
+
+.card-header {
+  padding: 16px;
+  background: #0f172a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.queue-number {
+  background-color: #0e7490;
+  color: #fff;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.patient-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 16px;
+  color: #f1f5f9;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-badge.in-progress {
+  background-color: #854d0e;
+  color: #fbbf24;
+}
+
+.status-badge.completed {
+  background-color: #064e3b;
+  color: #34d399;
+}
+
+.status-badge.waiting {
+  background-color: #0c4a6e;
+  color: #38bdf8;
+}
+
+.card-details {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.detail-item svg {
+  color: #38bdf8;
+}
+
+.detail-item.purpose {
+  margin-top: 4px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.detail-item.purpose strong {
+  color: #e5e7eb;
+  font-weight: 500;
+}
+
+.notes-section {
+  margin-top: 8px;
+  background: #172136;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.notes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.notes-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.edit-notes-btn {
+  background: none;
+  border: none;
+  color: #38bdf8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.edit-notes-btn:hover {
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.notes-content {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+}
+
+.notes-edit textarea {
+  width: 100%;
+  padding: 8px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  color: #e2e8f0;
+  font-size: 14px;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+
+.notes-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cancel-btn, .save-btn {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  background: transparent;
+  border: 1px solid #334155;
+  color: #94a3b8;
+}
+
+.save-btn {
+  background: #0e7490;
+  border: none;
+  color: white;
+  font-weight: 500;
+}
+
+.card-actions {
+  padding: 16px;
+  border-top: 1px solid #334155;
+  margin-top: auto;
+}
+
+.complete-session-btn {
+  width: 100%;
+  padding: 10px;
+  background: #0e7490;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.complete-session-btn:hover {
+  background: #0c4a6e;
+}
+
+.complete-session-btn:disabled {
+  background: #334155;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.loading, .error, .no-sessions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: #94a3b8;
+}
+
+.error {
+  color: #ef4444;
+}

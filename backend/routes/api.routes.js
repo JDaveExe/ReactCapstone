@@ -835,4 +835,101 @@ router.post('/add-surname', (req, res) => {
   });
 });
 
+// In-memory store for today's check-ups (in production, use a database)
+let todaysCheckUps = [];
+
+// In-memory store for session history (replace with database in production)
+let sessionHistory = [];
+
+// Endpoint to get today's check-ups
+router.get('/checkups/today', (req, res) => {
+  res.json(todaysCheckUps);
+});
+
+// Endpoint to add a patient to today's check-ups
+router.post('/checkups/today', (req, res) => {
+  const patientData = req.body;
+  
+  // Check if patient already exists in list
+  if (todaysCheckUps.find(p => p.id === patientData.id)) {
+    return res.status(200).json({ message: 'Patient already in check-up list', checkUps: todaysCheckUps });
+  }
+  
+  // Add queue number, status, and login time
+  const queueNumber = todaysCheckUps.length + 1;
+  const newCheckUp = {
+    ...patientData,
+    loggedInAt: new Date().toISOString(),
+    queueNumber,
+    status: 'Waiting',
+    purpose: 'Not Specified'
+  };
+  
+  // Add to list
+  todaysCheckUps.push(newCheckUp);
+  console.log('Added patient to check-up list:', { ...newCheckUp, fullList: todaysCheckUps.length });
+  
+  res.status(201).json({ message: 'Patient added to check-up list', checkUp: newCheckUp, checkUps: todaysCheckUps });
+});
+
+// Endpoint to update a check-up item
+router.put('/checkups/today/:id', (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+  
+  const index = todaysCheckUps.findIndex(item => item.id == id);
+  if (index === -1) {
+    return res.status(404).json({ message: 'Check-up not found' });
+  }
+  
+  // Update the item
+  todaysCheckUps[index] = { ...todaysCheckUps[index], ...updateData };
+  console.log('Updated check-up:', todaysCheckUps[index]);
+  
+  res.json({ message: 'Check-up updated', checkUp: todaysCheckUps[index], checkUps: todaysCheckUps });
+});
+
+// Endpoint to clear today's check-ups
+router.delete('/checkups/today', (req, res) => {
+  todaysCheckUps = [];
+  console.log('Cleared all today\'s check-ups.');
+  res.status(200).json({ message: 'All today\'s check-ups cleared successfully' });
+});
+
+// POST /api/sessionhistory - Add a session to history
+router.post('/sessionhistory', (req, res) => {
+  try {
+    const sessionData = req.body;
+    // Basic validation for sessionData
+    if (!sessionData || typeof sessionData !== 'object' || Object.keys(sessionData).length === 0) {
+      console.error('[API /api/sessionhistory POST] Invalid or empty session data received:', sessionData);
+      return res.status(400).json({ message: 'Invalid or empty session data provided.' });
+    }
+
+    const newHistoryEntry = {
+      ...sessionData,
+      historyId: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Generate a unique ID for the history entry
+      archivedAt: new Date().toISOString() // Timestamp of when it was archived
+    };
+
+    sessionHistory.push(newHistoryEntry);
+    console.log('[API /api/sessionhistory POST] Session added to history. Total history items:', sessionHistory.length);
+    res.status(201).json({ message: 'Session archived successfully', session: newHistoryEntry });
+  } catch (error) {
+    console.error('[API /api/sessionhistory POST] Error archiving session:', error.message, error.stack);
+    res.status(500).json({ message: 'Server error while archiving session.' });
+  }
+});
+
+// GET /api/sessionhistory - Retrieve all session history
+router.get('/sessionhistory', (req, res) => {
+  try {
+    console.log(`[API /api/sessionhistory GET] Retrieving session history. Total items: ${sessionHistory.length}`);
+    res.status(200).json(sessionHistory);
+  } catch (error) {
+    console.error('[API /api/sessionhistory GET] Error retrieving session history:', error.message, error.stack);
+    res.status(500).json({ message: 'Server error while retrieving session history.' });
+  }
+});
+
 module.exports = router;

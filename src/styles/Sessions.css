@@ -1,20 +1,26 @@
 .sessions-container {
   padding: 20px;
-  color: #f1f5f9;
+  color: #cbd5e1;
+  min-height: 100vh;
+  text-align: left; /* Ensure text is left-aligned by default */
+  max-width: 1200px; /* Limit container width */
+  margin: 0 auto; /* Center the container itself */
 }
 
 .sessions-container h1 {
-  color: #38bdf8;
+  color: #38bdf8; /* Match the blue color from reference */
   font-weight: 600;
-  font-size: 1.75rem;
-  margin-bottom: 16px;
+  font-size: 1.875rem;
+  margin-bottom: 20px;
+  text-align: left; /* Ensure left alignment */
 }
 
 .sessions-header {
+  display: flex;
+  flex-direction: column; /* Stack vertically */
+  align-items: flex-start; /* Left-align items */
   margin-bottom: 24px;
 }
-
-/* Removed filter-search-row as it's no longer needed */
 
 .filter-toggle {
   display: flex;
@@ -22,44 +28,62 @@
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid #334155;
-  margin-bottom: 16px;
-  width: fit-content;
+  margin-top: 10px;
 }
 
 .filter-btn {
   background: none;
   border: none;
-  padding: 8px 16px;
+  padding: 10px 20px;
   color: #94a3b8;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-size: 0.875rem;
+  text-align: center; /* Center text within button */
 }
 
 .filter-btn.active {
-  background-color: #0e7490;
+  background-color: #0e7490; /* Teal color from reference */
   color: white;
 }
 
-.search-input {
-  padding: 8px 16px;
+.filter-btn:not(.active):hover {
+  background-color: #334155;
+  color: #e2e8f0;
+}   
+
+.search-bar-container {
+  margin-bottom: 30px;
+  width: 100%; /* Full width */
+}
+
+.sessions-search-input {
+  padding: 12px 16px;
   border-radius: 6px;
   background: #1e293b;
   border: 1px solid #334155;
-  color: #fff;
+  color: #e2e8f0;
   outline: none;
-  font-size: 14px;
-  width: calc(100% - 40px);
-  max-width: 100%;
-  height: 36px;
-  margin-bottom: 10px;
-  margin-top: 16px;
+  font-size: 0.875rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.session-cards {
+.sessions-search-input::placeholder {
+  color: #64748b;
+}
+
+.sessions-search-input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
+}
+
+.sessions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(510px, 1fr));
+  gap: 24px;
   margin-top: 20px;
 }
 
@@ -70,12 +94,14 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: left; /* Default alignment for all card content */
 }
 
 .session-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 .session-card.completed {
@@ -90,193 +116,260 @@
   border-left: 4px solid #0c4a6e;
 }
 
-.card-header {
+.session-card-header {
   padding: 16px;
-  background: #0f172a;
+  background-color: #121c2e; /* Darker header as in reference */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
+  border-bottom: 1px solid #334155;
+  text-align: left; /* Force header content left aligned */
 }
 
-.queue-number {
-  background-color: #0e7490;
-  color: #fff;
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
+.session-card-header > div:first-child {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 14px;
 }
 
-.patient-name {
-  flex: 1;
+.session-queue-number {
+  color: #e2e8f0;
   font-weight: 600;
-  font-size: 16px;
-  color: #f1f5f9;
+  padding: 2px 6px;
+  font-size: 1rem; /* Larger font size */
+  margin-right: 4px; /* Reduce space */
 }
 
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
+.session-patient-name {
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: #e2e8f0;
+  margin-left: 8px;
+  text-align: left; /* Force left alignment */
 }
 
-.status-badge.in-progress {
-  background-color: #854d0e;
-  color: #fbbf24;
+.session-status-badge {
+  padding: 5px 10px;
+  border-radius: 16px; /* More rounded like reference */
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em; /* Slight spacing between letters */
+  text-align: center; /* Center text within badge */
 }
 
-.status-badge.completed {
-  background-color: #064e3b;
-  color: #34d399;
+.status-ongoing {
+  background-color: #f59e0b; /* Orange/amber */
+  color: #422006;
 }
 
-.status-badge.waiting {
-  background-color: #0c4a6e;
-  color: #38bdf8;
+.status-in-session {
+  background-color: #f59e0b;
+  color: #422006;
 }
 
-.card-details {
-  padding: 16px;
+.status-completed {
+  background-color: #10b981;
+  color: #064e3b;
+}
+
+.status-waiting {
+  background-color: #60a5fa;
+  color: #1e3a8a;
+}
+
+.status-unknown {
+  background-color: #64748b;
+  color: #1e293b;
+}
+
+.session-card-body {
+  padding: 20px; /* Increased padding */
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 15px; /* Slightly more spacing */
+  flex-grow: 1;
+  text-align: left; /* Force left alignment */
 }
 
-.detail-item {
+.session-detail-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   color: #94a3b8;
-  font-size: 14px;
+  font-size: 0.875rem;
+  text-align: left; /* Force left alignment */
 }
 
-.detail-item svg {
-  color: #38bdf8;
+.session-detail-item svg {
+  color: #60a5fa;
+  width: 16px;
+  height: 16px;
+  min-width: 16px; /* Prevent icon shrinking */
 }
 
-.detail-item.purpose {
-  margin-top: 4px;
+.session-detail-item.purpose {
+  margin-top: 8px; /* More space above purpose */
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
 }
 
-.detail-item.purpose strong {
-  color: #e5e7eb;
+.session-detail-item.purpose strong {
+  color: #cbd5e1;
   font-weight: 500;
 }
 
-.notes-section {
-  margin-top: 8px;
-  background: #172136;
+.session-notes-view {
+  margin-top: 16px; /* Slightly more spacing */
+  background-color: #131e32; /* Darker background as in reference */
   border-radius: 6px;
-  padding: 12px;
+  padding: 16px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left; /* Force left alignment */
 }
 
 .notes-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  text-align: left; /* Force left alignment */
 }
 
-.notes-title {
+.notes-header strong {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
+  gap: 6px;
+  font-size: 0.875rem;
   font-weight: 500;
-  color: #94a3b8;
+  color: #94a3b8; /* Slightly more muted color */
+  text-align: left; /* Force left alignment */
 }
 
 .edit-notes-btn {
   background: none;
   border: none;
-  color: #38bdf8;
+  color: #60a5fa;
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .edit-notes-btn:hover {
-  background: rgba(56, 189, 248, 0.1);
+  background: rgba(96, 165, 250, 0.1);
 }
 
-.notes-content {
-  font-size: 14px;
-  line-height: 1.5;
-  color: #e2e8f0;
+.session-notes-view p {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #94a3b8;
   white-space: pre-wrap;
+  margin-top: 0;
+  flex-grow: 1;
+  overflow-y: auto;
+  max-height: 100px;
+  text-align: left; /* Force left alignment */
 }
 
-.notes-edit textarea {
+.notes-editor {
   width: 100%;
-  padding: 8px;
-  background: #1e293b;
+  text-align: left; /* Force left alignment */
+}
+
+.notes-editor textarea {
+  width: 100%;
+  padding: 12px;
+  background: #0f172a;
   border: 1px solid #334155;
   border-radius: 4px;
-  color: #e2e8f0;
-  font-size: 14px;
+  color: #cbd5e1;
+  font-size: 0.875rem;
   resize: vertical;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  min-height: 100px;
+  box-sizing: border-box;
+  text-align: left; /* Force left alignment */
+}
+
+.notes-editor textarea::placeholder {
+  color: #64748b;
 }
 
 .notes-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+  justify-content: flex-start; /* Left align like reference */
+  gap: 10px;
 }
 
-.cancel-btn, .save-btn {
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 14px;
+.save-notes-btn, .cancel-notes-btn {
+  padding: 8px 16px;
+  border-radius: 4px; /* Less rounded in reference */
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-align: center; /* Center text within button */
 }
 
-.cancel-btn {
+.save-notes-btn {
+  background-color: #38bdf8;
+  border: none;
+  color: #0f172a;
+}
+
+.save-notes-btn:hover {
+  background-color: #60a5fa;
+}
+
+.cancel-notes-btn {
   background: transparent;
-  border: 1px solid #334155;
+  border: 1px solid #475569;
   color: #94a3b8;
 }
 
-.save-btn {
-  background: #0e7490;
-  border: none;
-  color: white;
-  font-weight: 500;
+.cancel-notes-btn:hover {
+  background-color: #334155;
+  color: #e2e8f0;
 }
 
-.card-actions {
-  padding: 16px;
+.session-card-footer {
+  padding: 16px 20px; /* Slightly more horizontal padding */
   border-top: 1px solid #334155;
   margin-top: auto;
 }
 
 .complete-session-btn {
   width: 100%;
-  padding: 10px;
-  background: #0e7490;
+  padding: 12px;
+  background: #059669; /* Green from reference */
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px; /* Less rounded in reference */
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   cursor: pointer;
   font-weight: 500;
-  transition: background-color 0.2s;
+  font-size: 0.9375rem;
+  transition: background-color 0.2s ease;
+  text-align: center; /* Center text within button */
 }
 
 .complete-session-btn:hover {
-  background: #0c4a6e;
+  background: #047857;
+}
+
+.complete-session-btn svg {
+  width: 18px;
+  height: 18px;
 }
 
 .complete-session-btn:disabled {
@@ -285,14 +378,31 @@
   cursor: not-allowed;
 }
 
-.loading, .error, .no-sessions {
+.loading, .error, .no-sessions-message {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 200px;
-  color: #94a3b8;
+  min-height: 300px;
+  color: #64748b;
+  text-align: center; /* This one should be centered */
+  font-size: 1rem;
+}
+
+.loading svg, .error svg {
+  margin-bottom: 16px;
+  color: #38bdf8;
 }
 
 .error {
-  color: #ef4444;
+  color: #f87171;
+}
+
+.error svg {
+  color: #f87171;
+}
+
+.single-view-container .session-card {
+  max-width: 800px;
+  margin: 20px auto;
 }

@@ -1,115 +1,57 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react'; // Import useContext
 import axios from 'axios';
 import '../styles/Sessions.css';
-import { Clock, Calendar, User, Check, Edit, ArrowRight, FileText } from 'lucide-react';
+import { Clock, Calendar, User, Check, Edit, ArrowRight, FileText, Loader } from 'lucide-react'; // Added Loader
+import CheckUpContext from '../contexts/CheckUpContext'; // Import CheckUpContext
 
 const Sessions = ({ userRole = 'doctor' }) => {
-  // State for sessions and user interactions
+  const { 
+    todaysCheckUps, 
+    isLoading: contextIsLoading, 
+    error: contextError, 
+    updateCheckUpItem, 
+    archiveSession // Destructure archiveSession from context
+  } = useContext(CheckUpContext); // Consume context
+
   const today = new Date();
   const todayDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const [search, setSearch] = useState("");
-  const [sortField, setSortField] = useState("queueNumber");
+  const [sortField, setSortField] = useState("queueNumber"); // Or a relevant field from context data
   const [sortOrder, setSortOrder] = useState("asc");
-  const [sessions, setSessions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [editingNotes, setEditingNotes] = useState(null);
   const [noteText, setNoteText] = useState("");
-  const [activeFilter, setActiveFilter] = useState("all"); // "all", "ongoing", or "completed"
+  const [activeFilter, setActiveFilter] = useState("ongoing"); // Default to ongoing
 
-  // Fetch session data on component mount
-  useEffect(() => {
-    fetchSessions();
-  }, [userRole]);
+  // Removed local sessions, loading, error states and fetchSessions function
 
-  const fetchSessions = async () => {
-    setLoading(true);
-    try {
-      // In a real application, this would fetch data from your backend API
-      // const response = await axios.get('http://localhost:5000/api/active-sessions', {
-      //   params: { userRole, userId: localStorage.getItem('userId') }
-      // });
-      // setSessions(response.data);
-      
-      // For now using mock data for active sessions
-      const mockData = [
-        { 
-          id: 1, 
-          queueNumber: 1, 
-          patientName: 'John Doe', 
-          time: '09:00 AM', 
-          purpose: 'General Consultation', 
-          date: todayDate, 
-          status: 'In Progress',
-          notes: 'Patient complaining of headaches for the past week. Initial assessment shows signs of tension headache.'
-        },
-        { 
-          id: 2, 
-          queueNumber: 2, 
-          patientName: 'Maria Garcia', 
-          time: '10:30 AM', 
-          purpose: 'Follow-up Check', 
-          date: todayDate, 
-          status: 'Completed',
-          notes: 'Follow-up for previous treatment. Recovery proceeding well, no complications observed.'
-        },
-        { 
-          id: 3, 
-          queueNumber: 3, 
-          patientName: 'Carlos Reyes', 
-          time: '01:00 PM', 
-          purpose: 'Eye Exam', 
-          date: todayDate, 
-          status: 'In Progress',
-          notes: 'Patient due for annual eye examination. No prior issues reported.'
-        },
-        { 
-          id: 4, 
-          queueNumber: 4, 
-          patientName: 'Sarah Johnson', 
-          time: '02:30 PM', 
-          purpose: 'Vaccination', 
-          date: todayDate, 
-          status: 'Waiting',
-          notes: 'Scheduled for routine vaccination. Previous record shows no adverse reactions.'
-        },
-      ];
-      setSessions(mockData);
-      setLoading(false);
-    } catch (err) {
-      console.error("Error fetching sessions:", err);
-      setError("Failed to load active sessions. Please try again later.");
-      setLoading(false);
-    }
-  };
-  // Filter by patient name and status
-  const filtered = sessions.filter(session => {
-    const nameMatch = session.patientName.toLowerCase().includes(search.toLowerCase());
+  // Filter by patient name and status from context
+  const filtered = todaysCheckUps.filter(session => {
+    const nameMatch = session.name && session.name.toLowerCase().includes(search.toLowerCase()); // Use session.name
     
-    // Apply status filter if not "all"
-    if (activeFilter === "all") {
-      return nameMatch;
-    } else if (activeFilter === "ongoing") {
-      return nameMatch && session.status !== 'Completed';
-    } else {
-      return nameMatch && session.status === 'Completed';
+    if (!nameMatch) return false;
+
+    if (activeFilter === "ongoing") {
+      return session.status === 'Ongoing';
+    } else if (activeFilter === "completed") {
+      return session.status === 'Completed';
+    } else if (activeFilter === "all") {
+      // Show all relevant session statuses for this page (e.g., Ongoing, Completed)
+      return session.status === 'Ongoing' || session.status === 'Completed';
     }
+    return false;
   });
 
   // Sort by selected field
   const sorted = [...filtered].sort((a, b) => {
     if (sortField === 'queueNumber') {
-      return sortOrder === 'asc' ? a.queueNumber - b.queueNumber : b.queueNumber - a.queueNumber;
-    } else if (sortField === 'date') {
-      // Parse date and time for both a and b
-      const dA = new Date(a.date + ' ' + a.time);
-      const dB = new Date(b.date + ' ' + b.time);
-      return sortOrder === 'asc' ? dA - dB : dB - dA;
-    } else if (sortField === 'time') {
-      // If dates are the same, sort by time; otherwise, keep date order
-      const dA = new Date(a.date + ' ' + a.time);
-      const dB = new Date(b.date + ' ' + b.time);
-      return sortOrder === 'asc' ? dA - dB : dB - dA;
+      return sortOrder === 'asc' ? (a.queueNumber || 0) - (b.queueNumber || 0) : (b.queueNumber || 0) - (a.queueNumber || 0);
+    }
+    // Assuming loggedInAt is the primary timestamp for sorting by date/time
+    const timeA = new Date(a.loggedInAt).getTime();
+    const timeB = new Date(b.loggedInAt).getTime();
+
+    if (sortField === 'date' || sortField === 'time') { // Simplified sorting for time
+      return sortOrder === 'asc' ? timeA - timeB : timeB - timeA;
     }
     return 0;
   });
@@ -125,43 +67,46 @@ const Sessions = ({ userRole = 'doctor' }) => {
 
   const handleCompleteSession = async (session) => {
     try {
-      // In production, this would update the backend
-      // await axios.patch(`http://localhost:5000/api/sessions/${session.id}/complete`, { 
-      //   status: 'Completed',
-      //   notes: session.notes,
-      //   completedAt: new Date().toISOString()
-      // });
+      console.log(`[Sessions] Completing session for ${session.name}`);
+      // Update status to 'Completed' in today's check-ups
+      await updateCheckUpItem({ ...session, status: 'Completed' });
       
-      console.log(`Session completed for ${session.patientName}`);
+      // Archive the session to permanent history
+      // Ensure all necessary session data is passed for archiving
+      const sessionToArchive = {
+        ...session, // Spread existing session data
+        status: 'Completed', // Ensure status is set to Completed
+        completedAt: new Date().toISOString(), // Add a completion timestamp
+        // Add any other fields required by the session history schema
+      };
+      await archiveSession(sessionToArchive);
+
+      alert(`Session for ${session.name} marked as Completed and archived.`);
       
-      // Update the session status in our local state
-      setSessions(sessions.map(s => 
-        s.id === session.id ? { ...s, status: 'Completed' } : s
-      ));
+      // Optionally, remove from todaysCheckUps if backend doesn't do it or for immediate UI update
+      // This depends on whether the backend /api/checkups/today GET endpoint will still return completed sessions
+      // or if they are filtered out after archiving.
+      // If they are filtered out by the backend, the polling will update the UI.
+      // If not, you might want to filter them out client-side:
+      // setTodaysCheckUps(prev => prev.filter(s => s.id !== session.id));
+
     } catch (err) {
-      console.error("Error completing session:", err);
+      console.error("[Sessions] Error completing session:", err);
       alert("Failed to complete session. Please try again.");
     }
   };
 
   const handleSaveNotes = async (sessionId) => {
+    const sessionToUpdate = todaysCheckUps.find(s => s.id === sessionId);
+    if (!sessionToUpdate) return;
+
     try {
-      // In production, this would update the backend
-      // await axios.patch(`http://localhost:5000/api/sessions/${sessionId}/notes`, { 
-      //   notes: noteText
-      // });
-      
-      console.log(`Notes saved for session ${sessionId}`);
-      
-      // Update the session notes in our local state
-      setSessions(sessions.map(s => 
-        s.id === sessionId ? { ...s, notes: noteText } : s
-      ));
-      
-      // Exit edit mode
+      console.log(`[Sessions] Saving notes for session ${sessionId}`);
+      await updateCheckUpItem({ ...sessionToUpdate, notes: noteText });
       setEditingNotes(null);
+      alert('Notes saved.');
     } catch (err) {
-      console.error("Error saving notes:", err);
+      console.error("[Sessions] Error saving notes:", err);
       alert("Failed to save notes. Please try again.");
     }
   };
@@ -171,13 +116,15 @@ const Sessions = ({ userRole = 'doctor' }) => {
     setNoteText(session.notes || '');
   };
 
-  if (loading) {
-    return <div className="loading">Loading active sessions...</div>;
+  if (contextIsLoading) {
+    return <div className="loading"><Loader size={48} /> Loading sessions...</div>;
   }
 
-  if (error) {
-    return <div className="error">{error}</div>;
-  }  return (
+  if (contextError) {
+    return <div className="error">{contextError}</div>;
+  }  
+  
+  return (
     <div className="sessions-container">
       <div className="sessions-header">
         <h1>Sessions</h1>
@@ -201,107 +148,77 @@ const Sessions = ({ userRole = 'doctor' }) => {
             Completed
           </button>
         </div>
+      </div>
+      <div className="search-bar-container" style={{ marginBottom: '20px', marginTop: '10px' }}>
         <input
           type="text"
           placeholder="Search by patient name..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="search-input"
+          className="sessions-search-input"
         />
       </div>
-      
+
       {sorted.length === 0 ? (
-        <div className="no-sessions">
-          <p>No active sessions found.</p>
+        <div className="no-sessions-message">
+          No sessions match the current filter.
         </div>
       ) : (
-        <div className="session-cards">
+        <div className="sessions-grid">
           {sorted.map((session) => (
-            <div className={`session-card ${session.status.toLowerCase().replace(' ', '-')}`} key={session.id}>
-              <div className="card-header">
-                <div className="queue-number">#{session.queueNumber}</div>
-                <div className="patient-name">{session.patientName}</div>
-                <div className={`status-badge ${session.status.toLowerCase().replace(' ', '-')}`}>
-                  <span>{session.status}</span>
+            <div key={session.id} className="session-card">
+              <div className="session-card-header">
+                <div className="session-header-left">
+                  <span className="session-queue-number">#{session.queueNumber || session.id}</span>
+                  <span className="session-patient-name">{session.name}</span>
+                </div>
+                <div className="session-header-right">
+                  <span className={`session-status-badge status-${session.status ? session.status.toLowerCase().replace(' ', '-') : 'unknown'}`}>
+                    {session.status}
+                  </span>
                 </div>
               </div>
-              
-              <div className="card-details">
-                <div className="detail-item">
-                  <Calendar size={16} />
-                  <span>{session.date}</span>
+              <div className="session-card-body">
+                <div className="session-detail-item">
+                  <Calendar size={16} /> {new Date(session.loggedInAt).toLocaleDateString()}
                 </div>
-                <div className="detail-item">
-                  <Clock size={16} />
-                  <span>{session.time}</span>
+                <div className="session-detail-item">
+                  <Clock size={16} /> {new Date(session.loggedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit'})}
                 </div>
-                <div className="detail-item purpose">
-                  <span>Purpose:</span>
-                  <strong>{session.purpose}</strong>
+                <div className="session-detail-item purpose">
+                  <strong>Purpose:</strong> {session.purpose || 'Not specified'}
                 </div>
                 
-                <div className="notes-section">
-                  <div className="notes-header">
-                    <div className="notes-title">
-                      <FileText size={16} />
-                      <span>Session Notes</span>
+                {editingNotes === session.id ? (
+                  <div className="notes-editor">
+                    <textarea 
+                      value={noteText} 
+                      onChange={(e) => setNoteText(e.target.value)} 
+                      rows={3}
+                      placeholder="Enter session notes..."
+                    />
+                    <div className="notes-actions">
+                      <button onClick={() => handleSaveNotes(session.id)} className="save-notes-btn">Save Notes</button>
+                      <button onClick={() => setEditingNotes(null)} className="cancel-notes-btn">Cancel</button>
                     </div>
-                    {session.status !== 'Completed' && (
-                      <button 
-                        className="edit-notes-btn"
-                        onClick={() => startEditNotes(session)}
-                      >
-                        <Edit size={14} />
-                      </button>
-                    )}
                   </div>
-                  
-                  {editingNotes === session.id ? (
-                    <div className="notes-edit">
-                      <textarea
-                        value={noteText}
-                        onChange={(e) => setNoteText(e.target.value)}
-                        rows={4}
-                        placeholder="Enter session notes..."
-                      />
-                      <div className="notes-actions">
-                        <button 
-                          className="cancel-btn"
-                          onClick={() => setEditingNotes(null)}
-                        >
-                          Cancel
-                        </button>
-                        <button 
-                          className="save-btn"
-                          onClick={() => handleSaveNotes(session.id)}
-                        >
-                          Save Notes
-                        </button>
-                      </div>
+                ) : (
+                  <div className="session-notes-view">
+                    <div className="notes-header">
+                      <strong><FileText size={16} />Session Notes:</strong>
+                      <button onClick={() => startEditNotes(session)} className="edit-notes-btn"><Edit size={14} /></button>
                     </div>
-                  ) : (
-                    <div className="notes-content">
-                      {session.notes || 'No notes recorded yet.'}
-                    </div>
-                  )}
-                </div>
+                    <p>{session.notes || 'No notes yet.'}</p>
+                  </div>
+                )}
               </div>
-              
-              {session.status !== 'Completed' && (
-                <div className="card-actions">
+              {session.status === 'Ongoing' && (
+                <div className="session-card-footer">
                   <button 
-                    className="complete-session-btn"
+                    className="complete-session-btn" 
                     onClick={() => handleCompleteSession(session)}
-                    disabled={session.status === 'Waiting'}
                   >
-                    <span>
-                      {session.status === 'Waiting' 
-                        ? 'Waiting for Patient' 
-                        : session.status === 'In Progress' 
-                        ? 'Complete Session' 
-                        : 'Session Completed'}
-                    </span>
-                    {session.status === 'In Progress' && <Check size={16} />}
+                    Complete Session <Check size={16} />
                   </button>
                 </div>
               )}
@@ -311,6 +228,6 @@ const Sessions = ({ userRole = 'doctor' }) => {
       )}
     </div>
   );
-};
+}; 
 
 export default Sessions;

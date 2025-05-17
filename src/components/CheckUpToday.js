@@ -1,20 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import '../styles/CheckUpToday.css';
-import { Clock, Calendar, User, Check } from 'lucide-react';
+import { Clock, Calendar, User, Check, Loader } from 'lucide-react';
+import CheckUpContext from '../contexts/CheckUpContext';
 
 export default function CheckUpToday({ showDateTimePerPatient }) {
-  // State for checkups and user interactions
+  const { todaysCheckUps, updateCheckUpItem, setTodaysCheckUps, isLoading, error } = useContext(CheckUpContext);
+  console.log('[CheckUpToday] Received todaysCheckUps from context:', todaysCheckUps);
+  console.log('[CheckUpToday] todaysCheckUps is Array?', Array.isArray(todaysCheckUps), 'Length:', todaysCheckUps?.length);
+  console.log('[CheckUpToday] Context states - isLoading:', isLoading, 'error:', error);
+  
+  useEffect(() => {
+    console.log('[CheckUpToday] todaysCheckUps changed in component:', todaysCheckUps);
+    // Force a check of localStorage directly as well to compare
+    try {
+      const directFromStorage = localStorage.getItem('todaysCheckUpsList');
+      console.log('[CheckUpToday] Direct localStorage check:', directFromStorage);
+      if (directFromStorage) {
+        console.log('[CheckUpToday] Parsed from localStorage:', JSON.parse(directFromStorage));
+      }
+    } catch (e) {
+      console.error('[CheckUpToday] Error checking localStorage directly:', e);
+    }
+  }, [todaysCheckUps]);
+
   const today = new Date();
   const todayDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState("queueNumber");
   const [sortOrder, setSortOrder] = useState("asc");
-  const [checkups, setCheckups] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   
-  // Purpose options for dropdown
   const purposeOptions = [
     'General Consultation',
     'Follow-up',
@@ -27,51 +42,17 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
     'Other'
   ];
 
-  // Fetch checkup data on component mount
-  useEffect(() => {
-    fetchCheckups();
-  }, []);
+  const filtered = todaysCheckUps.filter(c => c.name && c.name.toLowerCase().includes(search.toLowerCase()));
 
-  const fetchCheckups = async () => {
-    setLoading(true);
-    try {
-      // In production, this would fetch from your backend
-      // const response = await axios.get('http://localhost:5000/api/checkup-today');
-      // setCheckups(response.data);
-      
-      // For now using mock data
-      const mockData = [
-        { id: 1, queueNumber: 1, name: 'John Doe', time: '09:00 AM', purpose: 'General Consultation', date: todayDate, status: 'Waiting' },
-        { id: 2, queueNumber: 2, name: 'Jane Smith', time: '10:30 AM', purpose: 'Dental Check-Up', date: todayDate, status: 'Waiting' },
-        { id: 3, queueNumber: 3, name: 'Carlos Reyes', time: '01:00 PM', purpose: 'Eye Exam', date: todayDate, status: 'Waiting' },
-        { id: 4, queueNumber: 4, name: 'Maria Garcia', time: '03:15 PM', purpose: 'Pediatric Check-Up', date: todayDate, status: 'Waiting' },
-      ];
-      setCheckups(mockData);
-      setLoading(false);
-    } catch (err) {
-      console.error("Error fetching checkups:", err);
-      setError("Failed to load checkups. Please try again later.");
-      setLoading(false);
-    }
-  };
-
-  // Filter by name
-  const filtered = checkups.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
-
-  // Sort by selected field
   const sorted = [...filtered].sort((a, b) => {
     if (sortField === 'queueNumber') {
       return sortOrder === 'asc' ? a.queueNumber - b.queueNumber : b.queueNumber - a.queueNumber;
-    } else if (sortField === 'date') {
-      // Parse date and time for both a and b
-      const dA = new Date(a.date + ' ' + a.time);
-      const dB = new Date(b.date + ' ' + b.time);
+    } else if (sortField === 'loggedInAt') {
+      const dA = new Date(a.loggedInAt);
+      const dB = new Date(b.loggedInAt);
       return sortOrder === 'asc' ? dA - dB : dB - dA;
-    } else if (sortField === 'time') {
-      // If dates are the same, sort by time; otherwise, keep date order
-      const dA = new Date(a.date + ' ' + a.time);
-      const dB = new Date(b.date + ' ' + b.time);
-      return sortOrder === 'asc' ? dA - dB : dB - dA;
+    } else if (sortField === 'name') {
+      return sortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
     }
     return 0;
   });
@@ -85,29 +66,18 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
     }
   };
 
-  const handlePurposeChange = (id, purpose) => {
-    setCheckups(checkups.map(c => 
-      c.id === id ? { ...c, purpose } : c
-    ));
+  const handlePurposeChange = (id, newPurpose) => {
+    const itemToUpdate = todaysCheckUps.find(c => c.id === id);
+    if (itemToUpdate) {
+      updateCheckUpItem({ ...itemToUpdate, purpose: newPurpose });
+    }
   };
 
   const handleStartSession = async (checkup) => {
     try {
-      // In production, this would update the backend
-      // await axios.patch(`http://localhost:5000/api/checkup/${checkup.id}/status`, { 
-      //   status: 'In Session',
-      //   doctorId: localStorage.getItem('userId') // Assign the session to the doctor 
-      // });
-      
-      // Update local state
-      setCheckups(checkups.map(c => 
-        c.id === checkup.id ? { ...c, status: 'In Session' } : c
-      ));
-      
-      // Notify that the patient is ready for the doctor
+      console.log(`Attempting to start session for ${checkup.name}`);
+      updateCheckUpItem({ ...checkup, status: 'In Session' });
       console.log(`Patient ${checkup.name} is now in session`);
-      
-      // In a real application, this would trigger a notification to the doctor
     } catch (err) {
       console.error("Error starting session:", err);
       alert("Failed to start session. Please try again.");
@@ -117,12 +87,19 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
   const handleCustomPurpose = (id) => {
     const customPurpose = prompt("Enter specific purpose:");
     if (customPurpose && customPurpose.trim() !== "") {
-      handlePurposeChange(id, customPurpose);
+      handlePurposeChange(id, customPurpose.trim());
     }
   };
 
-  if (loading) {
-    return <div className="loading">Loading today's checkups...</div>;
+  // Replace the localStorage-based date check with API-based solution
+  useEffect(() => {
+    // We'll rely on the backend to manage daily reset of check-ups
+    console.log("[CheckUpToday] Component mounted - date check will be handled by the backend");
+    // No need for interval as the polling in CheckUpContext will handle updates
+  }, []);
+
+  if (isLoading) {
+    return <div className="loading"><Loader /> Loading today's checkups...</div>;
   }
 
   if (error) {
@@ -132,7 +109,7 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
   return (
     <div className="checkup-today-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-        <h1 style={{ marginBottom: 0 }}>Check-Ups Scheduled for Today</h1>
+        <h1 style={{ marginBottom: 0 }}>{showDateTimePerPatient ? 'Your Check Ups Today' : 'Check Ups Today'}</h1>
         <input
           type="text"
           placeholder="Search by name..."
@@ -141,91 +118,98 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
           style={{ padding: '7px 14px', borderRadius: 6, background: '#172136', border: '1px solid #334155', color: '#fff', outline: 'none', fontSize: 14, minWidth: 180 }}
         />
       </div>
-      <table className="checkup-table">
-        <thead>
-          <tr>
-            <th style={{ cursor: 'pointer' }} onClick={() => handleSort('queueNumber')}>
-              # {sortField === 'queueNumber' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
-            </th>
-            <th>Name</th>
-            <th style={{ cursor: 'pointer' }} onClick={() => handleSort('date')}>
-              Date {sortField === 'date' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
-            </th>
-            <th style={{ cursor: 'pointer' }} onClick={() => handleSort('time')}>
-              Time {sortField === 'time' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
-            </th>
-            <th>Purpose</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map((c) => (
-            <tr key={c.id}>
-              <td>{c.queueNumber}</td>
-              <td>{c.name}</td>
-              <td>{c.date}</td>
-              <td>{c.time}</td>
-              <td>
-                <select 
-                  value={c.purpose} 
-                  onChange={(e) => e.target.value === 'Other' 
-                    ? handleCustomPurpose(c.id) 
-                    : handlePurposeChange(c.id, e.target.value)
-                  }
-                  style={{ 
-                    padding: '6px', 
-                    borderRadius: '4px', 
-                    background: '#1e293b', 
-                    color: '#e5e7eb',
-                    border: '1px solid #334155'
-                  }}
-                >
-                  {purposeOptions.map(option => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                  <option value="Other">Other...</option>
-                </select>
-              </td>
-              <td>
-                <span style={{ 
-                  padding: '4px 8px', 
-                  borderRadius: '4px', 
-                  fontSize: '14px',
-                  backgroundColor: 
-                    c.status === 'Waiting' ? '#0c4a6e' : 
-                    c.status === 'In Session' ? '#854d0e' : 
-                    c.status === 'Finished' ? '#064e3b' : '#334155',
-                  color:
-                    c.status === 'Waiting' ? '#38bdf8' : 
-                    c.status === 'In Session' ? '#fbbf24' : 
-                    c.status === 'Finished' ? '#34d399' : '#94a3b8',
-                }}>
-                  {c.status}
-                </span>
-              </td>
-              <td>
-                <button
-                  onClick={() => handleStartSession(c)}
-                  disabled={c.status !== 'Waiting'}
-                  style={{ 
-                    padding: '6px 12px', 
-                    borderRadius: '4px', 
-                    backgroundColor: c.status !== 'Waiting' ? '#334155' : '#0e7490',
-                    color: c.status !== 'Waiting' ? '#64748b' : '#fff',
-                    border: 'none',
-                    cursor: c.status !== 'Waiting' ? 'not-allowed' : 'pointer',
-                    fontSize: '14px'
-                  }}
-                >
-                  {c.status === 'Waiting' ? 'In Session' : 
-                   c.status === 'In Session' ? 'Currently In Session' : 'Completed'}
-                </button>
-              </td>
+      {sorted.length === 0 ? (
+        <div className="no-sessions" style={{textAlign: 'center', padding: '20px', color: '#94a3b8'}}>
+            No patients have logged in for check-up yet today.
+        </div>
+      ) : (
+        <table className="checkup-table">
+          <thead>
+            <tr>
+              <th style={{ cursor: 'pointer' }} onClick={() => handleSort('queueNumber')}>
+                # {sortField === 'queueNumber' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+              </th>
+              <th style={{ cursor: 'pointer' }} onClick={() => handleSort('name')}>
+                Name {sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+              </th>
+              {showDateTimePerPatient && (
+                <th style={{ cursor: 'pointer' }} onClick={() => handleSort('loggedInAt')}>
+                  Logged In At {sortField === 'loggedInAt' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                </th>
+              )}
+              <th>Purpose</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sorted.map((c) => (
+              <tr key={c.id}>
+                <td>{c.queueNumber}</td>
+                <td>{c.name}</td>
+                {showDateTimePerPatient && (
+                  <td>{new Date(c.loggedInAt).toLocaleTimeString()}</td>
+                )}
+                <td>
+                  <select 
+                    value={c.purpose}
+                    onChange={(e) => e.target.value === 'Other' 
+                      ? handleCustomPurpose(c.id) 
+                      : handlePurposeChange(c.id, e.target.value)
+                    }
+                    style={{ 
+                      padding: '6px', 
+                      borderRadius: '4px', 
+                      background: '#1e293b', 
+                      color: '#e5e7eb',
+                      border: '1px solid #334155',
+                      minWidth: '150px'
+                    }}
+                  >
+                    {purposeOptions.map(option => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <span style={{ 
+                    padding: '4px 8px', 
+                    borderRadius: '4px', 
+                    fontSize: '14px',
+                    backgroundColor: 
+                      c.status === 'Waiting' ? '#0c4a6e' : 
+                      c.status === 'In Session' ? '#854d0e' : 
+                      c.status === 'Finished' ? '#064e3b' : '#334155',
+                    color:
+                      c.status === 'Waiting' ? '#38bdf8' : 
+                      c.status === 'In Session' ? '#fbbf24' : 
+                      c.status === 'Finished' ? '#34d399' : '#94a3b8',
+                  }}>
+                    {c.status}
+                  </span>
+                </td>
+                <td>
+                  <button
+                    onClick={() => handleStartSession(c)}
+                    disabled={c.status !== 'Waiting'}
+                    style={{ 
+                      padding: '6px 12px', 
+                      borderRadius: '4px', 
+                      backgroundColor: c.status !== 'Waiting' ? '#334155' : '#0e7490',
+                      color: c.status !== 'Waiting' ? '#64748b' : '#fff',
+                      border: 'none',
+                      cursor: c.status !== 'Waiting' ? 'not-allowed' : 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {c.status === 'Waiting' ? 'Enter Session' : 'Currently In Session'} 
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }

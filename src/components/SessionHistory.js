@@ -1,334 +1,154 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
-import { Calendar, Clock, Search, Filter, ChevronDown, User, FileText } from 'lucide-react';
-import '../styles/SessionHistory.css';
+import '../styles/SessionHistory.css'; // We will create this file next
+import { Search, Filter, Calendar, Clock, User, FileText, Loader } from 'lucide-react';
+import CheckUpContext from '../contexts/CheckUpContext'; // To potentially access API_URL or other shared logic if needed
 
-const SessionHistory = ({ userRole = 'doctor' }) => {
-  const [sessions, setSessions] = useState([]);
-  const [loading, setLoading] = useState(true);
+const API_URL = 'http://localhost:5000/api'; // Assuming this is your backend API
+
+const SessionHistory = () => {
+  const [sessionHistory, setSessionHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [dateFilter, setDateFilter] = useState('today');
-  const [customDateRange, setCustomDateRange] = useState({
-    start: '',
-    end: ''
+  const [filterOption, setFilterOption] = useState('all'); // Default filter to "all"
+
+  useEffect(() => {
+    const fetchSessionHistory = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        console.log('[SessionHistory] Fetching session history...');
+        const response = await axios.get(`${API_URL}/sessionhistory`);
+        console.log('[SessionHistory] API response for session history:', response.data);
+        // Sort by archivedAt or completedAt in descending order (newest first)
+        const sortedHistory = response.data.sort((a, b) => {
+          const dateA = new Date(a.archivedAt || a.completedAt || 0);
+          const dateB = new Date(b.archivedAt || b.completedAt || 0);
+          return dateB - dateA;
+        });
+        setSessionHistory(sortedHistory);
+      } catch (err) {
+        console.error('[SessionHistory] Error fetching session history:', err);
+        setError('Failed to fetch session history. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSessionHistory();
+  }, []);
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const handleFilterChange = (event) => {
+    setFilterOption(event.target.value);
+  };
+
+  const getFormattedDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+  };
+
+  const getFormattedTime = (dateString, includeSeconds = false) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Time';
+    const options = { hour: '2-digit', minute: '2-digit', hour12: true };
+    if (includeSeconds) {
+      options.second = '2-digit';
+    }
+    return date.toLocaleTimeString('en-US', options);
+  };
+
+  const filteredHistory = sessionHistory.filter(session => {
+    const nameMatch = session.name && session.name.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    let dateMatch = true;
+    if (filterOption === 'today') {
+      const todayStr = getFormattedDate(new Date().toISOString());
+      const sessionDateStr = getFormattedDate(session.completedAt || session.archivedAt);
+      dateMatch = sessionDateStr === todayStr;
+    }
+    // Add more filter options here (e.g., last7days, specificMonth)
+
+    return nameMatch && dateMatch;
   });
 
-  // Fetch sessions on component mount and when date filter changes
-  useEffect(() => {
-    fetchSessions();
-  }, [dateFilter, customDateRange]);
-
-  const fetchSessions = async () => {
-    setLoading(true);
-    try {
-      // In a real application, this would be an API call
-      // const params = getDateFilterParams();
-      // const response = await axios.get('/api/sessions/history', { params });
-      // setSessions(response.data);
-      
-      // Temporary mock data
-      const today = new Date();
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const lastWeek = new Date(today);
-      lastWeek.setDate(lastWeek.getDate() - 7);
-      const lastMonth = new Date(today);
-      lastMonth.setMonth(lastMonth.getMonth() - 1);
-      
-      const formatDate = (date) => {
-        return date.toISOString().split('T')[0];
-      };
-      
-      const mockData = [
-        { 
-          id: 1, 
-          patientName: 'John Doe', 
-          date: formatDate(today), 
-          time: '10:00', 
-          purpose: 'General Consultation',
-          notes: 'Patient reported headaches. Prescribed painkillers and recommended rest.',
-          completedAt: new Date(today.setHours(10, 45)).toISOString()
-        },
-        { 
-          id: 2, 
-          patientName: 'Jane Smith', 
-          date: formatDate(today), 
-          time: '14:30', 
-          purpose: 'Follow-up',
-          notes: 'Recovery is good. No further medication needed.',
-          completedAt: new Date(today.setHours(15, 15)).toISOString()
-        },
-        { 
-          id: 3, 
-          patientName: 'Mike Johnson', 
-          date: formatDate(yesterday), 
-          time: '09:00', 
-          purpose: 'Vaccination',
-          notes: 'Administered flu vaccine. No adverse reactions observed.',
-          completedAt: new Date(yesterday.setHours(9, 30)).toISOString()
-        },
-        { 
-          id: 4, 
-          patientName: 'Sarah Williams', 
-          date: formatDate(yesterday), 
-          time: '16:00', 
-          purpose: 'Dental Check-Up',
-          notes: 'Two cavities found. Scheduled followup for fillings next week.',
-          completedAt: new Date(yesterday.setHours(16, 45)).toISOString()
-        },
-        { 
-          id: 5, 
-          patientName: 'Robert Brown', 
-          date: formatDate(lastWeek), 
-          time: '11:30', 
-          purpose: 'Eye Exam',
-          notes: 'Slight deterioration in right eye. New prescription provided.',
-          completedAt: new Date(lastWeek.setHours(12, 15)).toISOString()
-        },
-        { 
-          id: 6, 
-          patientName: 'Emily Davis', 
-          date: formatDate(lastMonth), 
-          time: '13:00', 
-          purpose: 'Prenatal Check-Up',
-          notes: 'All measurements normal. Baby developing well.',
-          completedAt: new Date(lastMonth.setHours(13, 45)).toISOString()
-        }
-      ];
-      
-      // Filter based on date range
-      let filteredData = [];
-      
-      const isInDateRange = (sessionDate) => {
-        const date = new Date(sessionDate);
-        const today = new Date();
-        
-        switch(dateFilter) {
-          case 'today':
-            return formatDate(date) === formatDate(today);
-          case 'yesterday':
-            const yesterday = new Date(today);
-            yesterday.setDate(today.getDate() - 1);
-            return formatDate(date) === formatDate(yesterday);
-          case 'week':
-            const lastWeek = new Date(today);
-            lastWeek.setDate(today.getDate() - 7);
-            return date >= lastWeek;
-          case 'month':
-            const lastMonth = new Date(today);
-            lastMonth.setMonth(today.getMonth() - 1);
-            return date >= lastMonth;
-          case 'year':
-            const lastYear = new Date(today);
-            lastYear.setFullYear(today.getFullYear() - 1);
-            return date >= lastYear;
-          case 'custom':
-            if (customDateRange.start && customDateRange.end) {
-              const start = new Date(customDateRange.start);
-              const end = new Date(customDateRange.end);
-              end.setHours(23, 59, 59); // Include the entire end day
-              return date >= start && date <= end;
-            }
-            return true;
-          default:
-            return true;
-        }
-      };
-      
-      filteredData = mockData.filter(session => isInDateRange(session.date));
-      setSessions(filteredData);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching session history:", error);
-      setError("Failed to load sessions. Please try again later.");
-      setLoading(false);
-    }
-  };
-
-  const getDateFilterLabel = () => {
-    switch(dateFilter) {
-      case 'today': return 'Today';
-      case 'yesterday': return 'Yesterday';
-      case 'week': return 'Last 7 Days';
-      case 'month': return 'Last 30 Days';
-      case 'year': return 'Last Year';
-      case 'custom': return 'Custom Range';
-      default: return 'All Time';
-    }
-  };
-
-  // Filter sessions by search term
-  const filteredSessions = sessions.filter(session => 
-    session.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    session.purpose.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    session.notes.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  if (loading) {
-    return <div className="history-loading">Loading session history...</div>;
+  if (isLoading) {
+    return <div className="loading-container history-loading"><Loader size={48} /> Loading session history...</div>;
   }
 
   if (error) {
-    return <div className="history-error">{error}</div>;
+    return <div className="error-container history-error">{error}</div>;
   }
 
   return (
     <div className="session-history-container">
-      <div className="history-header">
+      <div className="session-history-header">
         <h1>Session History</h1>
-        <div className="history-actions">
-          <div className="search-container">
-            <Search size={16} />
+        <div className="session-history-controls">
+          <div className="search-bar">
+            <Search size={18} />
             <input
               type="text"
               placeholder="Search sessions..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
             />
           </div>
-          
-          <div className="filter-container">
-            <button className="filter-button" onClick={() => setFilterOpen(!filterOpen)}>
-              <Filter size={16} />
-              <span>{getDateFilterLabel()}</span>
-              <ChevronDown size={16} />
-            </button>
-            
-            {filterOpen && (
-              <div className="filter-dropdown">
-                <div className="filter-options">
-                  <button 
-                    className={dateFilter === 'today' ? 'active' : ''}
-                    onClick={() => {
-                      setDateFilter('today');
-                      setFilterOpen(false);
-                    }}
-                  >
-                    Today
-                  </button>
-                  <button 
-                    className={dateFilter === 'yesterday' ? 'active' : ''}
-                    onClick={() => {
-                      setDateFilter('yesterday');
-                      setFilterOpen(false);
-                    }}
-                  >
-                    Yesterday
-                  </button>
-                  <button 
-                    className={dateFilter === 'week' ? 'active' : ''}
-                    onClick={() => {
-                      setDateFilter('week');
-                      setFilterOpen(false);
-                    }}
-                  >
-                    Last 7 Days
-                  </button>
-                  <button 
-                    className={dateFilter === 'month' ? 'active' : ''}
-                    onClick={() => {
-                      setDateFilter('month');
-                      setFilterOpen(false);
-                    }}
-                  >
-                    Last 30 Days
-                  </button>
-                  <button 
-                    className={dateFilter === 'year' ? 'active' : ''}
-                    onClick={() => {
-                      setDateFilter('year');
-                      setFilterOpen(false);
-                    }}
-                  >
-                    Last Year
-                  </button>
-                  <button 
-                    className={dateFilter === 'custom' ? 'active' : ''}
-                    onClick={() => {
-                      setDateFilter('custom');
-                    }}
-                  >
-                    Custom Range
-                  </button>
-                </div>
-                
-                {dateFilter === 'custom' && (
-                  <div className="custom-date-range">
-                    <div className="date-input">
-                      <label>Start Date</label>
-                      <input 
-                        type="date" 
-                        value={customDateRange.start}
-                        onChange={(e) => setCustomDateRange({...customDateRange, start: e.target.value})}
-                      />
-                    </div>
-                    <div className="date-input">
-                      <label>End Date</label>
-                      <input 
-                        type="date" 
-                        value={customDateRange.end}
-                        onChange={(e) => setCustomDateRange({...customDateRange, end: e.target.value})}
-                      />
-                    </div>
-                    <button 
-                      className="apply-button"
-                      onClick={() => setFilterOpen(false)}
-                    >
-                      Apply
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+          <div className="filter-dropdown">
+            <Filter size={18} />
+            <select value={filterOption} onChange={handleFilterChange}>
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              {/* Add more options like "Last 7 Days", "This Month" etc. */}
+            </select>
           </div>
         </div>
       </div>
-      
-      {filteredSessions.length === 0 ? (
-        <div className="no-sessions">
-          <p>No sessions found for the selected time period.</p>
+
+      {filteredHistory.length === 0 ? (
+        <div className="no-history-message">
+          No session history records found matching your criteria.
         </div>
       ) : (
-        <div className="session-history-list">
-          {filteredSessions.map(session => (
-            <div className="history-session-card" key={session.id}>
-              <div className="session-card-header">
+        <div className="session-history-grid">
+          {filteredHistory.map((session) => (
+            <div key={session.historyId || session.id} className="history-card">
+              <div className="history-card-header">
                 <div className="patient-info">
-                  <User size={18} />
-                  <h3>{session.patientName}</h3>
+                  <User size={20} /> 
+                  <span>{session.name || 'N/A'}</span>
                 </div>
-                <div className="session-date-time">
+                <div className="session-datetime">
                   <div className="session-date">
-                    <Calendar size={14} />
-                    <span>{session.date}</span>
+                    <Calendar size={16} /> {getFormattedDate(session.loggedInAt || session.completedAt)}
                   </div>
                   <div className="session-time">
-                    <Clock size={14} />
-                    <span>{session.time}</span>
+                    <Clock size={16} /> {getFormattedTime(session.loggedInAt || session.completedAt)}
                   </div>
                 </div>
               </div>
-              <div className="session-card-details">
+              <div className="history-card-body">
                 <div className="session-purpose">
-                  <span className="detail-label">Purpose:</span>
-                  <span className="purpose-value">{session.purpose}</span>
+                  <strong>Purpose:</strong> {session.purpose || 'Not specified'}
                 </div>
-                
-                <div className="session-notes-section">
-                  <div className="notes-header">
-                    <FileText size={14} />
-                    <span>Notes</span>
+                <div className="session-notes-history">
+                  <div className="notes-history-header">
+                    <FileText size={16} />
+                    <strong>Notes</strong>
                   </div>
-                  <div className="notes-content">
-                    {session.notes || <span className="no-notes">No notes recorded</span>}
-                  </div>
+                  <p>{session.notes || 'No notes recorded.'}</p>
                 </div>
-                
-                <div className="session-completion">
-                  <span>Completed at: {new Date(session.completedAt).toLocaleTimeString()}</span>
-                </div>
+              </div>
+              <div className="history-card-footer">
+                {/* Use archivedAt for the footer timestamp as it's more specific to history entry */}
+                <span>Completed at: {getFormattedTime(session.completedAt || session.archivedAt, true)}</span>
               </div>
             </div>
           ))}

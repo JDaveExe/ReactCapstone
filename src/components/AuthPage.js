@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react'; // Added useContext
 import { Form, Button, Container, Row, Col, Card, Nav } from 'react-bootstrap';
 import DatePicker from 'react-datepicker';
 import axios from 'axios';
@@ -11,11 +11,13 @@ import 'react-datepicker/dist/react-datepicker.css';
 import '../styles/AuthPage.css';
 import '../styles/auth-alignment-fix.css';
 import logoImage from '../images/maybunga.png';
- 
+import CheckUpContext from '../contexts/CheckUpContext'; // Import the context
+
 const AuthPage = () => {
   const [activeTab, setActiveTab] = useState('login');
   const navigate = useNavigate();
- 
+  const { addPatientToCheckUpList } = useContext(CheckUpContext); // Consume the context
+
   // ===== LOGIN STATE =====
   const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -25,7 +27,7 @@ const AuthPage = () => {
   const [isQrLogin, setIsQrLogin] = useState(false);
   const [qrData, setQrData] = useState("");
   const [showQrScanner, setShowQrScanner] = useState(false);
- 
+
   // ===== REGISTRATION STATE =====
   const [formData, setFormData] = useState({
     firstName: '',
@@ -55,7 +57,7 @@ const AuthPage = () => {
   const [showQrCode, setShowQrCode] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const [userQrValue, setUserQrValue] = useState("");
- 
+
   // ===== REGISTRATION DATA =====
   const suffixOptions = ['', 'Jr.', 'Sr.', 'II', 'III', 'IV', 'V'];
   const pasigStreets = [
@@ -82,56 +84,56 @@ const AuthPage = () => {
     'San Guillermo Street': ['San Jose', 'Pineda', 'Palatiw'],
     'Dr. Sixto Antonio Avenue': ['Kapasigan', 'Bagong Ilog', 'Caniogan']
   };
- 
+
   // ===== PASSWORD STRENGTH CHECKER =====
   const checkPasswordStrength = (password) => {
     if (!password) return "";
-   
+
     // Define criteria
     const hasLowerCase = /[a-z]/.test(password);
     const hasUpperCase = /[A-Z]/.test(password);
     const hasNumber = /\d/.test(password);
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-   
+
     // Less punishing criteria based primarily on length
     const length = password.length;
-   
+
     if (length < 4) return "very-weak";
     if (length < 6) return "weak";
-   
+
     // Count additional security features
     const securityFeatures = [hasLowerCase, hasUpperCase, hasNumber, hasSpecialChar].filter(Boolean).length;
-   
+
     if (length >= 6 && length < 8) {
       return securityFeatures >= 2 ? "medium" : "weak";
     }
-   
+
     if (length >= 8 && length < 10) {
       return securityFeatures >= 2 ? "strong" : "medium";
     }
-   
+
     // 10+ characters with at least 2 special features is very strong
     if (length >= 10) {
       return securityFeatures >= 2 ? "very-strong" : "strong";
     }
-   
+
     return "medium";
   };
- 
+
   // Update password strength whenever registration password changes
   useEffect(() => {
     setRegPasswordStrength(checkPasswordStrength(formData.password));
   }, [formData.password]);
- 
+
   // ===== LOGIN FUNCTIONS =====
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
- 
+
   const toggleRegPasswordVisibility = () => {
     setShowRegPassword(!showRegPassword);
   };
- 
+
   const toggleQrLogin = () => {
     setIsQrLogin(!isQrLogin);
     if (!isQrLogin) {
@@ -141,10 +143,10 @@ const AuthPage = () => {
     }
     setLoginError("");
   };
- 
+
   const handleLogin = async () => {
     setLoginError(""); // Clear any previous error messages
- 
+
     // Hard-coded credentials check for admin and doctor
     if (emailOrPhone === "admin@gmail.com" && password === "admin") {
       localStorage.setItem("isAuthenticated", "true");
@@ -165,7 +167,7 @@ const AuthPage = () => {
       navigate("/doctor/dashboard");
       return;
     }
- 
+
     try {
       const loginData = {
         emailOrPhone,
@@ -173,14 +175,14 @@ const AuthPage = () => {
       };
       const response = await axios.post('http://localhost:5000/api/login', loginData);
       const { user } = response.data;
- 
+
       console.log("Login response:", user);
- 
+
       // Store user data in localStorage consistently
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userRole", user.role);
       localStorage.setItem("userEmail", user.email);
-     
+      
       // Make sure we store the name consistently
       if (user.firstName) {
         localStorage.setItem("firstName", user.firstName);
@@ -188,25 +190,42 @@ const AuthPage = () => {
       } else if (user.name) {
         // If firstName is not available but name is, store the full name
         localStorage.setItem("userName", user.name);
-        // Try to extract firstName from the full name
         const nameParts = user.name.split(' ');
         if (nameParts.length > 0) {
           localStorage.setItem("firstName", nameParts[0]);
         }
       }
- 
+
       // Store patient ID if available
       if (user.role === "patient" || user.role === "member") {
         localStorage.setItem("patientId", user.id);
         if (!localStorage.getItem("patientName") && user.name) {
           localStorage.setItem("patientName", user.name);
         }
+        // Add patient to the check-up list via context
+        const patientData = { 
+          id: user.id, 
+          name: user.name || `${user.firstName} ${user.lastName}`,
+        };
+        console.log('[AuthPage] Attempting to add patient to check-up list:', patientData);
+        try {
+          await addPatientToCheckUpList(patientData);
+          console.log('[AuthPage] Patient successfully added to check-up list');
+        } catch (checkupError) {
+          console.error('[AuthPage] Error adding patient to check-up list:', checkupError);
+          // Continue with navigation anyway - don't block the user
+        }
       }
- 
-      // Regular users (patients/members) go to dashboard
-      console.log("Redirecting to patient dashboard");
-      navigate("/dashboard");
-     
+
+      // Redirect based on role
+      if (user.role === "admin") {
+        navigate("/admin/dashboard");
+      } else if (user.role === "doctor") {
+        navigate("/doctor/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
+      
     } catch (error) {
       if (error.response && error.response.status === 404) {
         setLoginError("User not found. Please register first.");
@@ -218,73 +237,77 @@ const AuthPage = () => {
       console.error("Login failed:", error);
     }
   };
- 
+
   const handleQrLogin = async (scannedQrData) => {
     try {
       // Parse the QR data to get email and password
       const qrDataObj = JSON.parse(scannedQrData);
-     
+      
       if (!qrDataObj.email || !qrDataObj.authToken) {
         setLoginError("Invalid QR code format");
         return;
       }
-     
+      
       // Use the email and token from QR code for login
       const response = await axios.post('http://localhost:5000/api/login', {
         email: qrDataObj.email,
-        password: qrDataObj.authToken
+        password: qrDataObj.authToken // In a real app, this should be a proper token
       });
-     
+      
       const { user } = response.data;
-     
+      
       console.log("QR Login response:", user);
-     
+      
       // Store user data in localStorage with the same pattern as regular login
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userRole", user.role);
       localStorage.setItem("userEmail", user.email);
-     
+      
       // Store name data consistently
       if (user.firstName) {
         localStorage.setItem("firstName", user.firstName);
         localStorage.setItem("userName", `${user.firstName} ${user.lastName}`);
       } else if (user.name) {
         localStorage.setItem("userName", user.name);
-        // Try to extract firstName from the full name
         const nameParts = user.name.split(' ');
         if (nameParts.length > 0) {
           localStorage.setItem("firstName", nameParts[0]);
         }
       } else if (qrDataObj.name) {
-        // If the name is in the QR code
         localStorage.setItem("userName", qrDataObj.name);
-        // Try to extract firstName from the QR code name
         const nameParts = qrDataObj.name.split(' ');
         if (nameParts.length > 0) {
           localStorage.setItem("firstName", nameParts[0]);
         }
       }
-     
+      
       if (user.role === "patient" || user.role === "member") {
         localStorage.setItem("patientId", user.id);
         if (!localStorage.getItem("patientName") && user.name) {
           localStorage.setItem("patientName", user.name);
         }
+         // Add patient to the check-up list via context
+        const patientData = { 
+          id: user.id, 
+          name: user.name || `${user.firstName} ${user.lastName}`,
+        };
+        console.log('[AuthPage] Attempting to add patient via QR to check-up list:', patientData); // Added console.log
+        addPatientToCheckUpList(patientData);
       }
-     
+      
       // Redirect based on role
       if (user.role === "admin") {
         navigate("/admin/dashboard");
       } else {
         navigate("/dashboard");
       }
-     
+      
     } catch (error) {
       console.error("QR Login failed:", error);
       setLoginError("QR code login failed. Please try again or use password login.");
     }
   };
- 
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       if (activeTab === 'login' && !isQrLogin) {
@@ -294,7 +317,7 @@ const AuthPage = () => {
       }
     }
   };
- 
+
   // ===== REGISTRATION FUNCTIONS =====
   const getAvailableBarangays = () => {
     if (formData.street) {
@@ -302,7 +325,7 @@ const AuthPage = () => {
     }
     return [];
   };
- 
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'street') {
@@ -326,7 +349,7 @@ const AuthPage = () => {
       });
     }
   };
- 
+
   const handleDateChange = (date) => {
     const today = new Date();
     let computedAge = '';
@@ -344,7 +367,7 @@ const AuthPage = () => {
       age: computedAge
     }));
   };
- 
+
   // Generate a unique token for QR code
   const generateQrToken = () => {
     // In a real application, this should be a secure, properly generated token
@@ -353,7 +376,7 @@ const AuthPage = () => {
     const timestamp = new Date().getTime().toString(36);
     return randomString + timestamp;
   };
- 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -433,7 +456,7 @@ const AuthPage = () => {
       }
     }
   };
- 
+
   // Download QR code as image
   const downloadQRCode = () => {
     const canvas = document.getElementById("user-qr-code");
@@ -450,7 +473,7 @@ const AuthPage = () => {
       document.body.removeChild(downloadLink);
     }
   };
- 
+
   // Print QR code
   const printQRCode = () => {
     const printWindow = window.open('', '_blank');
@@ -525,7 +548,7 @@ const AuthPage = () => {
    
     printWindow.document.close();
   };
- 
+
   // Toggle between login and registration forms
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -536,7 +559,7 @@ const AuthPage = () => {
     setIsQrLogin(false);
     setShowQrScanner(false);
   };
- 
+
   // Password strength indicator UI component
   const PasswordStrengthIndicator = ({ strength }) => {
     if (!strength) return null;
@@ -606,7 +629,7 @@ const AuthPage = () => {
               <label htmlFor="username">Email or Phone Number</label>
               <div className="form-text text-muted mt-1">Enter your registered email or phone</div>
             </div>
- 
+
             <div className="form-floating mb-4 position-relative w-100">
               <input
                 type={showPassword ? "text" : "password"}
@@ -622,13 +645,13 @@ const AuthPage = () => {
                 className="password-toggle-icon"
                 onClick={togglePasswordVisibility}
               >
-                {showPassword ?
+                {showPassword ? 
                   <i className="bi bi-eye-fill"></i> :
                   <i className="bi bi-eye-slash-fill"></i>
                 }
               </span>
             </div>
- 
+
             <div className="d-flex justify-content-between align-items-center mb-4 w-100">
               <div className="form-check">
                 <input
@@ -700,7 +723,7 @@ const AuthPage = () => {
             )}
           </button>
         </div>
- 
+
         <div className="text-center mt-3 w-100">
           <a href="#" className="forgot-password">
             Forgot password?
@@ -709,7 +732,7 @@ const AuthPage = () => {
       </div>
     );
   };
- 
+
   // Render registration form
   const renderRegistrationForm = () => {
     return (
@@ -853,7 +876,7 @@ const AuthPage = () => {
                         style={{ cursor: 'pointer' }}
                         onClick={toggleRegPasswordVisibility}
                       >
-                        {showRegPassword ?
+                        {showRegPassword ? 
                           <i className="bi bi-eye-fill"></i> :
                           <i className="bi bi-eye-slash-fill"></i>
                         }
@@ -1079,5 +1102,5 @@ const AuthPage = () => {
     </Container>
   );
 };
- 
+
 export default AuthPage;

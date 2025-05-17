@@ -29,104 +29,107 @@ import PatientLayout from "./components/PatientLayout";
 import DoctorLayout from "./components/DoctorLayout";
 import DocDashboard from "./components/DoctorDashboard";
 import AdminDashboard from "./components/AdminDashboard";
+import { CheckUpProvider } from './contexts/CheckUpContext'; // Import the provider
  
 function App() {
   // Sidebar logic can be handled in each component if needed
   return (
-    <Routes>
-      {/* Public/User Routes */}
-      <Route path="/" element={<Homepage />} />
-      <Route path="/auth" element={<AuthPage />} />
-      <Route path="/register" element={<RegistrationForm />} />
-      <Route path="/login" element={<Login />} />
+    <CheckUpProvider>
+      <Routes>
+        {/* Public/User Routes */}
+        <Route path="/" element={<Homepage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/register" element={<RegistrationForm />} />
+        <Route path="/login" element={<Login />} />
  
-      {/* Patient Routes with Sidebar/Topbar */}
-      <Route element={<PatientLayout />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/patient-profile" element={<PatientProfile />} />
-        <Route path="/immunisation-history" element={<ImmunisationH />} />
-        <Route path="/referral" element={<Referral />} />
-        <Route path="/notification" element={<Notification />} />
-        <Route path="/med-history" element={<TreatmentRecord />} />
-        <Route path="/checkup-records" element={<CheckupRecords />} />
-        <Route path="/admitting-data" element={<AdmittingData />} />
-        <Route path="/manage" element={<Manage />} />
-      </Route>
+        {/* Patient Routes with Sidebar/Topbar */}
+        <Route element={<PatientLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/patient-profile" element={<PatientProfile />} />
+          <Route path="/immunisation-history" element={<ImmunisationH />} />
+          <Route path="/referral" element={<Referral />} />
+          <Route path="/notification" element={<Notification />} />
+          <Route path="/med-history" element={<TreatmentRecord />} />
+          <Route path="/checkup-records" element={<CheckupRecords />} />
+          <Route path="/admitting-data" element={<AdmittingData />} />
+          <Route path="/manage" element={<Manage />} />
+        </Route>
  
-      {/* About Us and Contact Us without Sidebar/Topbar */}
-      <Route path="/about-us" element={<AboutUs />} />
-      <Route path="/contact" element={<ContactPage />} />
+        {/* About Us and Contact Us without Sidebar/Topbar */}
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/contact" element={<ContactPage />} />
  
-      {/* Doctor Routes with DoctorLayout */}
-      <Route element={<DoctorLayout />}>
-        <Route path="/doctor/dashboard" element={<DocDashboard />} />
-        <Route path="/doctor/patient/:id" element={<PatientProfile />} />
-        <Route path="/doctor/patient/:id/immunisation" element={<ImmunisationH />} />
-        <Route path="/doctor/patient/:id/checkup" element={<CheckupRecords />} />
-        <Route path="/doctor/patient/:id/admitting" element={<AdmittingData />} />
-        <Route path="/doctor/patient/:id/referral" element={<Referral />} />
-      </Route>
+        {/* Doctor Routes with DoctorLayout */}
+        <Route element={<DoctorLayout />}>
+          <Route path="/doctor/dashboard" element={<DocDashboard />} />
+          <Route path="/doctor/patient/:id" element={<PatientProfile />} />
+          <Route path="/doctor/patient/:id/immunisation" element={<ImmunisationH />} />
+          <Route path="/doctor/patient/:id/checkup" element={<CheckupRecords />} />
+          <Route path="/doctor/patient/:id/admitting" element={<AdmittingData />} />
+          <Route path="/doctor/patient/:id/referral" element={<Referral />} />
+        </Route>
  
-      {/* Admin Routes */}
-      <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      <Route path="/admin/manage-patient-data" element={
-        <div className="app-wrapper admin-app">
-          <SidebarAdmin />
-          <div className="admin-main-content">
-            <TopbarAdmin />
-            <div className="admin-content-area">
-              <Manage />
+        {/* Admin Routes */}
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/manage-patient-data" element={
+          <div className="app-wrapper admin-app">
+            <SidebarAdmin />
+            <div className="admin-main-content">
+              <TopbarAdmin />
+              <div className="admin-content-area">
+                <Manage />
+              </div>
             </div>
           </div>
-        </div>
-      } />
-      <Route path="/admin/settings" element={
-        <div className="app-wrapper admin-app">
-          <SidebarAdmin />
-          <div className="admin-main-content">
-            <TopbarAdmin />
-            <div className="admin-content-area">
-              <Asettings />
+        } />
+        <Route path="/admin/settings" element={
+          <div className="app-wrapper admin-app">
+            <SidebarAdmin />
+            <div className="admin-main-content">
+              <TopbarAdmin />
+              <div className="admin-content-area">
+                <Asettings />
+              </div>
             </div>
           </div>
-        </div>
-      } />
-      <Route path="/admin/appearance" element={
-        <div className="app-wrapper admin-app">
-          <SidebarAdmin />
-          <div className="admin-main-content">
-            <TopbarAdmin />
-            <div className="admin-content-area">
-              <div className="p-4">Appearance Settings Page</div>
+        } />
+        <Route path="/admin/appearance" element={
+          <div className="app-wrapper admin-app">
+            <SidebarAdmin />
+            <div className="admin-main-content">
+              <TopbarAdmin />
+              <div className="admin-content-area">
+                <div className="p-4">Appearance Settings Page</div>
+              </div>
             </div>
           </div>
-        </div>
-      } />
-      <Route path="/admin/report/generate" element={
-        <div className="app-wrapper admin-app">
-          <SidebarAdmin />
-          <div className="admin-main-content">
-            <TopbarAdmin />
-            <div className="admin-content-area">
-              <Reports />
+        } />
+        <Route path="/admin/report/generate" element={
+          <div className="app-wrapper admin-app">
+            <SidebarAdmin />
+            <div className="admin-main-content">
+              <TopbarAdmin />
+              <div className="admin-content-area">
+                <Reports />
+              </div>
             </div>
           </div>
-        </div>
-      } />
-      <Route path="/admin/referral" element={
-        <div className="app-wrapper admin-app">
-          <SidebarAdmin />
-          <div className="admin-main-content">
-            <TopbarAdmin />
-            <div className="admin-content-area">
-              <Referral />
+        } />
+        <Route path="/admin/referral" element={
+          <div className="app-wrapper admin-app">
+            <SidebarAdmin />
+            <div className="admin-main-content">
+              <TopbarAdmin />
+              <div className="admin-content-area">
+                <Referral />
+              </div>
             </div>
           </div>
-        </div>
-      } />
-      {/* Fallback route */}
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+        } />
+        {/* Fallback route */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </CheckUpProvider>
   );
 }
  

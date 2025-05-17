@@ -13,6 +13,7 @@ import CheckupRecords from './CheckupRecords';
 import ScheduleSession from './ScheduleSession';
 import SessionsList from './SessionsList';
 import UnsortedMembers from './UnsortedMembers';
+import RegisteredProfile from './RegisteredProfile';
 import { getPatients, getFamilies, getFamilyMembers, getSortedFamilies } from '../services/api';
 import { Button } from 'react-bootstrap';
 
@@ -437,16 +438,15 @@ export default function DoctorDashboard() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
-                    fontSize: '14px'
-                  }}
-                  onClick={() => alert('View full profile functionality to be implemented')}
+                    fontSize: '14px'                  }}
+                  onClick={() => setActionView('registered-profile')}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"/>
                     <circle cx="12" cy="10" r="3"/>
                     <path d="M12 21.7C17 20 22 16.4 22 10c0-5.5-4.5-10-10-10S2 4.5 2 10c0 6.4 5 10 10 11.7z"/>
                   </svg>
-                  View Full Profile
+                  Registered Profile
                 </button>
               </h2>
                 <div style={{ marginBottom: '30px' }}>
@@ -790,8 +790,8 @@ export default function DoctorDashboard() {
         case 'treatment': return <TreatmentRecord member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
         case 'admitting': return <AdmittingData member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
         case 'immunization': return <ImmunisationH member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
-        case 'referral': return <Referral member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
-        case 'schedule': return <ScheduleVisit member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
+        case 'referral': return <Referral member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;        case 'schedule': return <ScheduleVisit member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
+        case 'registered-profile': return <RegisteredProfile patient={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
         default: setActionView(null);
       }
     }
@@ -867,6 +867,7 @@ export default function DoctorDashboard() {
                       case 'admitting': actionLabel = 'Admitting Data'; break;
                       case 'immunization': actionLabel = 'Immunization History'; break;
                       case 'referral': actionLabel = 'Referral'; break;
+                      case 'registered-profile': actionLabel = 'Registered Profile'; break;
                       default: actionLabel = actionView;
                     }
                     path.push(<span key="action" style={baseStyle}>{actionLabel}</span>);
@@ -887,6 +888,7 @@ export default function DoctorDashboard() {
                       case 'admitting': actionLabel = 'Admitting Data'; break;
                       case 'immunization': actionLabel = 'Immunization History'; break;
                       case 'referral': actionLabel = 'Referral'; break;
+                      case 'registered-profile': actionLabel = 'Registered Profile'; break;
                       default: actionLabel = actionView;
                     }
                     path.push(<span key="action" style={baseStyle}>{actionLabel}</span>);

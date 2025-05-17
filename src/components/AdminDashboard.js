@@ -18,6 +18,7 @@ import Referral from './Referral';
 import SessionsList from './SessionsList';
 import ScheduleSession from './ScheduleSession';
 import ScheduleVisit from './ScheduleVisit'; 
+import RegisteredProfile from './RegisteredProfile';
 import { getPatients, getFamilies, getFamilyMembers, getSortedFamilies, addSurname } from '../services/api'; // Removed debugFamilyMembers and added addSurname
 import AddNewPatientForm from './AddNewPatientForm'; // Import AddNewPatientForm
 import { Button } from 'react-bootstrap'; // Import Button
@@ -311,6 +312,7 @@ export default function AdminDashboard() {
     }
   };
   function renderContent() {
+    console.log('AdminDashboard actionView:', actionView, 'selectedMember:', selectedMember); // DEBUG LINE
     if (actionView && selectedMember) {
       switch (actionView) {        case 'ck-profile': 
           return (
@@ -453,15 +455,14 @@ export default function AdminDashboard() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px'
-                    }}
-                    onClick={() => alert('View full profile functionality to be implemented')}
+                    }}                    onClick={() => setActionView('registered-profile')}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10"/>
                       <circle cx="12" cy="10" r="3"/>
                       <path d="M12 21.7C17 20 22 16.4 22 10c0-5.5-4.5-10-10-10S2 4.5 2 10c0 6.4 5 10 10 11.7z"/>
                     </svg>
-                    View Full Profile
+                    Registered Profile
                   </button>
                 </div>
               </div>
@@ -677,7 +678,7 @@ export default function AdminDashboard() {
                 maxWidth: '100%',
                 width: '100%'
               }}>
-                <button className="action-button" onClick={() => setActionView('ck-profile')}>
+                <button className="action-button" onClick={() => setActionView('checkup_history_detail')}> {/* Changed actionView */}
                   <div style={{ 
                     display: 'flex',
                     alignItems: 'center',
@@ -801,9 +802,12 @@ export default function AdminDashboard() {
         case 'immunization': 
           return <ImmunisationH member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
         case 'referral': 
-          return <Referral member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
-        case 'schedule': 
+          return <Referral member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;        case 'schedule': 
           return <ScheduleVisit member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
+        case 'registered-profile':
+          return <RegisteredProfile patient={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
+        case 'checkup_history_detail': // Added new case
+          return <CKProfile member={selectedMember} onBack={() => setActionView('ck-profile')} />;
         default: 
           setActionView(null);
       }
@@ -1349,13 +1353,15 @@ export default function AdminDashboard() {
                   <ChevronRight size={16} style={{ margin: '0 4px' }} />
                   <span style={{ color: '#38bdf8' }}>
                     {selectedMember.name}
-                  </span>
-                  <ChevronRight size={16} style={{ margin: '0 4px' }} />                  <span style={{ color: '#38bdf8' }}>
+                  </span>                  <ChevronRight size={16} style={{ margin: '0 4px' }} />                  <span style={{ color: '#38bdf8' }}>
                     {actionView === 'ck-profile' ? 'Profile' : 
                      actionView === 'treatment' ? 'Individual Treatment Record' : 
                      actionView === 'admitting' ? 'Admitting Data' : 
                      actionView === 'immunization' ? 'Immunization History' : 
-                     actionView === 'referral' ? 'Referral' : actionView}
+                     actionView === 'referral' ? 'Referral' : 
+                     actionView === 'registered-profile' ? 'Registered Profile' : 
+                     actionView === 'checkup_history_detail' ? 'Check Up History Detail' :
+                     actionView}
                   </span>
                 </>
               )}

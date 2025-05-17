@@ -182,17 +182,24 @@ const AuthPage = () => {
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userRole", user.role);
       localStorage.setItem("userEmail", user.email);
-      
-      // Make sure we store the name consistently
+        // Make sure we store the name consistently
       if (user.firstName) {
         localStorage.setItem("firstName", user.firstName);
-        localStorage.setItem("userName", `${user.firstName} ${user.lastName}`);
+        localStorage.setItem("lastName", user.lastName || "");
+        localStorage.setItem("userName", `${user.firstName} ${user.lastName || ""}`);
       } else if (user.name) {
         // If firstName is not available but name is, store the full name
         localStorage.setItem("userName", user.name);
         const nameParts = user.name.split(' ');
         if (nameParts.length > 0) {
           localStorage.setItem("firstName", nameParts[0]);
+          // Store lastName if available
+          if (nameParts.length > 1) {
+            const lastName = nameParts.slice(1).join(' ');
+            localStorage.setItem("lastName", lastName);
+          } else {
+            localStorage.setItem("lastName", "");
+          }
         }
       }
 

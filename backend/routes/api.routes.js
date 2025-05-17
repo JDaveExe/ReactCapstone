@@ -676,6 +676,31 @@ router.get('/families', (req, res) => {
   });
 });
 
+// Endpoint to get a specific patient by ID
+router.get('/patients/:id', (req, res) => {
+  const patientId = req.params.id;
+  
+  const query = `
+    SELECT u.*
+    FROM users u
+    WHERE u.id = ? AND u.membershipStatus != 'admin';
+  `;
+
+  db.query(query, [patientId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to fetch patient', details: err.message });
+    }
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: `Patient with ID ${patientId} not found` });
+    }
+    
+    // Remove password before sending
+    const { password, ...patientWithoutPassword } = results[0];
+    res.json(patientWithoutPassword);
+  });
+});
+
 // Endpoint to get members of a specific family by familyId
 router.get('/families/:familyId/members', (req, res) => {
   const { familyId } = req.params;

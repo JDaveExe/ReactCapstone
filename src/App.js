@@ -5,7 +5,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import './App.css';
 import Homepage from "./components/Homepage";
 import RegistrationForm from "./components/Registration";
-import Dashboard from "./components/dashboard";
+import PatientDashboard from "./components/PatientDashboard"; // Add this line
 import Login from "./components/Login";
 import PatientProfile from "./components/PatientProfile";
 import ImmunisationH from "./components/ImmunisationH";
@@ -37,14 +37,17 @@ function App() {
     <CheckUpProvider>
       <Routes>
         {/* Public/User Routes */}
-        <Route path="/" element={<Homepage />} />
+        <Route path="/home" element={<Homepage />} /> 
+        <Route path="/" element={<Navigate to="/home" />} /> {/* Redirect root to /home */}
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/register" element={<RegistrationForm />} />
         <Route path="/login" element={<Login />} />
+
+        {/* Patient Dashboard - Direct render without PatientLayout wrapper */}
+        <Route path="/dashboard" element={<PatientDashboard />} />
  
-        {/* Patient Routes with Sidebar/Topbar */}
+        {/* Patient Routes with Sidebar/Topbar (excluding dashboard) */}
         <Route element={<PatientLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/patient-profile" element={<PatientProfile />} />
           <Route path="/immunisation-history" element={<ImmunisationH />} />
           <Route path="/referral" element={<Referral />} />
@@ -127,7 +130,7 @@ function App() {
           </div>
         } />
         {/* Fallback route */}
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<Navigate to="/home" />} /> {/* Ensure fallback goes to /home */}
       </Routes>
     </CheckUpProvider>
   );

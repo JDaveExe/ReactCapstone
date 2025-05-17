@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Alert, Form, Button } from 'react-bootstrap';
 import axios from 'axios';
 import '../styles/AddNewPatientForm.css'; // Reusing the same styles
+import { ArrowLeftCircle, AlertTriangle, Loader2 } from 'lucide-react'; // Added icons
 
 const API_URL = 'http://localhost:5000/api';
 
@@ -30,39 +31,47 @@ export default function RegisteredProfile({ patient, onBack }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [families, setFamilies] = useState([]);
-
   // Function to fetch the user's profile data
   const fetchPatientData = async () => {
     setLoading(true);
     setError('');
+    
     try {
+      // If we have a patient ID, fetch directly from the single patient endpoint
       if (patient && patient.id) {
-        // If critical details like firstName and email are missing, fetch the full record.
-        if (typeof patient.firstName === 'undefined' && typeof patient.email === 'undefined') {
-          try {
-            const response = await axios.get(`${API_URL}/patients`);
-            const fullPatientDetails = response.data.find(p => p.id === patient.id);
-            if (fullPatientDetails) {
-              setPatientData(fullPatientDetails);
-            } else {
-              setError(`Could not load full details for patient ${patient.name || `ID ${patient.id}`}.`);
-            }
-          } catch (apiErr) {
-            setError(`Failed to retrieve complete data for patient ${patient.name || `ID ${patient.id}`}. Ensure /api/patients is working.`);
+        try {
+          console.log(`Fetching patient data for ID: ${patient.id}`);
+          const response = await axios.get(`${API_URL}/patients/${patient.id}`);
+          
+          if (response.data) {
+            console.log("Patient data retrieved successfully:", response.data);
+            setPatientData(response.data);
+          } else {
+            setError(`No data returned for patient ID ${patient.id}.`);
           }
-        } else {
-          // Patient prop seems to have detailed fields already.
-          setPatientData(patient);
+        } catch (apiErr) {
+          console.error("API error:", apiErr);
+          if (apiErr.response && apiErr.response.status === 404) {
+            setError(`Patient with ID ${patient.id} not found.`);
+          } else {
+            setError(`Failed to retrieve data for patient ID ${patient.id}. ${apiErr.message}`);
+          }
         }
-      } else if (patient && Object.keys(patient).length > 0 && typeof patient.firstName !== 'undefined') {
-          // Fallback: Patient prop exists, has no ID, but has firstName (less common scenario)
-          setPatientData(patient);
-      } else {
+      } 
+      // If we already have complete patient data
+      else if (patient && patient.firstName && patient.lastName) {
+        console.log("Using provided patient data:", patient);
+        setPatientData(patient);
+      } 
+      // No valid patient data provided
+      else {
         setError('Patient data not provided or is incomplete.');
       }
-    } catch (err) { // Catch errors from the main try block
-      setError('Failed to load patient data. An unexpected error occurred.');
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setError(`Failed to load patient data: ${err.message}`);
     }
+    
     setLoading(false);
   };
 
@@ -90,8 +99,9 @@ export default function RegisteredProfile({ patient, onBack }) {
   if (loading) {
     return (
       <Container fluid className="add-new-patient-form-container" style={{ background: '#0f172a', padding: '30px', borderRadius: '8px', maxWidth: '1200px', margin: '20px auto' }}>
-        <div style={{ textAlign: 'center', color: '#38bdf8', padding: '50px' }}>
-          Loading patient data...
+        <div style={{ textAlign: 'center', color: '#38bdf8', padding: '50px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}>
+          <Loader2 size={48} className="mb-3 animate-spin" color="#38bdf8" />
+          <p style={{fontSize: '1.2rem'}}>Loading patient data...</p>
         </div>
       </Container>
     );
@@ -100,8 +110,21 @@ export default function RegisteredProfile({ patient, onBack }) {
   if (error) {
     return (
       <Container fluid className="add-new-patient-form-container" style={{ background: '#0f172a', padding: '30px', borderRadius: '8px', maxWidth: '1200px', margin: '20px auto' }}>
-        <Alert variant="danger">
-          {error}
+        <Alert variant="danger" className="d-flex flex-column align-items-center text-center p-4">
+          <AlertTriangle size={48} className="mb-3" />
+          <Alert.Heading style={{fontSize: '1.5rem', color: '#dc3545'}}>Error Loading Profile</Alert.Heading>
+          <p style={{fontSize: '1rem', color: '#f8d7da', marginTop: '10px', marginBottom: '20px'}}>
+            {error}
+          </p>
+          {onBack && (
+            <>
+              <hr style={{width: '80%', borderColor: 'rgba(255,255,255,0.3)'}}/>
+              <Button variant="danger" onClick={onBack} className="mt-3">
+                <ArrowLeftCircle size={18} className="me-2" />
+                Go Back
+              </Button>
+            </>
+          )}
         </Alert>
       </Container>
     );
@@ -110,8 +133,21 @@ export default function RegisteredProfile({ patient, onBack }) {
   if (!patientData) {
     return (
       <Container fluid className="add-new-patient-form-container" style={{ background: '#0f172a', padding: '30px', borderRadius: '8px', maxWidth: '1200px', margin: '20px auto' }}>
-        <Alert variant="warning">
-          No patient data available.
+        <Alert variant="warning" className="d-flex flex-column align-items-center text-center p-4">
+          <AlertTriangle size={48} className="mb-3" />
+          <Alert.Heading style={{fontSize: '1.5rem', color: '#ffc107'}}>Data Not Available</Alert.Heading>
+          <p style={{fontSize: '1rem', color: '#212529', marginTop: '10px', marginBottom: '20px'}}>
+            No patient data could be displayed at this time. This might indicate an issue with the record or a delay in data synchronization.
+          </p>
+          {onBack && (
+            <>
+              <hr style={{width: '80%', borderColor: 'rgba(0,0,0,0.2)'}}/>
+              <Button variant="warning" onClick={onBack} className="mt-3 text-dark">
+                 <ArrowLeftCircle size={18} className="me-2" />
+                Go Back
+              </Button>
+            </>
+          )}
         </Alert>
       </Container>
     );

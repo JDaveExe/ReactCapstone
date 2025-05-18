@@ -587,51 +587,58 @@ router.patch('/unsorted/:id/assign-family', (req, res) => {
 // Get all sorted families and their members
 router.get('/sorted-families', (req, res) => {
   // First, get all families
-  db.query('SELECT id, familyName FROM families', (err, familiesResults) => {
+  db.query('SELECT id, familyName FROM families ORDER BY familyName ASC', (err, familiesResults) => {
     if (err) {
+      console.error('Error fetching families:', err);
       return res.status(500).json({ error: 'Failed to fetch families', details: err.message });
     }
 
-    // If no families, return empty array
     if (!familiesResults || familiesResults.length === 0) {
       return res.json([]);
     }
 
-    // Get all users with their family info
+    // Get all users who have a familyId assigned
     db.query(`
       SELECT 
         u.id, 
         u.firstName, 
         u.lastName, 
+        u.email, 
+        u.phoneNumber,
         u.familyId,
         CONCAT(u.firstName, ' ', u.lastName) as name
       FROM 
         users u
       WHERE 
-        u.familyId IS NOT NULL
+        u.familyId IS NOT NULL AND u.membershipStatus != 'admin'
     `, (err, usersResults) => {
       if (err) {
+        console.error('Error fetching users with family data:', err);
         return res.status(500).json({ error: 'Failed to fetch users with family data', details: err.message });
       }
 
-      // Create array of family objects with their members
       const familiesWithMembers = familiesResults.map(family => {
-        // Find all users belonging to this family
-        const familyMembers = usersResults.filter(user => 
-          user.familyId === family.id
-        );
+        const familyMembers = usersResults
+          .filter(user => user.familyId === family.id)
+          .map(member => ({
+            id: member.id,
+            name: member.name, // This correctly uses the concatenated firstName and lastName
+            firstName: member.firstName,
+            lastName: member.lastName,
+            email: member.email,
+            phoneNumber: member.phoneNumber
+          }));
 
         return {
-          id: family.id, // Ensure family ID is included at the top level of the family object
+          id: family.id,
           familyName: family.familyName,
-          members: familyMembers.map(member => ({
-            id: member.id,
-            name: member.name // This was already correctly concatenating firstName and lastName
-          }))
+          members: familyMembers
         };
       });
+      // Filter out families with no members after assignment changes
+      const populatedFamilies = familiesWithMembers.filter(family => family.members.length > 0);
 
-      res.json(familiesWithMembers);
+      res.json(populatedFamilies);
     });
   });
 });
@@ -709,35 +716,30 @@ router.get('/families/:familyId/members', (req, res) => {
     return res.status(400).json({ error: 'Family ID is required.' });
   }
 
-  // Convert familyId to a number for comparison (if it's a numeric string)
   const familyIdNum = parseInt(familyId, 10);
-  
-  // Updated query with better debugging and explicit parameter binding to the right type
+  if (isNaN(familyIdNum)) {
+    return res.status(400).json({ error: 'Family ID must be a valid number.' });
+  }
+
   const query = `
     SELECT u.id, u.firstName, u.lastName, u.email, u.phoneNumber, u.membershipStatus, 
-           u.familyId, f.familyName, f.id as actualFamilyId
+           u.familyId, f.familyName
     FROM users u
     JOIN families f ON u.familyId = f.id
-    WHERE u.familyId = ?
+    WHERE u.familyId = ? AND u.membershipStatus != 'admin'
   `;
   
   db.query(query, [familyIdNum], (err, results) => {
     if (err) {
+      console.error('Database error fetching family members for ID:', familyIdNum, err);
       return res.status(500).json({ error: 'Database error fetching family members.', details: err.message });
     }
-    if (results.length === 0) {
-      // Check if the family exists
-      const familyCheckQuery = `SELECT * FROM families WHERE id = ?`;
-      db.query(familyCheckQuery, [familyIdNum], (famErr, famResults) => {
-        res.json([]); // Return empty array as no members found
-      });
-    } else {
-      const members = results.map(member => {
-        const { password, ...memberWithoutPassword } = member;
-        return memberWithoutPassword;
-      });
-      res.json(members);
-    }
+    // No need to check if family exists separately, if no members, results will be empty.
+    const members = results.map(member => {
+      const { password, ...memberWithoutPassword } = member; // Ensure password is not sent
+      return memberWithoutPassword;
+    });
+    res.json(members); // Send empty array if no members found, which is correct
   });
 });
 
@@ -955,6 +957,54 @@ router.get('/sessionhistory', (req, res) => {
     console.error('[API /api/sessionhistory GET] Error retrieving session history:', error.message, error.stack);
     res.status(500).json({ message: 'Server error while retrieving session history.' });
   }
+});
+
+// Assign patient to a different family (by updating familyId)
+router.patch('/patients/:patientId/assign-family', (req, res) => {
+  const patientIdParam = req.params.patientId;
+  const familyIdBody = req.body.familyId;
+
+  console.log(`[assign-family] Received raw patientId: "${patientIdParam}", raw familyId: "${familyIdBody}"`);
+
+  const patientId = parseInt(patientIdParam, 10);
+  const familyId = parseInt(familyIdBody, 10);
+
+  if (isNaN(patientId) || isNaN(familyId)) {
+    console.error(`[assign-family] Invalid IDs after parsing. PatientId: ${patientId}, FamilyId: ${familyId}. Original params: patientId="${patientIdParam}", familyId="${familyIdBody}"`);
+    return res.status(400).json({ error: 'Patient ID and Family ID must be valid numbers.' });
+  }
+
+  console.log(`[assign-family] Parsed patientId: ${patientId}, familyId: ${familyId}`);
+
+  // Step 1: Verify the new family exists (optional, but good practice)
+  db.query('SELECT id FROM families WHERE id = ?', [familyId], (err, familyResults) => {
+    if (err) {
+      console.error('[assign-family] Error verifying family existence:', err);
+      return res.status(500).json({ error: 'Database error while verifying family', details: err.message });
+    }
+
+    if (familyResults.length === 0) {
+      console.warn(`[assign-family] Target family not found for ID: ${familyId}`);
+      return res.status(404).json({ error: 'Target family not found' });
+    }
+    console.log(`[assign-family] Target family ID: ${familyId} verified.`);
+
+    // Step 2: Update the patient's familyId in the 'users' table
+    db.query('UPDATE users SET familyId = ? WHERE id = ?', [familyId, patientId], (errUpdate, updateResult) => {
+      if (errUpdate) {
+        console.error('[assign-family] Error updating user\'s familyId:', errUpdate);
+        return res.status(500).json({ error: 'Database error while updating patient familyId', details: errUpdate.message });
+      }
+
+      if (updateResult.affectedRows === 0) {
+        console.warn(`[assign-family] Patient not found for ID: ${patientId} during update, or familyId was already set to ${familyId}.`);
+        return res.status(404).json({ error: `Patient with ID ${patientId} not found or no change needed.` });
+      }
+
+      console.log(`[assign-family] Successfully updated familyId for patient ${patientId} to ${familyId}. Affected rows: ${updateResult.affectedRows}`);
+      res.json({ message: 'Patient successfully assigned to new family', patientId, newFamilyId: familyId });
+    });
+  });
 });
 
 module.exports = router;

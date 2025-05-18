@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react'; // Added useRef
 import axios from 'axios';
-import { ChevronDown, ChevronUp, Search, Settings, Bell, LogOut, User, Menu, X, Maximize, BarChart2, Circle, Calendar, Square, ChevronRight, Activity, AlarmClock, FileText, Shield, Grid, List } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, Settings, Bell, LogOut, User, Menu, X, Maximize, BarChart2, Circle, Calendar, Square, ChevronRight, Activity, AlarmClock, FileText, Shield, Grid, List, QrCode } from 'lucide-react'; // Added QrCode
 import { useNavigate } from 'react-router-dom';
 import '../styles/DashboardAdm.css';
 import '../styles/SidebarAdmin.css';
@@ -21,9 +21,10 @@ import ScheduleSession from './ScheduleSession';
 import ScheduleVisit from './ScheduleVisit'; 
 import RegisteredProfile from './RegisteredProfile';
 import SessionHistory from './SessionHistory'; // Import the SessionHistory component
-import { getPatients, getFamilies, getFamilyMembers, getSortedFamilies, addSurname } from '../services/api'; // Removed debugFamilyMembers and added addSurname
+import { getPatients, getFamilies, getFamilyMembers, getSortedFamilies, addSurname, assignPatientToFamily } from '../services/api'; // Removed debugFamilyMembers and added addSurname
 import AddNewPatientForm from './AddNewPatientForm'; // Import AddNewPatientForm
-import { Button } from 'react-bootstrap'; // Import Button
+import { Button, Modal } from 'react-bootstrap'; // Import Button and Modal
+import { QRCodeCanvas } from 'qrcode.react'; // Added QRCodeCanvas for QR generation
 
 function SidebarItem({ icon, label, active, collapsed, indent, onClick }) {
   return (
@@ -152,7 +153,8 @@ function LineChart() {
 }
 
 export default function AdminDashboard() {
-  const [collapsed, setCollapsed] = useState(false);    const [dropdowns, setDropdowns] = useState({
+  const [collapsed, setCollapsed] = useState(false);    
+  const [dropdowns, setDropdowns] = useState({
     patientManagement: false,
     reports: false,
     checkUp: false,
@@ -168,6 +170,7 @@ export default function AdminDashboard() {
   const [viewMode, setViewMode] = useState('list');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [familySearchTerm, setFamilySearchTerm] = useState('');
+  const [currentSearchTerm, setCurrentSearchTerm] = useState(''); // Added this line
   const [patients, setPatients] = useState([]);
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'admin');
@@ -176,12 +179,27 @@ export default function AdminDashboard() {
   const [managePatientDropdownOpen, setManagePatientDropdownOpen] = useState(false);
   const [deleteStep, setDeleteStep] = useState(null); // null, 'initial', 'cooldown', 'final'
   const [cooldownTimer, setCooldownTimer] = useState(0);
+  const [showAssignFamilyModal, setShowAssignFamilyModal] = useState(false); // New state for assign family modal
+  const [selectedFamilyForAssignment, setSelectedFamilyForAssignment] = useState(null); // New state for selected family in modal
+  const [assignFamilySearchTerm, setAssignFamilySearchTerm] = useState(''); // New state for search term in assign modal
+  const [familiesWithMembers, setFamiliesWithMembers] = useState([]); // Ensure this state exists
 
-  const [families, setFamilies] = useState([]);
-  const [members, setMembers] = useState([]); // This will now store members of the selected family from the nested structure
-  const [loadingFamilies, setLoadingFamilies] = useState(false);
-  const [loadingMembers, setLoadingMembers] = useState(false); // May not be needed if members are fetched with families
-  const [currentSearchTerm, setCurrentSearchTerm] = useState(''); // General search term
+  // QR Code State
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrCodeValue, setQrCodeValue] = useState('');
+  const [currentMemberForQr, setCurrentMemberForQr] = useState(null);
+  const qrCodeRef = useRef(null);
+
+  // Helper function to get current family name
+  const getCurrentFamilyName = () => {
+    if (!selectedMember || selectedMember.familyId === null || !familiesWithMembers) {
+      console.log('[getCurrentFamilyName] Conditions not met:', { selectedMember, familiesWithMembers });
+      return 'N/A';
+    }
+    const currentFamily = familiesWithMembers.find(f => f.id === selectedMember.familyId);
+    console.log('[getCurrentFamilyName] selectedMember.familyId:', selectedMember.familyId, 'Found family:', currentFamily);
+    return currentFamily ? currentFamily.familyName : 'Unknown Family';
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -209,6 +227,7 @@ export default function AdminDashboard() {
   }, [deleteStep, cooldownTimer]);
 
   useEffect(() => {
+    fetchFamiliesWithMembers();
     if (selectedView === 'patients' && !showAddNewPatientForm) {
       fetchFamiliesWithMembers(); // Changed to fetch families with nested members
     }
@@ -221,55 +240,75 @@ export default function AdminDashboard() {
   }, [selectedView, showAddNewPatientForm]);
 
   const fetchFamiliesWithMembers = async () => {
-    setLoadingFamilies(true);
+    console.log('FETCH_FAMILIES_WITH_MEMBERS_STARTED');
     try {
-      const res = await getSortedFamilies();
-      console.log('AdminDashboard: Raw sorted families data from API (res.data):', res.data); // LOG 1
-      
-      if (!Array.isArray(res.data)) {
-        console.error('AdminDashboard: API response for sorted families is not an array!', res.data);
-        setFamilies([]); 
-        setLoadingFamilies(false);
-        return;
-      }
+        console.log('AdminDashboard: Fetching sorted families...');
+        const response = await getSortedFamilies(); // Renamed to 'response' for clarity
+        console.log('AdminDashboard: Fetched sorted families response:', response);
 
-      const processedFamilies = res.data.map(family => ({
-        ...family,
-        id: parseInt(family.id, 10), // Will be NaN if family.id is null or not a number
-        members: Array.isArray(family.members) ? family.members.map(member => ({ 
-          ...member,
-          id: parseInt(member.id, 10)
-        })) : []
-      }));
-      console.log('AdminDashboard: Processed families (before setFamilies):', processedFamilies); // LOG 2
-      
-      setFamilies(processedFamilies);
+        // Check if response and response.data exist, and if response.data is an array
+        if (response && response.data && Array.isArray(response.data)) {
+            const familiesArray = response.data; // Extract the array from response.data
+            console.log('AdminDashboard: Processing families:', familiesArray);
+            setFamiliesWithMembers(familiesArray);
+            console.log('AdminDashboard: familiesWithMembers state updated:', familiesArray);
 
+            // If a family was selected, update its details, especially if a member moved
+            if (selectedFamily) {
+                const updatedSelectedFamily = familiesArray.find(f => f.id === selectedFamily.id);
+                if (updatedSelectedFamily) {
+                    setSelectedFamily(updatedSelectedFamily);
+                } else {
+                    // setSelectedFamily(null); // Or handle as appropriate
+                }
+            }
+             // If a member was selected, ensure their data (like familyId) is fresh
+            if (selectedMember) {
+                let foundUpdatedMember = null;
+                for (const fam of familiesArray) { // Iterate over familiesArray
+                    if (fam.members && Array.isArray(fam.members)) { // Ensure fam.members exists and is an array
+                        const memberInFam = fam.members.find(m => m.id === selectedMember.id);
+                        if (memberInFam) {
+                            foundUpdatedMember = memberInFam;
+                            break;
+                        }
+                    }
+                }
+                if (foundUpdatedMember) {
+                    console.log('[fetchFamiliesWithMembers] Updating selectedMember with fresh data:', foundUpdatedMember);
+                    setSelectedMember(foundUpdatedMember);
+                } else {
+                    console.log('[fetchFamiliesWithMembers] Selected member not found in new families data. Clearing selectedMember.');
+                    // setSelectedMember(null); 
+                    // setActionView(null);
+                }
+            }
+        } else {
+            console.error('AdminDashboard: Fetched sorted families data is not an array or is null. Full response object:', response);
+            setFamiliesWithMembers([]); // Set to empty array on error or invalid data
+        }
     } catch (error) {
-      console.error("Error fetching sorted families:", error);
-      setFamilies([]);
+        console.error('AdminDashboard: Error fetching families with members:', error);
+        setFamiliesWithMembers([]); // Set to empty array on error
     }
-    setLoadingFamilies(false);
+    console.log('AdminDashboard: fetchFamiliesWithMembers finished');
   };
 
   const handleFamilyClick = (family) => {
     console.log(`Clicking on family: ${JSON.stringify(family)}`);
     setSelectedFamily(family);
-    // Members are already part of the family object, so just set them
-    setMembers(family.members || []); 
     setCurrentSearchTerm(''); // Reset search term when a new family is clicked
-    // No need for a separate API call to fetch members
-    setLoadingMembers(false); // Ensure loading state is off
   };
   const handleBackToFamilies = () => {
     setSelectedFamily(null);
     setSelectedMember(null);
     setActionView(null);
-    setMembers([]);
     setCurrentSearchTerm(''); // Clear search term
     setManagePatientDropdownOpen(false); // Close dropdown if open
     setDeleteStep(null); // Reset delete process
     setCooldownTimer(0);
+    setShowAssignFamilyModal(false); // Close assign modal if open
+    setShowQrModal(false); // Close QR modal if open
   };
 
   const handleDeletePatientData = () => {
@@ -279,6 +318,79 @@ export default function AdminDashboard() {
     // Potentially navigate back or refresh data
     handleBackToFamilies(); // Go back to family list after deletion
   };
+
+  const handleOpenAssignFamilyModal = () => {
+    setSelectedFamilyForAssignment(null); // Reset selection
+    setAssignFamilySearchTerm(''); // Reset search
+    setShowAssignFamilyModal(true);
+    setManagePatientDropdownOpen(false);
+  };
+
+  const handleAssignPatientToNewFamily = async (patientIdToAssign, newFamilyId) => {
+    console.log(`[AssignFamily] Initiating assignment. Patient ID: ${patientIdToAssign}, Target Family ID: ${newFamilyId}`);
+    console.log('[AssignFamily] Current selectedMember (at start of function):', JSON.parse(JSON.stringify(selectedMember)));
+    console.log('[AssignFamily] Current selectedFamilyForAssignment (state):', selectedFamilyForAssignment);
+
+
+    if (!selectedMember || patientIdToAssign !== selectedMember.id) {
+        console.error('[AssignFamily] Mismatch or missing selectedMember. Aborting. PatientID to assign:', patientIdToAssign, 'selectedMember.id:', selectedMember?.id);
+        alert('Error: Patient context lost. Please re-select the patient.');
+        setShowAssignFamilyModal(false);
+        return;
+    }
+
+    // CRUCIAL CHECK
+    if (selectedMember.familyId === newFamilyId) {
+      const currentFamName = getCurrentFamilyName(); // Get name for the alert
+      alert(`Patient ${selectedMember.firstName} ${selectedMember.lastName} is already in the family "${currentFamName}" (ID: ${newFamilyId}). No changes made.`);
+      console.log(`[AssignFamily] Patient ${selectedMember.id} (current family ID: ${selectedMember.familyId}) is already in target family ID: ${newFamilyId}. Assignment aborted.`);
+      setShowAssignFamilyModal(false);
+      return;
+    }
+
+    console.log(`[AssignFamily] Proceeding: Assign patient ID: ${patientIdToAssign} (current family ID: ${selectedMember.familyId}) to new family ID: ${newFamilyId}`);
+
+    try {
+      const response = await assignPatientToFamily(patientIdToAssign, newFamilyId);
+      console.log('[AssignFamily] API response object from service:', response);
+      if (response && response.data) {
+          console.log('[AssignFamily] response.data from service:', response.data);
+          if (response.data.message) {
+              console.log('[AssignFamily] response.data.message from service:', response.data.message);
+          }
+          alert(response.data.message || 'Patient assigned successfully!');
+          
+          // Refresh data
+          await fetchFamiliesWithMembers(); // Ensure it's awaited if it's async and matters for subsequent state
+          
+          setShowAssignFamilyModal(false);
+          setSelectedFamilyForAssignment(null); 
+          
+          // Optional: Update selectedMember with new family info or clear it
+          // To see the change reflected immediately if the same patient is viewed,
+          // fetchFamiliesWithMembers should update selectedMember if it's still relevant.
+          // Or, find the updated patient data and set it.
+          // For now, fetchFamiliesWithMembers handles updating selectedMember if found.
+
+      } else {
+          console.error('[AssignFamily] Invalid response from server:', response);
+          throw new Error('Invalid response from server');
+      }
+    } catch (error) {
+      console.error('[AssignFamily] Error assigning patient to new family:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'An unknown error occurred.';
+      alert(`Failed to assign patient. ${errorMessage}`);
+    }
+  };
+
+  const filteredFamiliesForAssignment = useMemo(() => {
+    if (!assignFamilySearchTerm) {
+      return familiesWithMembers.map(f => ({ id: f.id, familyName: f.familyName }));
+    }
+    return familiesWithMembers
+      .map(f => ({ id: f.id, familyName: f.familyName }))
+      .filter(f => f.familyName.toLowerCase().includes(assignFamilySearchTerm.toLowerCase()));
+  }, [familiesWithMembers, assignFamilySearchTerm]);
 
   const toggleDropdown = (key) => {
     setDropdowns(prev => ({ ...prev, [key]: !prev[key] }));
@@ -312,10 +424,62 @@ export default function AdminDashboard() {
       alert('Failed to add new surname. Please try again.');
     }
   };
+
+  const handleGenerateQrCode = (member) => {
+    if (!member) return;
+    // IMPORTANT: For actual login via QR, the 'authToken' should be a secure token.
+    // Using member.id here as a placeholder. The backend /api/login would need
+    // to be adapted to handle this if member.id is used as an authToken.
+    // This QR code structure is based on AuthPage.js registration QR.
+    const qrData = JSON.stringify({
+      email: member.email, // Ensure member object has an email property
+      authToken: member.id, // Using ID as a placeholder for authToken for login purposes
+      name: member.name || `${member.firstName || ''} ${member.lastName || ''}`
+    });
+    setQrCodeValue(qrData);
+    setCurrentMemberForQr(member);
+    setShowQrModal(true);
+    setManagePatientDropdownOpen(false); // Close manage dropdown if it was open
+  };
+
+  const downloadQRCode = () => {
+    const canvas = qrCodeRef.current?.querySelector('canvas');
+    if (canvas) {
+      const pngUrl = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream');
+      let downloadLink = document.createElement('a');
+      downloadLink.href = pngUrl;
+      downloadLink.download = `${currentMemberForQr?.name?.replace(/\s+/g, '_') || 'patient_qr'}_qrcode.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    }
+  };
+
+  const printQRCode = () => {
+    const canvas = qrCodeRef.current?.querySelector('canvas');
+    if (canvas) {
+      const dataUrl = canvas.toDataURL('image/png');
+      let windowContent = '<!DOCTYPE html><html><head><title>Print QR Code</title></head><body style="text-align:center;">';
+      windowContent += `<h2>QR Code for ${currentMemberForQr?.name || ''}</h2>`;
+      windowContent += `<img src="${dataUrl}" style="max-width: 80%; margin-top: 20px;">`;
+      windowContent += '<script type="text/javascript">window.onload = function() { window.print(); window.onafterprint = function(){ window.close(); }; };</script>';
+      windowContent += '</body></html>';
+      const printWin = window.open('', '', 'width=600,height=600');
+      if (printWin) {
+        printWin.document.open();
+        printWin.document.write(windowContent);
+        printWin.document.close();
+      } else {
+        alert('Please allow popups to print the QR code.');
+      }
+    }
+  };
+
   function renderContent() {
     console.log('AdminDashboard actionView:', actionView, 'selectedMember:', selectedMember); // DEBUG LINE
     if (actionView && selectedMember) {
-      switch (actionView) {        case 'ck-profile': 
+      switch (actionView) {        
+        case 'ck-profile': 
           return (
             <div className="profile-container" style={{ 
               color: '#e5e7eb', 
@@ -340,7 +504,8 @@ export default function AdminDashboard() {
                 }}
               >
                 <ChevronRight style={{ transform: 'rotate(180deg)' }} size={16} />
-                Back to Families              </button>
+                Back to Families
+              </button>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h2 style={{ 
@@ -353,8 +518,28 @@ export default function AdminDashboard() {
                   {selectedMember.name || `${selectedMember.firstName || ''} ${selectedMember.lastName || ''}`}
                 </h2>
                 
-                <div style={{ display: 'flex', gap: '16px', position: 'relative' }}> {/* Added position: 'relative' for dropdown positioning */}
-                  {/* Manage Patient Dropdown Button */}
+                <div style={{ display: 'flex', gap: '10px', position: 'relative' }}> {/* Adjusted gap */}
+                  {/* New Generate QR Code Button */}
+                  <button
+                    style={{
+                      background: '#10B981', // Green background
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '10px 16px',
+                      cursor: 'pointer',
+                      fontWeight: '500',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                    onClick={() => handleGenerateQrCode(selectedMember)}
+                  >
+                    <QrCode size={16} />
+                    Generate QR Code
+                  </button>
+
+                  {/* Existing Manage Menu Button */}
                   <button 
                     style={{
                       background: '#3b82f6', // Blue background
@@ -373,7 +558,7 @@ export default function AdminDashboard() {
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/> {/* Edit icon */}
                     </svg>
-                    Manage Patient
+                    Manage
                     {/* Simple caret down icon */}
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="6 9 12 15 18 9"></polyline>
@@ -405,9 +590,9 @@ export default function AdminDashboard() {
                           cursor: 'pointer',
                           borderBottom: '1px solid #334155' // Separator line
                         }}
-                        onClick={() => { alert('Notify functionality to be implemented'); setManagePatientDropdownOpen(false); }}
+                        onClick={() => { setActionView('registered-profile'); setManagePatientDropdownOpen(false); }}
                       >
-                        Notify
+                        Registered Profile
                       </button>
                       <button 
                         style={{
@@ -419,11 +604,27 @@ export default function AdminDashboard() {
                           border: 'none',
                           color: '#e5e7eb',
                           cursor: 'pointer',
-                           borderBottom: '1px solid #334155' // Separator line
+                          borderBottom: '1px solid #334155' // Separator line
                         }}
-                        onClick={() => { alert('Assign to a different family functionality to be implemented'); setManagePatientDropdownOpen(false); }}
+                        onClick={handleOpenAssignFamilyModal} // Updated onClick
                       >
                         Assign to a different family
+                      </button>
+                      <button 
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          padding: '10px 16px',
+                          textAlign: 'left',
+                          background: 'none',
+                          border: 'none',
+                          color: '#e5e7eb', // Light text color
+                          cursor: 'pointer',
+                          borderBottom: '1px solid #334155' // Separator line
+                        }}
+                        onClick={() => { alert('Notify functionality to be implemented'); setManagePatientDropdownOpen(false); }}
+                      >
+                        Notify
                       </button>
                       <button 
                         style={{
@@ -443,31 +644,115 @@ export default function AdminDashboard() {
                       </button>
                     </div>
                   )}
-                  
-                  <button
-                    style={{
-                      background: '#1e293b',
-                      color: '#e5e7eb',
-                      border: '1px solid #334155',
-                      borderRadius: '4px',
-                      padding: '10px 16px',
-                      cursor: 'pointer',
-                      fontWeight: '500',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}                    onClick={() => setActionView('registered-profile')}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10"/>
-                      <circle cx="12" cy="10" r="3"/>
-                      <path d="M12 21.7C17 20 22 16.4 22 10c0-5.5-4.5-10-10-10S2 4.5 2 10c0 6.4 5 10 10 11.7z"/>
-                    </svg>
-                    Registered Profile
-                  </button>
                 </div>
               </div>
               
+              {/* Assign Family Modal */}
+              {showAssignFamilyModal && selectedMember && (
+                <Modal show={showAssignFamilyModal} onHide={() => {
+                    setShowAssignFamilyModal(false);
+                    setSelectedFamilyForAssignment(null); // Reset on close
+                    setAssignFamilySearchTerm(''); // Reset search
+                }} centered>
+                  <Modal.Header closeButton>
+                    <Modal.Title>Assign {selectedMember.firstName} {selectedMember.lastName} to a New Family</Modal.Title>
+                  </Modal.Header>
+                  <Modal.Body>
+                    <p>Assigning Patient: <strong>{selectedMember.firstName} {selectedMember.lastName}</strong> (ID: {selectedMember.id})</p>
+                    <p>Current Family: <strong>{getCurrentFamilyName()}</strong> (ID: {selectedMember.familyId !== null && selectedMember.familyId !== undefined ? selectedMember.familyId : 'N/A'})</p>
+                    <hr />
+                    <p><em>Selected family for assignment (state for debugging): {selectedFamilyForAssignment !== null ? selectedFamilyForAssignment : 'None selected'}</em></p>
+                    
+                    <input
+                      type="text"
+                      className="form-control mb-3"
+                      placeholder="Search families to assign to..."
+                      value={assignFamilySearchTerm}
+                      onChange={(e) => setAssignFamilySearchTerm(e.target.value)}
+                    />
+                    <div className="list-group" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                      {filteredFamiliesForAssignment.length > 0 ? filteredFamiliesForAssignment.map(fam => {
+                        console.log('AssignFamilyModal: Rendering family in list - Name:', fam.familyName, 'ID:', fam.id, 'Current selection for assignment:', selectedFamilyForAssignment);
+                        return (
+                          <button
+                            type="button"
+                            key={fam.id}
+                            className={`list-group-item list-group-item-action ${selectedFamilyForAssignment === fam.id ? 'active' : ''}`}
+                            onClick={() => {
+                              console.log('[AssignFamilyModal] Clicked on family - Name:', fam.familyName, 'ID:', fam.id);
+                              setSelectedFamilyForAssignment(fam.id);
+                              console.log('[AssignFamilyModal] setSelectedFamilyForAssignment called with:', fam.id);
+                            }}
+                          >
+                            {fam.familyName} (ID: {fam.id})
+                          </button>
+                        );
+                      }) : <p className="text-muted">No families found or matching search.</p>}
+                    </div>
+                  </Modal.Body>
+                  <Modal.Footer>
+                    <Button variant="secondary" onClick={() => {
+                        setShowAssignFamilyModal(false);
+                        setSelectedFamilyForAssignment(null);
+                        setAssignFamilySearchTerm('');
+                    }}>
+                      Cancel
+                    </Button>
+                    <Button variant="primary" onClick={() => {
+                        console.log('[Assign Modal "Assign" Button Click] selectedMember.id:', selectedMember?.id, 'selectedFamilyForAssignment:', selectedFamilyForAssignment);
+                        if (selectedMember && selectedFamilyForAssignment !== null) {
+                          handleAssignPatientToNewFamily(selectedMember.id, selectedFamilyForAssignment);
+                        } else {
+                          console.error('[Assign Modal "Assign" Button Click] Cannot assign: selectedMember or selectedFamilyForAssignment is not set properly.');
+                          alert('Please select a family to assign the patient to.');
+                        }
+                      }}
+                      disabled={selectedFamilyForAssignment === null}
+                    >
+                      Assign
+                    </Button>
+                  </Modal.Footer>
+                </Modal>
+              )}
+
+              {/* QR Code Modal */}
+              {showQrModal && currentMemberForQr && (
+                <Modal show={showQrModal} onHide={() => { setShowQrModal(false); setQrCodeValue(''); setCurrentMemberForQr(null); }} centered>
+                  <Modal.Header closeButton>
+                    <Modal.Title>QR Code for {currentMemberForQr.name || `${currentMemberForQr.firstName} ${currentMemberForQr.lastName}`}</Modal.Title>
+                  </Modal.Header>
+                  <Modal.Body style={{ textAlign: 'center' }}>
+                    <p>Scan this QR code for login or identification.</p>
+                    <div ref={qrCodeRef} style={{ margin: '20px auto', display: 'inline-block', border: '1px solid #eee', padding: '10px' }}>
+                      {qrCodeValue && <QRCodeCanvas value={qrCodeValue} size={256} level="H" includeMargin={true} />}
+                    </div>
+                    <p style={{fontSize: '0.8em', color: '#6c757d', marginTop: '10px'}}>
+                      This QR code contains identifying information (email and patient ID).
+                      For login, the system must be configured to accept patient ID as an authentication token.
+                    </p>
+                  </Modal.Body>
+                  <Modal.Footer>
+                    <Button variant="secondary" onClick={() => { setShowQrModal(false); setQrCodeValue(''); setCurrentMemberForQr(null); }}>
+                      Close
+                    </Button>
+                    <Button variant="info" onClick={printQRCode}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-printer" viewBox="0 0 16 16" style={{marginRight: '5px'}}>
+                        <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                        <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
+                      </svg>
+                      Print QR Code
+                    </Button>
+                    <Button variant="primary" onClick={downloadQRCode}>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-download" viewBox="0 0 16 16" style={{marginRight: '5px'}}>
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                      </svg>
+                      Download QR Code
+                    </Button>
+                  </Modal.Footer>
+                </Modal>
+              )}
+
               {/* Delete Confirmation Modals/Dialogs */}
               {deleteStep === 'initial' && (
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
@@ -803,7 +1088,8 @@ export default function AdminDashboard() {
         case 'immunization': 
           return <ImmunisationH member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
         case 'referral': 
-          return <Referral member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;        case 'schedule': 
+          return <Referral member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;        
+        case 'schedule': 
           return <ScheduleVisit member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
         case 'registered-profile':
           return <RegisteredProfile patient={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
@@ -829,7 +1115,8 @@ export default function AdminDashboard() {
           <ScheduleSession />
         </div>
       );
-    }    if (selectedView === 'sessions') {
+    }    
+    if (selectedView === 'sessions') {
       return (
         <div style={{ color: '#f1f5f9' }}>
           <h2 style={{ color: '#38bdf8', fontWeight: 700, fontSize: 28, textAlign: 'center', marginBottom: 24 }}>Session Management</h2>
@@ -847,7 +1134,8 @@ export default function AdminDashboard() {
     }
     if (selectedView === 'unsorted') {
       return <div style={{ color: '#f1f5f9' }}><UnsortedMembers /></div>;
-    }      if (selectedView === 'patients') {
+    }      
+    if (selectedView === 'patients') {
       if (showAddNewPatientForm) {
         return (
           <AddNewPatientForm
@@ -863,9 +1151,9 @@ export default function AdminDashboard() {
       }
 
       // Log families state directly inside the render logic for 'patients' view
-      console.log('AdminDashboard: Current `families` state in renderContent:', families); // LOG 3
+      console.log('AdminDashboard: Current `familiesWithMembers` state in renderContent:', familiesWithMembers); // LOG 3
 
-      const filteredFamilies = Array.isArray(families) ? families.filter(family =>
+      const filteredFamilies = Array.isArray(familiesWithMembers) ? familiesWithMembers.filter(family =>
         family && family.familyName && // Add checks for family and familyName
         family.familyName.toLowerCase().includes(currentSearchTerm.toLowerCase())
       ) : [];
@@ -911,8 +1199,8 @@ export default function AdminDashboard() {
               color: '#e5e7eb',
               fontSize: '14px'
             }}
-          />          {loadingFamilies && !selectedFamily ? <p>Loading families...</p> : 
-            selectedFamily ? (
+          />          
+          {selectedFamily ? (
               <div>
                 {!selectedFamily.members || selectedFamily.members.length === 0 ? (
                   <div>
@@ -972,7 +1260,7 @@ export default function AdminDashboard() {
               <div>
                 {/* This is the section that lists families */}
                 {filteredFamilies.length === 0 ? (
-                  <p>{currentSearchTerm ? 'No families match your search.' : 'No families found. (Is `families` state populated?)'}</p>
+                  <p>{currentSearchTerm ? 'No families match your search.' : 'No families found. (Is `familiesWithMembers` state populated?)'}</p>
                 ) : (
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                     {filteredFamilies.map((fam, index) => (
@@ -1280,7 +1568,8 @@ export default function AdminDashboard() {
               indent
               onClick={() => setSelectedView('reports')}
             />
-          </SidebarDropdown>          <SidebarDropdown
+          </SidebarDropdown>          
+          <SidebarDropdown
             icon={<AlarmClock size={20} />}
             label="Sessions"
             collapsed={collapsed}
@@ -1321,7 +1610,8 @@ export default function AdminDashboard() {
             onClick={() => setSelectedView('settings')}
           />
         </div>
-      </div>      {/* Main content */}
+      </div>      
+      {/* Main content */}
       <div className="main-content" style={{ marginLeft: collapsed ? 68 : 260, transition: 'margin-left 0.3s', flexGrow: 1, padding: '0px', height: '100vh', display: 'flex', flexDirection: 'column' }}>
         {/* Topbar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e3256', padding: '16px 32px', position: 'sticky', top: 0, background: '#0f172a', zIndex: 5 }}>
@@ -1367,7 +1657,9 @@ export default function AdminDashboard() {
                   <ChevronRight size={16} style={{ margin: '0 4px' }} />
                   <span style={{ color: '#38bdf8' }}>
                     {selectedMember.name}
-                  </span>                  <ChevronRight size={16} style={{ margin: '0 4px' }} />                  <span style={{ color: '#38bdf8' }}>
+                  </span>                  
+                  <ChevronRight size={16} style={{ margin: '0 4px' }} />                  
+                  <span style={{ color: '#38bdf8' }}>
                     {actionView === 'ck-profile' ? 'Profile' : 
                      actionView === 'treatment' ? 'Individual Treatment Record' : 
                      actionView === 'admitting' ? 'Admitting Data' : 
@@ -1453,7 +1745,8 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
-        </div>        {/* Main dashboard content */}
+        </div>        
+        {/* Main dashboard content */}
         <div style={{ padding: 24, flex: 1, overflowY: 'auto', height: 'calc(100vh - 65px)' }}>
           {renderContent()}
         </div>

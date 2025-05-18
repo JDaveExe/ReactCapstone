@@ -187,39 +187,65 @@
 
 /* Year dropdown styling */
 .react-datepicker__year-dropdown {
-  background-color: #1e293b;
-  border: 1px solid #475569;
+  background-color: #0f172a; /* Darker background for better contrast */
+  border: 1px solid #334155; /* Slightly lighter border */
   border-radius: 4px;
   padding: 8px 0;
-  max-height: 300px;
+  max-height: 250px; /* Adjusted max-height */
   overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Added shadow for depth */
 }
 
 .react-datepicker__year-dropdown-container {
-  color: #f8fafc;
+  color: #e5e7eb; /* Lighter text color for readability */
 }
 
 .react-datepicker__year-option {
-  padding: 6px 12px;
-  color: #f1f5f9;
+  padding: 8px 15px; /* Increased padding for better spacing */
+  color: #000000; /* Black text as requested */
+  background-color: #ffffff; /* White background for readability */
   transition: all 0.15s ease;
+  font-size: 0.9rem; /* Slightly adjusted font size */
 }
 
 .react-datepicker__year-option:hover {
-  background-color: #2563eb;
-  color: white;
+  background-color: #f0f0f0; /* Light gray hover background */
+  color: #000000; /* Black text on hover */
   cursor: pointer;
 }
 
+.react-datepicker__year-option--selected_year, /* Combined selected states */
 .react-datepicker__year-option--selected {
-  background-color: #3b82f6;
-  color: white;
-  font-weight: bold;
+  background-color: #d1eaff; /* Light blue selected background */
+  color: #0056b3; /* Dark blue text for selected, similar to image */
+  font-weight: 600; /* Adjusted font-weight */
 }
 
-.react-datepicker__year-option--selected_year {
-  color: white;
-  font-weight: 600;
+/* Ensure year dropdown appears on top of other elements */
+.react-datepicker-popper {
+  z-index: 1000 !important;
+}
+
+/* Make the year dropdown clearly visible */
+.react-datepicker__year-read-view {
+  background-color: #334155;
+  padding: 4px 10px; /* Adjusted padding */
+  border-radius: 4px;
+  color: #f1f5f9; /* Lighter text color */
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid #475569; /* Added border for definition */
+}
+
+.react-datepicker__year-read-view:hover {
+  background-color: #3b82f6;
+  border-color: #3b82f6; /* Match border color on hover */
+}
+
+.react-datepicker__year-read-view--down-arrow {
+  top: 7px; /* Adjusted arrow position */
+  border-width: 5px 5px 0 5px; /* Slightly larger arrow */
+  border-color: #f1f5f9 transparent transparent transparent;
 }
 
 .react-datepicker__year-dropdown::-webkit-scrollbar {
@@ -300,34 +326,4 @@
 /* Date picker popper (dropdown) styling */
 .date-picker-popper {
   z-index: 9999 !important;
-}
-
-/* Ensure year dropdown appears on top of other elements */
-.react-datepicker-popper {
-  z-index: 1000 !important;
-}
-
-/* Make the year dropdown clearly visible */
-.react-datepicker__year-read-view {
-  background-color: #334155;
-  padding: 2px 8px;
-  border-radius: 4px;
-  color: #f8fafc;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.react-datepicker__year-read-view:hover {
-  background-color: #3b82f6;
-}
-
-.react-datepicker__year-read-view--down-arrow {
-  top: 5px;
-  border-color: #f8fafc transparent transparent;
-}
-
-/* Additional styling to ensure years are visible */
-.react-datepicker__year-option {
-  line-height: 1.4;
-  margin: 2px 0;
 }

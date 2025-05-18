@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, Bell, Settings, LogOut, User, Menu, X, ChevronDown, ChevronUp,
@@ -12,10 +12,10 @@ import CKProfile from './CKProfile';
 import RegisteredProfile from './RegisteredProfile';
 
 // SidebarItem Component
-function SidebarItem({ icon, label, active, collapsed, indent, onClick }) {
+function SidebarItem({ icon, label, active, collapsed, indent, onClick, isDropdownItem }) {
   return (
     <div 
-      className={`sidebar-item${active ? ' active' : ''}${indent ? ' indent' : ''}`}
+      className={`sidebar-item${active ? ' active' : ''}${indent ? ' indent' : ''}${isDropdownItem ? ' sidebar-dropdown-item' : ''}`}
       onClick={onClick}
     >
       {icon && <span>{icon}</span>}
@@ -78,48 +78,56 @@ export default function PatientDashboard() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('dashboard');
-  const [showQrDropdown, setShowQrDropdown] = useState(false);
-  const [showQrCode, setShowQrCode] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrDataForModal, setQrDataForModal] = useState('');
   const [dropdowns, setDropdowns] = useState({
     records: false,
-    prescriptions: false
+    prescriptions: false,
+    settings: false
   });
   const navigate = useNavigate();
-  
-  // Control body overflow to prevent scrollbar issues
+  const qrCodeRef = useRef(null);
+
+  const [patient, setPatient] = useState({ name: null }); // Initialize patient as an object with name null
+  const [userEmail, setUserEmail] = useState('');
+  const [patientId, setPatientId] = useState('');
+
   useEffect(() => {
-    // Prevent scrolling on the body when the dashboard is mounted
-    document.body.style.overflow = 'hidden';
-    
-    // Cleanup: restore body overflow when component unmounts
-    return () => {
-      document.body.style.overflow = 'auto';
+    const loadPatientData = () => {
+      try {
+        const storedEmail = localStorage.getItem('userEmail');
+        const storedPatientId = localStorage.getItem('patientId');
+        const storedPatientName = localStorage.getItem('patientName');
+
+        setUserEmail(storedEmail || ''); 
+        setPatientId(storedPatientId || '');
+
+        if (storedPatientName) {
+          setPatient({ name: storedPatientName });
+        } else {
+          setPatient({ name: null }); // Explicitly set name to null if not found
+          console.warn("PatientDashboard: patientName not found in localStorage. QR code generation might be incomplete or show an alert if name is required.");
+        }
+        
+        console.log("PatientDashboard loaded data from localStorage:", { 
+            email: storedEmail, 
+            patientId: storedPatientId, 
+            patientName: storedPatientName 
+        });
+
+      } catch (error) {
+        console.error("PatientDashboard: Error loading patient data from localStorage:", error);
+        setUserEmail('');
+        setPatientId('');
+        setPatient({ name: null }); // Ensure patient is an object even on error
+      }
     };
-  }, []);
-    // Get patient data from localStorage
-  const firstName = localStorage.getItem("firstName") || "Patient";
-  const lastName = localStorage.getItem("lastName") || "";
-  const patientId = localStorage.getItem("patientId") || "";
-  const userEmail = localStorage.getItem("userEmail") || "";
-  
-  // Create patient object with available data
-  const patient = {
-    id: parseInt(patientId), // Ensure ID is numeric
-    name: firstName + (lastName ? " " + lastName : ""),
-    firstName: firstName,
-    lastName: lastName,
-    email: userEmail,
-    nextAppointment: "May 20, 2025", // Example data
-    pendingPrescriptions: 2,
-    recentCheckup: "May 5, 2025"
-  };
-  
-  // Create QR code value based on the patient ID or email
-  const qrValue = patientId ? `patientId:${patientId}` : `email:${userEmail}`;
-  
-  // Function to download QR code
+
+    loadPatientData();
+  }, []); // Empty dependency array: run once on component mount
+
   const downloadQRCode = () => {
-    const canvas = document.getElementById("patient-qr-code");
+    const canvas = qrCodeRef.current?.querySelector('canvas');
     if (canvas) {
       const pngUrl = canvas
         .toDataURL("image/png")
@@ -127,67 +135,31 @@ export default function PatientDashboard() {
      
       const downloadLink = document.createElement("a");
       downloadLink.href = pngUrl;
-      downloadLink.download = `maybunga_health_qr_${firstName}.png`;
+      downloadLink.download = `maybunga_health_qr_${patient?.name || 'patient'}.png`;
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
     }
   };
 
-  // Function to print QR code
   const printQRCode = () => {
-    const printWindow = window.open('', '_blank');
-   
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Maybunga Healthcare Center QR Code</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-          }
-          .container {
-            max-width: 400px;
-            margin: 0 auto;
-            border: 1px solid #ccc;
-            padding: 20px;
-            border-radius: 5px;
-          }
-          .qr-container {
-            margin: 20px 0;
-          }
-          .footer {
-            margin-top: 20px;
-            font-size: 12px;
-            color: #666;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h2>Maybunga Healthcare Center</h2>
-          <p>QR Code for: ${firstName}</p>
-          <div class="qr-container">
-            <img src="${document.getElementById('patient-qr-code').toDataURL()}" alt="QR Code" />
-          </div>
-          <p>Scan this QR code for quick login at the healthcare center.</p>
-          <div class="footer">
-            <p>Printed on: ${new Date().toLocaleDateString()}</p>
-          </div>
-        </div>
-        <script>
-          window.onload = function() {
-            window.print();
-          }
-        </script>
-      </body>
-      </html>
-    `);
-    
-    printWindow.document.close();
+    const canvas = qrCodeRef.current?.querySelector('canvas');
+    if (canvas) {
+      const dataUrl = canvas.toDataURL('image/png');
+      let windowContent = '<!DOCTYPE html><html><head><title>Print QR Code</title></head><body style="text-align:center;">';
+      windowContent += `<h2>QR Code for ${patient?.name || 'Patient'}</h2>`;
+      windowContent += `<img src="${dataUrl}" style="max-width: 80%; margin-top: 20px;">`;
+      windowContent += '<script type="text/javascript">window.onload = function() { window.print(); window.onafterprint = function(){ window.close(); }; };</script>';
+      windowContent += '</body></html>';
+      const printWin = window.open('', '', 'width=600,height=600');
+      if (printWin) {
+        printWin.document.open();
+        printWin.document.write(windowContent);
+        printWin.document.close();
+      } else {
+        alert('Please allow popups to print the QR code.');
+      }
+    }
   };
 
   const toggleDropdown = (key) => {
@@ -197,25 +169,39 @@ export default function PatientDashboard() {
     }));
   };
 
+  const openQrCodeModal = () => {
+    if (patient && patient.name && userEmail && patientId) {
+      const qrDataString = JSON.stringify({
+        email: userEmail,
+        authToken: patientId,
+        name: patient.name
+      });
+      setQrDataForModal(qrDataString);
+    } else {
+      console.error("QR Code Generation: Patient data is missing.", { patient, userEmail, patientId });
+      setQrDataForModal('');
+      alert("Could not generate QR code: Essential patient information is missing. Please ensure your profile is complete.");
+    }
+    setShowQrModal(true);
+  };
+
   const handleLogout = () => {
     localStorage.clear();
     navigate('/home');
   };
 
-  // Example medical records
   const records = [
     { id: 1, date: 'May 5, 2025', title: 'Annual Physical Exam', doctor: 'Dr. Sarah Johnson' },
     { id: 2, date: 'April 12, 2025', title: 'Laboratory Results', doctor: 'Laboratory' }
   ];
 
-  // Example prescriptions
   const prescriptions = [
     { id: 1, name: 'Amoxicillin', dosage: '500mg', frequency: 'Three times daily', remaining: 5 },
     { id: 2, name: 'Ibuprofen', dosage: '200mg', frequency: 'As needed', remaining: 10 }
   ];
+
   return (
     <div className="patient-dashboard">
-      {/* Sidebar */}
       <div className={`patient-sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'open' : ''}`}>
         <div className="sidebar-logo">
           <img src={require('../images/maybunga.png')} alt="Maybunga Healthcare Center Logo" />
@@ -298,13 +284,22 @@ export default function PatientDashboard() {
             onClick={() => setActiveSection('profile')}
           />
 
-          <SidebarItem
+          <SidebarDropdown
             icon={<Settings size={18} />}
             label="Settings"
-            active={activeSection === 'settings'}
             collapsed={collapsed}
-            onClick={() => setActiveSection('settings')}
-          />
+            isOpen={dropdowns.settings}
+            onClick={() => toggleDropdown('settings')}
+          >
+            <SidebarItem
+              icon={<QrCode size={18} />}
+              label="Generate QR Code"
+              collapsed={collapsed}
+              indent
+              isDropdownItem
+              onClick={openQrCodeModal}
+            />
+          </SidebarDropdown>
         </div>
         <div className="sidebar-toggle">
           <button className="toggle-button" onClick={() => setCollapsed(!collapsed)}>
@@ -313,17 +308,16 @@ export default function PatientDashboard() {
         </div>
       </div>
       
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div className="sidebar-overlay" onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* Mobile menu toggle */}
       <div className="mobile-menu-toggle">
         <button className="toggle-button" onClick={() => setMobileOpen(!mobileOpen)}>
           <Menu size={20} />
         </button>
-      </div>      {/* Main content */}
+      </div>
+
       <div className="main-content">
         <div className="top-bar">
           <div className="breadcrumb">
@@ -332,7 +326,8 @@ export default function PatientDashboard() {
             <span className="breadcrumb-value">
               {activeSection === 'dashboard' ? 'Dashboard' : activeSection.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
             </span>
-          </div>          <div className="top-bar-controls">
+          </div>
+          <div className="top-bar-controls">
             <div className="search-box">
               <Search size={16} className="search-icon" />
               <input 
@@ -345,28 +340,11 @@ export default function PatientDashboard() {
               <Bell size={18} />
             </button>
             
-            <div className="qr-dropdown">
-              <button className="icon-button" onClick={() => setShowQrDropdown(!showQrDropdown)}>
-                <Settings size={18} />
-              </button>
-              {showQrDropdown && (
-                <div className="qr-dropdown-content">
-                  <button className="qr-dropdown-item" onClick={() => {
-                    setShowQrCode(true);
-                    setShowQrDropdown(false);
-                  }}>
-                    <QrCode size={16} />
-                    <span>Generate QR Code</span>
-                  </button>
-                </div>
-              )}
-            </div>
-            
             <div className="user-profile" onClick={() => setActiveSection('profile')}>
               <div className="avatar">
                 <User size={16} />
               </div>
-              <span className="username">{firstName}</span>
+              <span className="username">{patient?.name || 'Patient'}</span>
             </div>
             
             <button className="icon-button" onClick={handleLogout}>
@@ -379,92 +357,45 @@ export default function PatientDashboard() {
           {activeSection === 'dashboard' && (
             <>
               <h1 style={{ fontSize: 24, fontWeight: 600, color: '#f8fafc', marginTop: 0, marginBottom: '24px' }}>
-                Welcome back, {firstName}
+                Welcome back, {patient?.name || 'Patient'}
               </h1>
               
-              <div className="dashboard-grid">
-                <DashboardCard title="Recent Medical Records">
-                  {records.length > 0 ? (
-                    <>
-                      {records.map(record => (
-                        <div key={record.id} className="record-item">
-                          <div className="record-date">{record.date}</div>
-                          <div className="record-title">{record.title}</div>
-                          <div className="record-doctor">
-                            <User size={12} />
-                            {record.doctor}
-                          </div>
-                        </div>
-                      ))}
-                      <a href="#" className="view-all" onClick={(e) => { e.preventDefault(); setActiveSection('checkup-history'); }}>
-                        View all records
-                      </a>
-                    </>
-                  ) : (
-                    <p>No recent medical records</p>
-                  )}
-                </DashboardCard>
-                
-                <DashboardCard title="Active Prescriptions">
-                  {prescriptions.length > 0 ? (
-                    <>
-                      {prescriptions.map(prescription => (
-                        <div key={prescription.id} className="record-item">
-                          <div className="record-title">{prescription.name} - {prescription.dosage}</div>
-                          <div className="record-date">{prescription.frequency}</div>
-                          <div className="record-doctor">
-                            <Pill size={12} />
-                            {prescription.remaining} refills remaining
-                          </div>
-                        </div>
-                      ))}
-                      <a href="#" className="view-all" onClick={(e) => { e.preventDefault(); setActiveSection('active-prescriptions'); }}>
-                        View all prescriptions
-                      </a>
-                    </>
-                  ) : (
-                    <p>No active prescriptions</p>
-                  )}
-                </DashboardCard>
-              </div>
+              {showQrModal && (
+                <div className="qr-modal-overlay">
+                  <div className="qr-modal-content">
+                    <div className="qr-modal-header">
+                      <h3>QR Code for {patient?.name || 'Patient'}</h3>
+                      <button onClick={() => setShowQrModal(false)} className="close-button">
+                        <X size={20} />
+                      </button>
+                    </div>
+                    <div className="qr-modal-body">
+                      <p>Scan this QR code for login or identification.</p>
+                      <div ref={qrCodeRef} style={{ margin: '20px auto', display: 'inline-block', border: '1px solid #eee', padding: '10px' }}>
+                        {qrDataForModal ? <QRCodeCanvas value={qrDataForModal} size={200} level="H" includeMargin={true} id="patient-qr-code" /> : <p>QR Code will be displayed here. If it's not showing, required data might be missing.</p>}
+                      </div>
+                      <p style={{fontSize: '0.8em', color: '#6c757d', marginTop: '10px'}}>
+                        This QR code contains identifying information.
+                      </p>
+                    </div>
+                    <div className="qr-modal-footer">
+                      <button onClick={downloadQRCode} className="qr-action-button">
+                        <Download size={16} style={{ marginRight: '8px' }} /> Download
+                      </button>
+                      <button onClick={printQRCode} className="qr-action-button">
+                        <Printer size={16} style={{ marginRight: '8px' }} /> Print
+                      </button>
+                      <button onClick={() => setShowQrModal(false)} className="qr-action-button secondary">
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
           
-          {/* QR Code Modal */}
-          {showQrCode && (
-            <div className="qr-code-modal">
-              <div className="qr-code-content">
-                <div className="qr-code-header">
-                  <h2>Your QR Code</h2>
-                  <button className="close-button" onClick={() => setShowQrCode(false)}>
-                    <X size={20} />
-                  </button>
-                </div>
-                <div className="qr-code-container">
-                  <QRCodeCanvas 
-                    id="patient-qr-code"
-                    value={qrValue}
-                    size={200}
-                    level="H"
-                  />
-                </div>
-                <p className="qr-code-instructions">
-                  This QR code contains your patient information. You can use it for quick check-in at Maybunga Healthcare Center.
-                </p>
-                <div className="qr-code-actions">
-                  <button className="qr-action-button download" onClick={downloadQRCode}>
-                    <Download size={16} />
-                    <span>Download</span>
-                  </button>
-                  <button className="qr-action-button print" onClick={printQRCode}>
-                    <Printer size={16} />
-                    <span>Print</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-            {activeSection === 'admitting-data' && (
+          {activeSection === 'admitting-data' && (
             <AdmittingData />
           )}
           
@@ -473,9 +404,10 @@ export default function PatientDashboard() {
           )}
           
           {activeSection === 'checkup-history' && (
-            <CKProfile member={{ name: firstName }} onBack={() => setActiveSection('dashboard')} />
+            <CKProfile member={{ name: patient?.name || 'Patient' }} onBack={() => setActiveSection('dashboard')} />
           )}
-            {activeSection === 'profile' && (
+          
+          {activeSection === 'profile' && (
             <RegisteredProfile patient={patient} onBack={() => setActiveSection('dashboard')} />
           )}
           

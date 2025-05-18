@@ -143,6 +143,15 @@
   background: #172136;
 }
 
+.sidebar-dropdown-item {
+  padding-left: 44px !important; /* Override if necessary, ensure it's specific enough */
+}
+
+.sidebar-dropdown-item:hover {
+  color: #60a5fa !important; /* Ensure hover color matches other items */
+  background: #1e293b !important; /* Match active/hover background */
+}
+
 /* Main Content Styles */
 .main-content {
   flex: 1;
@@ -503,19 +512,18 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  width: 100%;
-  padding: 10px 16px;
+  padding: 10px 15px;
+  color: #e2e8f0;
+  font-size: 14px;
+  cursor: pointer;
   background: none;
   border: none;
-  color: #e2e8f0;
+  width: 100%;
   text-align: left;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  border-radius: 6px;
 }
 
 .qr-dropdown-item:hover {
-  background-color: #334155;
+  background-color: #263449;
   color: #38bdf8;
 }
 
@@ -623,4 +631,111 @@
 
 .qr-action-button.print:hover {
   background-color: #475569;
+}
+
+/* QR Modal Overlay Styles */
+.qr-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050; /* Ensure it's above other content */
+}
+
+.qr-modal-content {
+  background-color: #1e293b; /* Dark background for the modal */
+  color: #e5e7eb; /* Light text color */
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  width: auto;
+  max-width: 450px; /* Max width for the modal */
+  text-align: center;
+  border: 1px solid #334155; /* Subtle border */
+}
+
+.qr-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #334155; /* Separator line */
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.qr-modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #38bdf8; /* Highlight color for title */
+}
+
+.qr-modal-header .close-button {
+  background: none;
+  border: none;
+  color: #9ca3af; /* Muted color for close button */
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 5px;
+  line-height: 1;
+}
+
+.qr-modal-header .close-button:hover {
+  color: #e5e7eb; /* Lighter on hover */
+}
+
+.qr-modal-body {
+  margin-bottom: 25px;
+}
+
+.qr-modal-body p {
+  font-size: 0.95rem;
+  margin-bottom: 15px;
+  line-height: 1.6;
+}
+
+.qr-modal-body canvas {
+  border: 5px solid #334155; /* Border around QR */
+  border-radius: 8px;
+  background-color: white; /* Ensure QR code background is white for scannability */
+  padding: 10px; /* Padding inside the white background, around the QR */
+}
+
+.qr-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 15px;
+  border-top: 1px solid #334155; /* Separator line */
+}
+
+.qr-action-button {
+  background-color: #3b82f6; /* Blue for primary actions */
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.qr-action-button:hover {
+  background-color: #2563eb; /* Darker blue on hover */
+}
+
+.qr-action-button.secondary {
+  background-color: #4b5563; /* Gray for secondary actions */
+}
+
+.qr-action-button.secondary:hover {
+  background-color: #374151; /* Darker gray on hover */
 }

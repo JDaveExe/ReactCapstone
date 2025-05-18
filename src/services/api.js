@@ -72,3 +72,8 @@ export const addSurname = async (data) => {
     throw error;
   }
 };
+
+// Assign a patient to a different family
+export const assignPatientToFamily = (patientId, familyId) => {
+  return axios.patch(`${API_URL}/patients/${patientId}/assign-family`, { familyId });
+};

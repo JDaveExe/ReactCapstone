@@ -865,9 +865,6 @@ router.post('/add-surname', (req, res) => {
 // In-memory store for today's check-ups (in production, use a database)
 let todaysCheckUps = [];
 
-// In-memory store for session history (replace with database in production)
-let sessionHistory = [];
-
 // Endpoint to get today's check-ups
 router.get('/checkups/today', (req, res) => {
   res.json(todaysCheckUps);
@@ -927,21 +924,50 @@ router.delete('/checkups/today', (req, res) => {
 router.post('/sessionhistory', (req, res) => {
   try {
     const sessionData = req.body;
-    // Basic validation for sessionData
     if (!sessionData || typeof sessionData !== 'object' || Object.keys(sessionData).length === 0) {
       console.error('[API /api/sessionhistory POST] Invalid or empty session data received:', sessionData);
       return res.status(400).json({ message: 'Invalid or empty session data provided.' });
     }
 
-    const newHistoryEntry = {
-      ...sessionData,
-      historyId: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Generate a unique ID for the history entry
-      archivedAt: new Date().toISOString() // Timestamp of when it was archived
-    };
+    const archivedAt = new Date().toISOString(); // Timestamp of when it was archived
 
-    sessionHistory.push(newHistoryEntry);
-    console.log('[API /api/sessionhistory POST] Session added to history. Total history items:', sessionHistory.length);
-    res.status(201).json({ message: 'Session archived successfully', session: newHistoryEntry });
+    const {
+      patientId,
+      patientName,
+      doctorId,
+      doctorName,
+      sessionDate,
+      sessionTime,
+      purpose,
+      notes,
+      status,
+      completedAt
+    } = sessionData;
+
+    const query = 'INSERT INTO session_history_records (patientId, patientName, doctorId, doctorName, sessionDate, sessionTime, purpose, notes, status, completedAt, archivedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    const values = [
+      patientId || null,
+      patientName || 'N/A',
+      doctorId || null,
+      doctorName || 'N/A',
+      sessionDate,
+      sessionTime,
+      purpose || 'N/A',
+      notes || '',
+      status || 'Archived',
+      completedAt || archivedAt,
+      archivedAt
+    ];
+
+    db.query(query, values, (err, result) => {
+      if (err) {
+        console.error('[API /api/sessionhistory POST] Error inserting session into database:', err);
+        return res.status(500).json({ message: 'Server error while archiving session to database.', details: err.message });
+      }
+      console.log('[API /api/sessionhistory POST] Session added to database history. Insert ID:', result.insertId);
+      res.status(201).json({ message: 'Session archived successfully to database', historyEntryId: result.insertId });
+    });
+
   } catch (error) {
     console.error('[API /api/sessionhistory POST] Error archiving session:', error.message, error.stack);
     res.status(500).json({ message: 'Server error while archiving session.' });
@@ -951,8 +977,15 @@ router.post('/sessionhistory', (req, res) => {
 // GET /api/sessionhistory - Retrieve all session history
 router.get('/sessionhistory', (req, res) => {
   try {
-    console.log(`[API /api/sessionhistory GET] Retrieving session history. Total items: ${sessionHistory.length}`);
-    res.status(200).json(sessionHistory);
+    const query = 'SELECT * FROM session_history_records ORDER BY archivedAt DESC';
+    db.query(query, (err, results) => {
+      if (err) {
+        console.error('[API /api/sessionhistory GET] Error retrieving session history from database:', err);
+        return res.status(500).json({ message: 'Server error while retrieving session history from database.', details: err.message });
+      }
+      console.log(`[API /api/sessionhistory GET] Retrieving session history from database. Total items: ${results.length}`);
+      res.status(200).json(results);
+    });
   } catch (error) {
     console.error('[API /api/sessionhistory GET] Error retrieving session history:', error.message, error.stack);
     res.status(500).json({ message: 'Server error while retrieving session history.' });

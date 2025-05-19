@@ -1,18 +1,17 @@
 import React from "react";
 import "../styles/Referral.css";
 
-const Referral = () => {
-  return (
-    <div className="referral-container">
-      <h2 className="referral-header">MAYBUNGA HEALTH CENTER REFERRAL SLIP</h2>
+const Referral = () => {  return (
+    <div className="referral-container dashboard-card fade-in">
+      <h2 className="referral-header dashboard-title">MAYBUNGA HEALTH CENTER REFERRAL SLIP</h2>
       <div className="patient-info">
         <div className="input-group">
-          <label>Full Name :</label>
-          <input type="text" />
+          <label className="dashboard-label">Full Name :</label>
+          <input type="text" className="dashboard-input" />
         </div>
         <div className="input-group">
-          <label>Age/Sex:</label>
-          <input type="text" />
+          <label className="dashboard-label">Age/Sex:</label>
+          <input type="text" className="dashboard-input" />
         </div>
         <div className="input-group">
           <label>Address:</label>

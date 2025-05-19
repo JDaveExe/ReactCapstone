@@ -1,0 +1,536 @@
+.scheduled-session-container {
+    padding: 20px;
+    color: #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.session-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.session-header h1 {
+    font-size: 24px;
+    font-weight: bold;
+    color: #f1f5f9;
+    margin: 0;
+}
+
+.back-navigation {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.back-button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 12px;
+    background-color: #1e293b;
+    color: #e5e7eb;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.back-button:hover {
+    background-color: #2d3748;
+    border-color: #4a5568;
+}
+
+.search-container {
+    margin-bottom: 20px;
+}
+
+.search-input {
+    position: relative;
+    width: 100%;
+}
+
+.search-input svg {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.search-input input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    border-radius: 6px;
+    border: 1px solid #334155;
+    background: #1e293b;
+    color: #e5e7eb;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.search-input input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.families-container {
+    flex: 1;
+    overflow: auto;
+}
+
+.families-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.families-list li {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.families-list li:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+.family-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f1f5f9;
+}
+
+.members-count {
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+.view-family {
+    font-size: 14px;
+    color: #3b82f6;
+    margin-top: auto;
+    align-self: flex-end;
+}
+
+.family-members-container {
+    flex: 1;
+    overflow: auto;
+}
+
+.members-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #1e293b;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.members-table thead tr {
+    border-bottom: 1px solid #334155;
+}
+
+.members-table th {
+    padding: 16px;
+    text-align: left;
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.members-table tbody tr {
+    border-bottom: 1px solid #334155;
+    transition: background-color 0.2s ease;
+}
+
+.members-table tbody tr:hover {
+    background-color: #243548;
+}
+
+.members-table td {
+    padding: 16px;
+    font-weight: 500;
+    font-size: 15px;
+    color: #e2e8f0;
+}
+
+.schedule-button {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.schedule-button:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.no-families, .no-members {
+    text-align: center;
+    padding: 30px;
+    color: #94a3b8;
+    background: #1e293b;
+    border-radius: 8px;
+    border: 1px dashed #334155;
+}
+
+/* Calendar Modal Styles */
+.calendar-modal .modal-content {
+    background-color: #0f172a;
+    color: #e5e7eb;
+    border-radius: 8px;
+    border: 1px solid #334155;
+}
+
+.calendar-modal .modal-header {
+    border-bottom: 1px solid #334155;
+    padding: 15px 20px;
+}
+
+.calendar-modal .modal-title {
+    color: #f1f5f9;
+    font-weight: 600;
+}
+
+.calendar-modal .modal-body {
+    padding: 20px;
+}
+
+.calendar-modal .modal-footer {
+    border-top: 1px solid #334155;
+    padding: 15px 20px;
+}
+
+.calendar-modal .close {
+    color: #94a3b8;
+}
+
+.calendar-modal .btn-primary {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.calendar-modal .btn-primary:hover {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+.calendar-modal .btn-secondary {
+    background-color: #4b5563;
+    border-color: #4b5563;
+}
+
+.calendar-modal .btn-secondary:hover {
+    background-color: #374151;
+    border-color: #374151;
+}
+
+.calendar-modal .form-control,
+.calendar-modal .form-select {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    color: #e5e7eb;
+}
+
+.calendar-modal .form-control:focus,
+.calendar-modal .form-select:focus {
+    background-color: #1e293b;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+    color: #e5e7eb;
+}
+
+.calendar-modal .form-label {
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.patient-info {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #1e293b;
+    border-radius: 6px;
+    border-left: 4px solid #3b82f6;
+}
+
+.patient-info h4 {
+    color: #f1f5f9;
+    margin: 0 0 8px 0;
+    font-size: 16px;
+}
+
+.patient-info p {
+    color: #94a3b8;
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Make DatePicker match our theme */
+.date-picker-container .react-datepicker-wrapper {
+    width: 100%;
+}
+
+.date-picker-container .react-datepicker {
+    background-color: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.date-picker-container .react-datepicker__header {
+    background-color: #1e293b;
+    border-bottom: 1px solid #334155;
+}
+
+.date-picker-container .react-datepicker__day-name,
+.date-picker-container .react-datepicker__day,
+.date-picker-container .react-datepicker__time-name {
+    color: #e5e7eb;
+}
+
+.date-picker-container .react-datepicker__day:hover {
+    background-color: #2d3748;
+}
+
+.date-picker-container .react-datepicker__day--selected {
+    background-color: #3b82f6;
+}
+
+/* Recent Appointments Section */
+.recent-appointments {
+    margin-top: 30px;
+}
+
+.recent-appointments h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin-bottom: 15px;
+}
+
+.appointments-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.appointment-card {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 15px;
+    transition: all 0.3s ease;
+}
+
+.appointment-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border-color: #4a5568;
+}
+
+.appointment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.appointment-patient {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #f1f5f9;
+}
+
+.appointment-family {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.appointment-details {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.appointment-date,
+.appointment-time {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #e5e7eb;
+}
+
+.appointment-type {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-bottom: 5px;
+}
+
+.appointment-notes {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-top: 5px;
+    border-top: 1px dashed #334155;
+    padding-top: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .families-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .appointments-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .members-table {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+/* Checkups Overview Section */
+.checkups-overview {
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+.checkups-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.checkup-card {
+    background-color: #1e293b;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.checkup-card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #38bdf8;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.today-checkups {
+    border-left: 4px solid #3b82f6;
+}
+
+.upcoming-checkups {
+    border-left: 4px solid #10b981;
+}
+
+.checkup-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.checkup-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.checkup-item {
+    background-color: #273548;
+    border-radius: 8px;
+    padding: 12px;
+    border-left: 3px solid #38bdf8;
+    transition: transform 0.2s ease;
+}
+
+.upcoming-checkups .checkup-item {
+    border-left-color: #10b981;
+}
+
+.checkup-item:hover {
+    transform: translateY(-2px);
+}
+
+.checkup-item-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.patient-name {
+    font-weight: 600;
+    color: #f1f5f9;
+}
+
+.checkup-time, .checkup-date {
+    color: #fbbf24;
+    font-weight: 500;
+}
+
+.checkup-item-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.checkup-family, .checkup-purpose, .checkup-time {
+    white-space: nowrap;
+}
+
+.no-checkups {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    min-height: 100px;
+    color: #64748b;
+    text-align: center;
+    font-style: italic;
+}
+
+/* Responsive Design for Checkups */
+@media (max-width: 768px) {
+    .checkups-row {
+        grid-template-columns: 1fr;
+    }
+
+    .checkup-card {
+        margin-bottom: 15px;
+    }
+}

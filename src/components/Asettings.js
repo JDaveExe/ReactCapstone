@@ -1,10 +1,9 @@
 import React from 'react';
 import { Card, Accordion, Button, Container } from 'react-bootstrap';
 
-const Asettings = () => {
-  return (
-    <Container fluid className="py-4">
-      <Accordion defaultActiveKey="0">
+const Asettings = () => {  return (
+    <Container fluid className="py-4 fade-in">
+      <Accordion defaultActiveKey="0" className="dashboard-card">
         {/* User Management Section */}
         <Accordion.Item eventKey="0">
           <Accordion.Header>

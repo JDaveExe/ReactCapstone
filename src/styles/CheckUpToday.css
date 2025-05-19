@@ -101,3 +101,132 @@
   font-size: 1rem;
   color: #f1f5f9;
 }
+
+/* Styles for Scheduled Checkup Today and Upcoming Checkups */
+.checkups-overview {
+  margin-top: 40px;
+}
+
+.checkups-row {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.checkup-card {
+  background: #172136;
+  border-radius: 12px;
+  padding: 20px;
+  flex: 1;
+  min-width: 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.today-checkups {
+  border-left: 4px solid #0284c7;
+}
+
+.upcoming-checkups {
+  border-left: 4px solid #059669;
+}
+
+.checkup-card-title {
+  color: #38bdf8;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.checkup-content {
+  margin-top: 16px;
+}
+
+.checkup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checkup-item {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.checkup-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 8px;
+}
+
+.patient-name {
+  font-weight: 600;
+  color: #f1f5f9;
+  font-size: 1.05rem;
+}
+
+.checkup-time {
+  color: #38bdf8;
+  font-weight: 500;
+  min-width: 60px;
+  text-align: right;
+}
+
+.checkup-date {
+  color: #fbbf24;
+  font-weight: 500;
+  min-width: 60px;
+  text-align: right;
+}
+
+.checkup-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.checkup-family {
+  display: inline-block;
+  width: 100%;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.checkup-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.checkup-time, .checkup-purpose {
+  display: inline-block;
+}
+
+.checkup-purpose {
+  background-color: #334155;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.no-checkups {
+  text-align: center;
+  padding: 24px 0;
+  color: #64748b;
+}
+
+@media (max-width: 768px) {
+  .checkups-row {
+    flex-direction: column;
+  }
+}

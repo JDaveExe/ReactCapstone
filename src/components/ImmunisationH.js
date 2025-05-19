@@ -24,10 +24,10 @@ function ImmunisationH() {
     };
 
     return (
-        <div className="immunisation-history-container">
-            <h1>Immunisation History</h1>
+        <div className="immunisation-history-container dashboard-card">
+            <h1 className="dashboard-title">Immunisation History</h1>
 
-            <div className="immunisation-table">
+            <div className="immunisation-table dashboard-table">
                 <div className="table-header">
                     <div className="header-cell">IMMUNIZATION</div>
                     <div className="header-cell">DATE RECIEVED</div>

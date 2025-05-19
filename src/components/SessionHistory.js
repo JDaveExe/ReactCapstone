@@ -69,12 +69,41 @@ const SessionHistory = () => {
     const nameMatch = session.name && session.name.toLowerCase().includes(searchTerm.toLowerCase());
     
     let dateMatch = true;
+    const sessionDate = new Date(session.completedAt || session.archivedAt);
+    if (isNaN(sessionDate.getTime())) return false; // Invalid date for session
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1); // Start of yesterday
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1); // Start of tomorrow (for end of today)
+
     if (filterOption === 'today') {
-      const todayStr = getFormattedDate(new Date().toISOString());
-      const sessionDateStr = getFormattedDate(session.completedAt || session.archivedAt);
-      dateMatch = sessionDateStr === todayStr;
+      dateMatch = sessionDate >= today && sessionDate < tomorrow;
+    } else if (filterOption === 'yesterday') {
+      dateMatch = sessionDate >= yesterday && sessionDate < today;
+    } else if (filterOption === 'thisWeek') {
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1)); // Adjust for Sunday as start or Monday
+      startOfWeek.setHours(0,0,0,0);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 7);
+      dateMatch = sessionDate >= startOfWeek && sessionDate < endOfWeek;
+    } else if (filterOption === 'thisMonth') {
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0); // Day 0 of next month is last day of current
+      endOfMonth.setHours(23, 59, 59, 999); // End of the last day of the month
+      dateMatch = sessionDate >= startOfMonth && sessionDate <= endOfMonth;
+    } else if (filterOption === 'thisYear') {
+      const startOfYear = new Date(today.getFullYear(), 0, 1);
+      const endOfYear = new Date(today.getFullYear(), 11, 31);
+      endOfYear.setHours(23, 59, 59, 999); // End of the last day of the year
+      dateMatch = sessionDate >= startOfYear && sessionDate <= endOfYear;
     }
-    // Add more filter options here (e.g., last7days, specificMonth)
+    // 'all' option implies dateMatch remains true
 
     return nameMatch && dateMatch;
   });
@@ -106,7 +135,10 @@ const SessionHistory = () => {
             <select value={filterOption} onChange={handleFilterChange}>
               <option value="all">All Time</option>
               <option value="today">Today</option>
-              {/* Add more options like "Last 7 Days", "This Month" etc. */}
+              <option value="yesterday">Yesterday</option>
+              <option value="thisWeek">This Week</option>
+              <option value="thisMonth">This Month</option>
+              <option value="thisYear">This Year</option>
             </select>
           </div>
         </div>

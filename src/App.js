@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './App.css';
+import './styles/DashboardCommon.css'; // Import common dashboard styles
 import Homepage from "./components/Homepage";
 import RegistrationForm from "./components/Registration";
 import PatientDashboard from "./components/PatientDashboard"; // Add this line

@@ -11,6 +11,7 @@ import ScheduleVisit from './ScheduleVisit';
 import CKProfile from './CKProfile';
 import CheckupRecords from './CheckupRecords';
 import ScheduleSession from './ScheduleSession';
+import ScheduledSession from './ScheduledSession';
 import SessionsList from './SessionsList';
 import UnsortedMembers from './UnsortedMembers';
 import RegisteredProfile from './RegisteredProfile';
@@ -800,13 +801,12 @@ export default function DoctorDashboard() {
       }
     }      switch (activeSection) {
       case 'patients':
-        return renderPatientList();
-      case 'unsorted':
+        return renderPatientList();      case 'unsorted':
         return <UnsortedMembers />;
       case 'yourCheckups':
         return <YourCheckUpsToday />;
       case 'scheduledSessions':
-        return <ScheduleSession />;
+        return <ScheduledSession userRole="doctor" familiesWithMembers={families} />;
       case 'sessions':
         return <Sessions userRole="doctor" />;
       case 'sessionHistory':
@@ -824,7 +824,7 @@ export default function DoctorDashboard() {
           {!sidebarCollapsed && <span style={{ fontWeight: 600, marginLeft: 10 }}>Maybunga Healthcare Center</span>}
         </div>        <div style={{ flex: 1, overflowY: 'auto' }}>          <SidebarDropdown icon={<Calendar size={18} />} label="Check Up" collapsed={sidebarCollapsed} isOpen={dropdowns.checkUp} onClick={() => setDropdowns(prev => ({ ...prev, checkUp: !prev.checkUp }))}>
             <SidebarItem label="Your Check Ups Today" active={activeSection === 'yourCheckups'} collapsed={sidebarCollapsed} indent onClick={() => handleSectionChange('yourCheckups')} />
-            <SidebarItem label="Schedule a Session" active={activeSection === 'scheduledSessions'} collapsed={sidebarCollapsed} indent onClick={() => handleSectionChange('scheduledSessions')} />
+            <SidebarItem label="Schedule New Session" active={activeSection === 'scheduledSessions'} collapsed={sidebarCollapsed} indent onClick={() => handleSectionChange('scheduledSessions')} />
           </SidebarDropdown>
           
           <SidebarDropdown icon={<AlarmClock size={18} />} label="Sessions" collapsed={sidebarCollapsed} isOpen={dropdowns.sessions} onClick={() => setDropdowns(prev => ({ ...prev, sessions: !prev.sessions }))}>
@@ -841,9 +841,8 @@ export default function DoctorDashboard() {
             {sidebarCollapsed ? <Menu size={18} /> : <X size={18} />}
           </button>
         </div>
-      </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ height: 64, background: '#111827', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', marginBottom: 32 }}>          <div style={{ display: 'flex', alignItems: 'center', fontSize: 14 }}>
+      </div>      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>        <div style={{ height: 64, background: '#111827', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', marginBottom: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', fontSize: 14 }}>
             <span style={{ color: '#64748b', marginRight: 8 }}>YOU ARE HERE &gt;</span>
             {(() => {
               let path = [];
@@ -899,11 +898,10 @@ export default function DoctorDashboard() {
                     }
                     path.push(<span key="action" style={baseStyle}>{actionLabel}</span>);
                   }                }                } else if (activeSection === 'unsorted') {
-                path.push(<span key="unsorted" style={baseStyle}>Unsorted Members</span>);
-              } else if (activeSection === 'yourCheckups') {
+                path.push(<span key="unsorted" style={baseStyle}>Unsorted Members</span>);              } else if (activeSection === 'yourCheckups') {
                 path.push(<span key="your-checkups" style={baseStyle}>Your Check Ups Today</span>);
               } else if (activeSection === 'scheduledSessions') {
-                path.push(<span key="schedule" style={baseStyle}>Schedule Session</span>);
+                path.push(<span key="schedule" style={baseStyle}>Schedule New Session</span>);
               } else if (activeSection === 'sessions') {
                 path.push(<span key="sessions" style={baseStyle}>Sessions</span>);
               } else if (activeSection === 'sessionHistory') {
@@ -911,8 +909,11 @@ export default function DoctorDashboard() {
               }
               return path;
             })()}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+          </div>          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+            <div className="current-date" style={{ color: '#94a3b8', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
+              <Calendar size={16} style={{ marginRight: '5px' }} />
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
             <button style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: '#fff', cursor: 'pointer' }}><Bell size={18} /></button>
             <button style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: '#fff', cursor: 'pointer' }}><Settings size={18} /></button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

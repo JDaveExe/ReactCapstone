@@ -6,6 +6,7 @@ const API_URL = 'http://localhost:5000/api';
 
 export const CheckUpProvider = ({ children }) => {
   const [todaysCheckUps, setTodaysCheckUps] = useState([]);
+  const [allScheduledAppointments, setAllScheduledAppointments] = useState([]); // New state
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -123,14 +124,30 @@ export const CheckUpProvider = ({ children }) => {
     }
   }, []);
 
+  // New function to add to allScheduledAppointments
+  const addScheduledAppointmentToList = useCallback((newAppointment) => {
+    setAllScheduledAppointments(prevAppointments => {
+      // Avoid duplicates if an appointment with the same ID already exists
+      if (prevAppointments.find(app => app.id === newAppointment.id)) {
+        return prevAppointments;
+      }
+      return [...prevAppointments, newAppointment];
+    });
+    // TODO: Persist this to backend if needed, similar to addPatientToCheckUpList
+    // For now, it's a local context update.
+    console.log('[CheckUpContext] Added to allScheduledAppointments:', newAppointment);
+  }, []);
+
   return (
     <CheckUpContext.Provider value={{ 
       todaysCheckUps, 
+      allScheduledAppointments, // Expose new state
       addPatientToCheckUpList, 
       updateCheckUpItem, 
       clearTodaysCheckUps, 
-      archiveSession, // Add new function to context value
+      archiveSession, 
       setTodaysCheckUps,
+      addScheduledAppointmentToList, // Expose new function
       isLoading,
       error
     }}>

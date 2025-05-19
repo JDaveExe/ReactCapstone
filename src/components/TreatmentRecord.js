@@ -75,11 +75,15 @@ const TreatmentRecord = () => {
       [name]: value
     });
   };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log('Form data submitted:', formData);
-    // Add API call or data processing logic here
+    
+    // Show success message (in real app would save to backend)
+    alert('Treatment record saved successfully!');
+    
+    // Here you would typically call an API endpoint to save the data
+    // Example: await api.savePatientTreatment(formData);
   };
 
   // Generate month options
@@ -219,10 +223,9 @@ const TreatmentRecord = () => {
       </div>
     );
   };
-
   return (
-    <div className="treatment-record">
-      <h2 className="treatment-record-title">Individual Treatment Record</h2>
+    <div className="treatment-record dashboard-card">
+      <h2 className="treatment-record-title dashboard-title">Individual Treatment Record</h2>
       
       <form onSubmit={handleSubmit}>
         <div className="personal-info-section">
@@ -239,21 +242,22 @@ const TreatmentRecord = () => {
           </div>
 
           <div className="form-row">
-            <div className="form-field name-field">
-              <label>Name:</label>
+            <div className="form-field name-field">              <label className="dashboard-label">Name:</label>
               <input 
                 type="text" 
                 name="name" 
                 value={formData.name} 
                 onChange={handleChange} 
+                className="dashboard-input"
               />
             </div>
             <div className="form-field sex-field">
-              <label>Sex:</label>
+              <label className="dashboard-label">Sex:</label>
               <select
                 name="sex"
                 value={formData.sex}
                 onChange={handleChange}
+                className="dashboard-select"
               >
                 <option value="">Select</option>
                 <option value="Male">Male</option>
@@ -395,10 +399,8 @@ const TreatmentRecord = () => {
         <div className="treatment-records-container">
           <TreatmentColumn side="left" />
           <TreatmentColumn side="right" />
-        </div>
-
-        <div className="form-actions">
-          <button type="submit" className="submit-button">Save Record</button>
+        </div>        <div className="form-actions">
+          <button type="submit" className="submit-button dashboard-btn">Save Record</button>
         </div>
       </form>
     </div>

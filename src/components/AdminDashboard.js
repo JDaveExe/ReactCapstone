@@ -20,7 +20,8 @@ import Sessions from './Sessions';
 import ScheduleSession from './ScheduleSession';
 import ScheduleVisit from './ScheduleVisit'; 
 import RegisteredProfile from './RegisteredProfile';
-import SessionHistory from './SessionHistory'; // Import the SessionHistory component
+import SessionHistory from './SessionHistory';
+import ScheduledSession from './ScheduledSession';
 import { getPatients, getFamilies, getFamilyMembers, getSortedFamilies, addSurname, assignPatientToFamily } from '../services/api'; // Removed debugFamilyMembers and added addSurname
 import AddNewPatientForm from './AddNewPatientForm'; // Import AddNewPatientForm
 import { Button, Modal } from 'react-bootstrap'; // Import Button and Modal
@@ -1107,15 +1108,14 @@ export default function AdminDashboard() {
           <CheckUpToday showDateTimePerPatient />
         </div>
       );
-    }
-    if (selectedView === 'scheduledSessions') {
+    }    if (selectedView === 'scheduledSessions') {
       return (
         <div style={{ color: '#f1f5f9' }}>
           <h2 style={{ color: '#38bdf8', fontWeight: 700, fontSize: 28, textAlign: 'center', marginBottom: 24 }}>Schedule New Session</h2>
-          <ScheduleSession />
+          <ScheduledSession userRole="admin" familiesWithMembers={familiesWithMembers} />
         </div>
       );
-    }    
+    }
     if (selectedView === 'sessions') {
       return (
         <div style={{ color: '#f1f5f9' }}>
@@ -1575,10 +1575,9 @@ export default function AdminDashboard() {
             collapsed={collapsed}
             isOpen={dropdowns.sessions}
             onClick={() => toggleDropdown('sessions')}
-          >
-            <SidebarItem
+          >            <SidebarItem
               icon={<Circle size={18} />}
-              label="Schedule Session"
+              label="Schedule New Session"
               active={selectedView === 'scheduledSessions'}
               collapsed={false}
               indent
@@ -1627,11 +1626,11 @@ export default function AdminDashboard() {
                   }
                 }}
               >
-                {selectedView === 'dashboard' ? 'Dashboard' : 
+                {                 selectedView === 'dashboard' ? 'Dashboard' : 
                  selectedView === 'patients' ? 'Patient Database' :
                  selectedView === 'checkups' ? 'Check-Ups Today' :
                  selectedView === 'unsorted' ? 'Unsorted Members' :
-                 selectedView === 'scheduledSessions' ? 'Schedule Session' :
+                 selectedView === 'scheduledSessions' ? 'Schedule New Session' :
                  selectedView === 'sessions' ? 'Sessions List' :
                  selectedView === 'reports' ? 'Reports' :
                  selectedView === 'settings' ? 'Settings' : 'Dashboard'}
@@ -1672,8 +1671,11 @@ export default function AdminDashboard() {
                 </>
               )}
             </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
+          </div>          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div className="current-date" style={{ color: '#94a3b8', fontSize: '14px', marginRight: '16px', display: 'flex', alignItems: 'center' }}>
+              <Calendar size={16} style={{ marginRight: '5px' }} />
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
             <div style={{ position: 'relative', marginRight: 16 }}>
               <Bell size={20} style={{ cursor: 'pointer' }} />
               <span style={{ position: 'absolute', top: -6, right: -6, width: 16, height: 16, borderRadius: '50%', background: '#ef4444', color: 'white', fontSize: 10, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>2</span>

@@ -5,7 +5,8 @@ import { Clock, Calendar, User, Check, Loader } from 'lucide-react';
 import CheckUpContext from '../contexts/CheckUpContext';
 
 export default function CheckUpToday({ showDateTimePerPatient }) {
-  const { todaysCheckUps, updateCheckUpItem, setTodaysCheckUps, isLoading, error } = useContext(CheckUpContext);
+  const { todaysCheckUps, updateCheckUpItem, setTodaysCheckUps, isLoading, error, allScheduledAppointments } = useContext(CheckUpContext);
+  
   console.log('[CheckUpToday] Received todaysCheckUps from context:', todaysCheckUps);
   console.log('[CheckUpToday] todaysCheckUps is Array?', Array.isArray(todaysCheckUps), 'Length:', todaysCheckUps?.length);
   console.log('[CheckUpToday] Context states - isLoading:', isLoading, 'error:', error);
@@ -23,7 +24,6 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
       console.error('[CheckUpToday] Error checking localStorage directly:', e);
     }
   }, [todaysCheckUps]);
-
   const today = new Date();
   const todayDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const [search, setSearch] = useState("");
@@ -91,6 +91,27 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
     }
   };
 
+  // Filter scheduled appointments for today
+  const getTodayScheduledAppointments = () => {
+    const todayStr = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    return allScheduledAppointments // Use allScheduledAppointments from context
+      .filter(appointment => appointment.date === todayStr)
+      .sort((a, b) => a.time.localeCompare(b.time));
+  };
+  
+  // Filter upcoming appointments for the next 7 days (excluding today)
+  const getUpcomingScheduledAppointments = () => {
+    const todayStr = today.toISOString().split('T')[0];
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+    const nextWeekStr = nextWeek.toISOString().split('T')[0];
+    
+    return allScheduledAppointments // Use allScheduledAppointments from context
+      .filter(appointment => appointment.date > todayStr && appointment.date <= nextWeekStr)
+      .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
+      .slice(0, 3); // Show up to 3 upcoming appointments
+  };
+
   // Replace the localStorage-based date check with API-based solution
   useEffect(() => {
     // We'll rely on the backend to manage daily reset of check-ups
@@ -105,111 +126,182 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
   if (error) {
     return <div className="error">{error}</div>;
   }
-
   return (
-    <div className="checkup-today-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-        <h1 style={{ marginBottom: 0 }}>{showDateTimePerPatient ? 'Your Check Ups Today' : 'Check Ups Today'}</h1>
-        <input
-          type="text"
-          placeholder="Search by name..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ padding: '7px 14px', borderRadius: 6, background: '#172136', border: '1px solid #334155', color: '#fff', outline: 'none', fontSize: 14, minWidth: 180 }}
-        />
-      </div>
-      {sorted.length === 0 ? (
-        <div className="no-sessions" style={{textAlign: 'center', padding: '20px', color: '#94a3b8'}}>
-            No patients have logged in for check-up yet today.
+    <>
+      <div className="checkup-today-container">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+          <h1 style={{ marginBottom: 0 }}>{showDateTimePerPatient ? 'Your Check Ups Today' : 'Check Ups Today'}</h1>
+          <input
+            type="text"
+            placeholder="Search by name..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ padding: '7px 14px', borderRadius: 6, background: '#172136', border: '1px solid #334155', color: '#fff', outline: 'none', fontSize: 14, minWidth: 180 }}
+          />
         </div>
-      ) : (
-        <table className="checkup-table">
-          <thead>
-            <tr>
-              <th style={{ cursor: 'pointer' }} onClick={() => handleSort('queueNumber')}>
-                # {sortField === 'queueNumber' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
-              </th>
-              <th style={{ cursor: 'pointer' }} onClick={() => handleSort('name')}>
-                Name {sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
-              </th>
-              {showDateTimePerPatient && (
-                <th style={{ cursor: 'pointer' }} onClick={() => handleSort('loggedInAt')}>
-                  Logged In At {sortField === 'loggedInAt' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+        {sorted.length === 0 ? (
+          <div className="no-sessions" style={{textAlign: 'center', padding: '20px', color: '#94a3b8'}}>
+              No patients have logged in for check-up yet today.
+          </div>
+        ) : (
+          <table className="checkup-table">
+            <thead>
+              <tr>
+                <th style={{ cursor: 'pointer' }} onClick={() => handleSort('queueNumber')}>
+                  # {sortField === 'queueNumber' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
                 </th>
-              )}
-              <th>Purpose</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((c) => (
-              <tr key={c.id}>
-                <td>{c.queueNumber}</td>
-                <td>{c.name}</td>
+                <th style={{ cursor: 'pointer' }} onClick={() => handleSort('name')}>
+                  Name {sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                </th>
                 {showDateTimePerPatient && (
-                  <td>{new Date(c.loggedInAt).toLocaleTimeString()}</td>
+                  <th style={{ cursor: 'pointer' }} onClick={() => handleSort('loggedInAt')}>
+                    Logged In At {sortField === 'loggedInAt' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+                  </th>
                 )}
-                <td>
-                  <select 
-                    value={c.purpose}
-                    onChange={(e) => e.target.value === 'Other' 
-                      ? handleCustomPurpose(c.id) 
-                      : handlePurposeChange(c.id, e.target.value)
-                    }
-                    style={{ 
-                      padding: '6px', 
-                      borderRadius: '4px', 
-                      background: '#1e293b', 
-                      color: '#e5e7eb',
-                      border: '1px solid #334155',
-                      minWidth: '150px'
-                    }}
-                  >
-                    {purposeOptions.map(option => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <span style={{ 
-                    padding: '4px 8px', 
-                    borderRadius: '4px', 
-                    fontSize: '14px',
-                    backgroundColor: 
-                      c.status === 'Waiting' ? '#0c4a6e' : 
-                      c.status === 'In Session' ? '#854d0e' : 
-                      c.status === 'Finished' ? '#064e3b' : '#334155',
-                    color:
-                      c.status === 'Waiting' ? '#38bdf8' : 
-                      c.status === 'In Session' ? '#fbbf24' : 
-                      c.status === 'Finished' ? '#34d399' : '#94a3b8',
-                  }}>
-                    {c.status}
-                  </span>
-                </td>
-                <td>
-                  <button
-                    onClick={() => handleStartSession(c)}
-                    disabled={c.status !== 'Waiting'}
-                    style={{ 
-                      padding: '6px 12px', 
-                      borderRadius: '4px', 
-                      backgroundColor: c.status !== 'Waiting' ? '#334155' : '#0e7490',
-                      color: c.status !== 'Waiting' ? '#64748b' : '#fff',
-                      border: 'none',
-                      cursor: c.status !== 'Waiting' ? 'not-allowed' : 'pointer',
-                      fontSize: '14px'
-                    }}
-                  >
-                    {c.status === 'Waiting' ? 'Enter Session' : 'Currently In Session'} 
-                  </button>
-                </td>
+                <th>Purpose</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {sorted.map((c) => (
+                <tr key={c.id}>
+                  <td>{c.queueNumber}</td>
+                  <td>{c.name}</td>
+                  {showDateTimePerPatient && (
+                    <td>{new Date(c.loggedInAt).toLocaleTimeString()}</td>
+                  )}
+                  <td>
+                    <select 
+                      value={c.purpose}
+                      onChange={(e) => e.target.value === 'Other' 
+                        ? handleCustomPurpose(c.id) 
+                        : handlePurposeChange(c.id, e.target.value)
+                      }
+                      style={{ 
+                        padding: '6px', 
+                        borderRadius: '4px', 
+                        background: '#1e293b', 
+                        color: '#e5e7eb',
+                        border: '1px solid #334155',
+                        minWidth: '150px'
+                      }}
+                    >
+                      {purposeOptions.map(option => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <span style={{ 
+                      padding: '4px 8px', 
+                      borderRadius: '4px', 
+                      fontSize: '14px',
+                      backgroundColor: 
+                        c.status === 'Waiting' ? '#0c4a6e' : 
+                        c.status === 'In Session' ? '#854d0e' : 
+                        c.status === 'Finished' ? '#064e3b' : '#334155',
+                      color:
+                        c.status === 'Waiting' ? '#38bdf8' : 
+                        c.status === 'In Session' ? '#fbbf24' : 
+                        c.status === 'Finished' ? '#34d399' : '#94a3b8',
+                    }}>
+                      {c.status}
+                    </span>
+                  </td>
+                  <td>
+                    <button
+                      onClick={() => handleStartSession(c)}
+                      disabled={c.status !== 'Waiting'}
+                      style={{ 
+                        padding: '6px 12px', 
+                        borderRadius: '4px', 
+                        backgroundColor: c.status !== 'Waiting' ? '#334155' : '#0e7490',
+                        color: c.status !== 'Waiting' ? '#64748b' : '#fff',
+                        border: 'none',
+                        cursor: c.status !== 'Waiting' ? 'not-allowed' : 'pointer',
+                        fontSize: '14px'
+                      }}
+                    >
+                      {c.status === 'Waiting' ? 'Enter Session' : 'Currently In Session'} 
+                    </button>
+                  </td>
+                </tr>
+              ))}            </tbody>
+          </table>        )}
+      </div>
+      
+      {/* Scheduled Checkups Today and Upcoming Checkups Section */}
+      <div className="checkups-overview">
+        <div className="checkups-row">
+          {/* Today's Scheduled Checkups */}
+        <div className="checkup-card today-checkups">
+          <h3 className="checkup-card-title">
+            <Calendar size={18} style={{ marginRight: '8px' }} />
+            Scheduled Checkup Today
+          </h3>
+          <div className="checkup-content">
+            {getTodayScheduledAppointments().length > 0 ? (
+              <div className="checkup-list">
+                {getTodayScheduledAppointments().map(appointment => (
+                  <div key={appointment.id} className="checkup-item">
+                    <div className="checkup-item-header">
+                      <span className="patient-name">{appointment.patientName}</span>
+                      <span className="checkup-time">{appointment.time}</span>
+                    </div>                    <div className="checkup-item-details">
+                      <span className="checkup-family">Family: {appointment.familyName}</span>
+                      <div className="checkup-item-row">
+                        <span className="checkup-purpose">Purpose: {appointment.purpose}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="no-checkups">
+                <p>No checkups scheduled for today.</p>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Upcoming Checkups */}
+        <div className="checkup-card upcoming-checkups">
+          <h3 className="checkup-card-title">
+            <Calendar size={18} style={{ marginRight: '8px' }} />
+            Upcoming Checkups
+          </h3>
+          <div className="checkup-content">
+            {getUpcomingScheduledAppointments().length > 0 ? (
+              <div className="checkup-list">
+                {getUpcomingScheduledAppointments().map(appointment => (
+                  <div key={appointment.id} className="checkup-item">
+                    <div className="checkup-item-header">
+                      <span className="patient-name">{appointment.patientName}</span>
+                      <span className="checkup-date">
+                        {new Date(appointment.date).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
+                      </span>
+                    </div>                    <div className="checkup-item-details">
+                      <span className="checkup-family">Family: {appointment.familyName}</span>
+                      <div className="checkup-item-row">
+                        <span className="checkup-time">Time: {appointment.time}</span>
+                        <span className="checkup-purpose">Purpose: {appointment.purpose}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="no-checkups">
+                <p>No upcoming checkups in the next 7 days.</p>
+              </div>
+            )}
+          </div>        </div>
+      </div>
     </div>
+    </>
   );
 }

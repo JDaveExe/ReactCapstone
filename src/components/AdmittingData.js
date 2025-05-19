@@ -63,8 +63,8 @@ const AdmittingData = () => {
 
   return (
     <div className="admitting-data-container">
-      <div className="admitting-data-card">
-        <h2 className="admitting-data-title">Admitting Data</h2>
+      <div className="admitting-data-card dashboard-card">
+        <h2 className="admitting-data-title dashboard-title">Admitting Data</h2>
         
         <div className="admitting-data-grid">
           {/* Left Column */}
@@ -431,10 +431,22 @@ const AdmittingData = () => {
                 </td>
               </tr>
               <tr>
-                <td colSpan="6">&nbsp;</td>
-              </tr>
+                <td colSpan="6">&nbsp;</td>              </tr>
             </tbody>
           </table>
+        </div>
+
+        {/* Save Button */}
+        <div className="save-button-container">
+          <button 
+            className="dashboard-btn save-button"
+            onClick={() => {
+              // Show success message (in real app would save to backend)
+              alert('Admitting data saved successfully!');
+            }}
+          >
+            Save
+          </button>
         </div>
       </div>
     </div>

@@ -2,29 +2,33 @@
     width: 90%;
     max-width: 800px;
     margin: 20px auto;
-    padding: 20px;
-    background-color: #ffffff;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgb(255, 255, 255);
-    color: #333; /* Darker text color for better contrast */
+    padding: 25px;
+    background-color: #1e293b; /* Dark background to match dashboard */
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    color: #e5e7eb; /* Light text color */
+    border: 1px solid #334155; /* Subtle border */
+    transition: all 0.3s ease;
 }
 
 .referral-header {
     text-align: center;
     font-size: 24px;
     font-weight: bold;
-    margin-bottom: 20px;
-    color: #444; /* Slightly darker header color */
+    margin-bottom: 25px;
+    color: #38bdf8; /* Accent blue color */
+    border-bottom: 2px solid #334155;
+    padding-bottom: 12px;
 }
 
 .patient-info {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 15px;
 }
 
 .input-group {
-    display: flex;
+        display: flex;
     flex-direction: column;
     flex: 1;
     min-width: 200px;
@@ -32,24 +36,39 @@
 
 .input-group input[type="date"] {
     width: 100%;
-    max-width: 200px; /* Adjust to match other input sizes */
+    max-width: 200px;
 }
 
 .input-group label {
-    font-weight: bold;
-    color: #555; /* Improve label visibility */
+    font-weight: 500;
+    color: #94a3b8; /* Lighter text color */
+    margin-bottom: 6px;
 }
 
-.input-group input {
-    padding: 5px;
-    border: 1px solid #000;
-    border-radius: 3px;
+.input-group input, 
+.input-group select {
+    padding: 10px;
+    background-color: #243548; /* Dark input background */
+    color: #e5e7eb; /* Light text color */
+    border: 1px solid #475569;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    outline: none;
+    border-color: #38bdf8; /* Accent blue color */
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
 }
 
 .section-title {
     text-align: center;
     font-weight: bold;
-    margin-top: 20px;
+    margin-top: 25px;
+    margin-bottom: 15px;
+    color: #38bdf8; /* Accent blue color */
+    font-size: 18px;
 }
 
 .lab-sections {

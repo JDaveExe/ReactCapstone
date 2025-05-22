@@ -19,6 +19,24 @@ export const CheckUpProvider = ({ children }) => {
         const response = await axios.get(`${API_URL}/checkups/today`);
         console.log('[CheckUpContext] API response for check-ups:', response.data);
         setTodaysCheckUps(response.data || []);
+        
+        // Check if today's data is from a previous day that needs to be reset
+        if (response.data && response.data.length > 0) {
+          const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+          const firstCheckupDate = new Date(response.data[0].loggedInAt).toISOString().split('T')[0];
+          
+          if (firstCheckupDate !== today) {
+            console.log(`[CheckUpContext] Detected outdated check-ups data (${firstCheckupDate} vs today ${today}). Triggering reset.`);
+            try {
+              const resetResponse = await axios.post(`${API_URL}/checkups/today/reset`);
+              console.log('[CheckUpContext] Auto-reset response:', resetResponse.data);
+              setTodaysCheckUps(resetResponse.data.checkUps || []);
+            } catch (resetError) {
+              console.error('[CheckUpContext] Error during auto-reset:', resetError);
+            }
+          }
+        }
+        
         setError(null);
       } catch (error) {
         console.error('[CheckUpContext] Error fetching check-ups from API:', error);
@@ -30,6 +48,24 @@ export const CheckUpProvider = ({ children }) => {
 
     fetchCheckUps();
   }, []);
+
+  // Effect to fetch all scheduled appointments from API on mount
+  useEffect(() => {
+    const fetchScheduledAppointments = async () => {
+      try {
+        console.log('[CheckUpContext] Fetching scheduled appointments from API');
+        const response = await axios.get(`${API_URL}/appointments`);
+        console.log('[CheckUpContext] API response for scheduled appointments:', response.data);
+        setAllScheduledAppointments(response.data || []);
+      } catch (error) {
+        console.error('[CheckUpContext] Error fetching scheduled appointments from API:', error);
+        // Don't set error state to avoid UI disruption if only appointments fail to load
+      }
+    };
+
+    fetchScheduledAppointments();
+  }, []);
+
   // Set up polling to refresh checkups from API periodically
   useEffect(() => {
     const pollInterval = setInterval(() => {
@@ -61,8 +97,8 @@ export const CheckUpProvider = ({ children }) => {
     return () => {
       clearInterval(pollInterval);
       console.log('[CheckUpContext] Stopped API polling interval');
-    };
-  }, []);
+    };  }, []);
+
   const addPatientToCheckUpList = useCallback(async (patientData) => {
     console.log('[CheckUpContext] addPatientToCheckUpList called with:', patientData);
     try {
@@ -78,6 +114,62 @@ export const CheckUpProvider = ({ children }) => {
       throw error;
     }
   }, []);
+
+  // Function to check if appointments need to be moved to today's list
+  const moveAppointmentsToToday = useCallback(async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      
+      // Find appointments scheduled for today that aren't in today's check-ups yet
+      const todayAppointments = allScheduledAppointments.filter(app => app.date === today);
+      
+      if (todayAppointments.length === 0) {
+        console.log('[CheckUpContext] No appointments to move to today\'s list');
+        return;
+      }
+      
+      console.log('[CheckUpContext] Found appointments for today:', todayAppointments);
+      
+      // Add today's appointments to the check-up list if they're not already there
+      for (const appointment of todayAppointments) {
+        const alreadyInList = todaysCheckUps.some(checkup => 
+          checkup.appointmentId === appointment.id || 
+          (checkup.name === appointment.patientName && 
+           checkup.scheduledTime === appointment.time)
+        );
+        
+        if (!alreadyInList) {
+          const patientData = {
+            id: `appointment_${appointment.id}`,
+            appointmentId: appointment.id,
+            name: appointment.patientName,
+            familyName: appointment.familyName,
+            purpose: appointment.purpose,
+            scheduledTime: appointment.time
+          };
+          
+          // Add to today's check-ups
+          await addPatientToCheckUpList(patientData);
+          console.log('[CheckUpContext] Moved appointment to today\'s check-ups:', appointment);
+        }
+      }
+    } catch (error) {
+      console.error('[CheckUpContext] Error moving appointments to today:', error);
+    }
+  }, [allScheduledAppointments, todaysCheckUps, addPatientToCheckUpList]);
+    // Check for appointments that need to be moved to today's list periodically
+  useEffect(() => {
+    // Run once on initial load
+    moveAppointmentsToToday();
+    
+    // Set up interval to check every hour
+    const intervalId = setInterval(moveAppointmentsToToday, 60 * 60 * 1000);
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [moveAppointmentsToToday]);
+
   const updateCheckUpItem = useCallback(async (updatedItem) => {
     console.log('[CheckUpContext] updateCheckUpItem called with:', updatedItem);
     try {
@@ -107,6 +199,22 @@ export const CheckUpProvider = ({ children }) => {
       throw error;
     }
   }, []);
+  
+  // Function to reset today's checkups and reload appointments
+  const resetTodaysCheckUps = useCallback(async () => {
+    console.log('[CheckUpContext] resetTodaysCheckUps called.');
+    try {
+      const response = await axios.post(`${API_URL}/checkups/today/reset`);
+      console.log('[CheckUpContext] API response after resetting check-ups:', response.data);
+      
+      setTodaysCheckUps(response.data.checkUps || []);
+      return response.data;
+    } catch (error) {
+      console.error('[CheckUpContext] Error resetting check-ups via API:', error);
+      setError('Failed to reset check-ups. Please try again.');
+      throw error;
+    }
+  }, []);
 
   const archiveSession = useCallback(async (sessionData) => {
     console.log('[CheckUpContext] archiveSession called with:', sessionData);
@@ -124,18 +232,40 @@ export const CheckUpProvider = ({ children }) => {
     }
   }, []);
 
-  // New function to add to allScheduledAppointments
-  const addScheduledAppointmentToList = useCallback((newAppointment) => {
-    setAllScheduledAppointments(prevAppointments => {
-      // Avoid duplicates if an appointment with the same ID already exists
-      if (prevAppointments.find(app => app.id === newAppointment.id)) {
-        return prevAppointments;
-      }
-      return [...prevAppointments, newAppointment];
-    });
-    // TODO: Persist this to backend if needed, similar to addPatientToCheckUpList
-    // For now, it's a local context update.
-    console.log('[CheckUpContext] Added to allScheduledAppointments:', newAppointment);
+  // Function to add to allScheduledAppointments
+  const addScheduledAppointmentToList = useCallback(async (newAppointment) => {
+    try {
+      // Make API call to save the appointment to backend
+      const response = await axios.post(`${API_URL}/appointments`, newAppointment);
+      console.log('[CheckUpContext] Added appointment to backend:', response.data);
+      
+      // Update local state with the data from the server
+      setAllScheduledAppointments(response.data.appointments);
+      
+      return response.data.appointment;
+    } catch (error) {
+      console.error('[CheckUpContext] Error adding scheduled appointment:', error);
+      setError('Failed to schedule appointment. Please try again.');
+      throw error;
+    }
+  }, []);
+
+  // Function to delete a scheduled appointment
+  const deleteScheduledAppointment = useCallback(async (appointmentId) => {
+    try {
+      // Make API call to delete the appointment
+      const response = await axios.delete(`${API_URL}/appointments/${appointmentId}`);
+      console.log('[CheckUpContext] Deleted appointment from backend:', response.data);
+      
+      // Update local state with the data from the server
+      setAllScheduledAppointments(response.data.appointments);
+      
+      return response.data.appointment;
+    } catch (error) {
+      console.error('[CheckUpContext] Error deleting scheduled appointment:', error);
+      setError('Failed to delete appointment. Please try again.');
+      throw error;
+    }
   }, []);
 
   return (
@@ -147,7 +277,10 @@ export const CheckUpProvider = ({ children }) => {
       clearTodaysCheckUps, 
       archiveSession, 
       setTodaysCheckUps,
+      resetTodaysCheckUps, // Expose reset function
       addScheduledAppointmentToList, // Expose new function
+      deleteScheduledAppointment, // Expose delete function
+      moveAppointmentsToToday, // Expose function to manually check for today's appointments
       isLoading,
       error
     }}>

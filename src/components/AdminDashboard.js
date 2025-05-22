@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react'; // Added useRef
+import React, { useState, useEffect, useMemo, useRef, useContext } from 'react'; // Added useRef and useContext
 import axios from 'axios';
 import { ChevronDown, ChevronUp, Search, Settings, Bell, LogOut, User, Menu, X, Maximize, BarChart2, Circle, Calendar, Square, ChevronRight, Activity, AlarmClock, FileText, Shield, Grid, List, QrCode } from 'lucide-react'; // Added QrCode
+import DateTimeContext from '../contexts/DateTimeContext';
 import { useNavigate } from 'react-router-dom';
 import '../styles/DashboardAdm.css';
 import '../styles/SidebarAdmin.css';
@@ -26,6 +27,31 @@ import { getPatients, getFamilies, getFamilyMembers, getSortedFamilies, addSurna
 import AddNewPatientForm from './AddNewPatientForm'; // Import AddNewPatientForm
 import { Button, Modal } from 'react-bootstrap'; // Import Button and Modal
 import { QRCodeCanvas } from 'qrcode.react'; // Added QRCodeCanvas for QR generation
+
+// Helper function to format address object into a string
+const formatAddress = (addressObj) => {
+  if (typeof addressObj === 'string') {
+    return addressObj;
+  }
+  if (typeof addressObj !== 'object' || addressObj === null) {
+    return 'N/A'; // Placeholder for invalid or missing address structure
+  }
+
+  const parts = [];
+  // Combine house number and street
+  const streetParts = [];
+  if (addressObj.houseNo) streetParts.push(addressObj.houseNo);
+  if (addressObj.street) streetParts.push(addressObj.street);
+  if (streetParts.length > 0) parts.push(streetParts.join(' '));
+
+  // Add barangay, city, region
+  if (addressObj.barangay) parts.push(addressObj.barangay);
+  if (addressObj.city) parts.push(addressObj.city);
+  if (addressObj.region) parts.push(addressObj.region);
+  
+  const result = parts.join(', ');
+  return result || 'N/A'; // Return 'N/A' if all parts are empty or addressObj was empty
+};
 
 function SidebarItem({ icon, label, active, collapsed, indent, onClick }) {
   return (
@@ -163,8 +189,7 @@ export default function AdminDashboard() {
     personalInfo: true, // For profile section
     contactInfo: true   // For profile section
   });
-  const [selectedView, setSelectedView] = useState('dashboard');
-  const [zoomedChart, setZoomedChart] = useState(null);
+  const [selectedView, setSelectedView] = useState('dashboard');  const [zoomedChart, setZoomedChart] = useState(null);
   const navigate = useNavigate();
   const [selectedFamily, setSelectedFamily] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
@@ -173,6 +198,7 @@ export default function AdminDashboard() {
   const [familySearchTerm, setFamilySearchTerm] = useState('');
   const [currentSearchTerm, setCurrentSearchTerm] = useState(''); // Added this line
   const [patients, setPatients] = useState([]);
+  const { getCurrentDate, isSimulated } = useContext(DateTimeContext);
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'admin');
   const [showAddNewPatientForm, setShowAddNewPatientForm] = useState(false);
@@ -190,14 +216,13 @@ export default function AdminDashboard() {
   const [qrCodeValue, setQrCodeValue] = useState('');
   const [currentMemberForQr, setCurrentMemberForQr] = useState(null);
   const qrCodeRef = useRef(null);
-
   // Helper function to get current family name
   const getCurrentFamilyName = () => {
-    if (!selectedMember || selectedMember.familyId === null || !familiesWithMembers) {
+    if (!selectedMember || !selectedMember.familyId || !familiesWithMembers || !Array.isArray(familiesWithMembers)) {
       console.log('[getCurrentFamilyName] Conditions not met:', { selectedMember, familiesWithMembers });
       return 'N/A';
     }
-    const currentFamily = familiesWithMembers.find(f => f.id === selectedMember.familyId);
+    const currentFamily = familiesWithMembers.find(f => f && f.id === selectedMember.familyId);
     console.log('[getCurrentFamilyName] selectedMember.familyId:', selectedMember.familyId, 'Found family:', currentFamily);
     return currentFamily ? currentFamily.familyName : 'Unknown Family';
   };
@@ -425,43 +450,65 @@ export default function AdminDashboard() {
       alert('Failed to add new surname. Please try again.');
     }
   };
-
   const handleGenerateQrCode = (member) => {
     if (!member) return;
     // IMPORTANT: For actual login via QR, the 'authToken' should be a secure token.
     // Using member.id here as a placeholder. The backend /api/login would need
     // to be adapted to handle this if member.id is used as an authToken.
     // This QR code structure is based on AuthPage.js registration QR.
+    
+    // Create a display name safely
+    const displayName = member.name || 
+                      (member.firstName || member.lastName ? 
+                        `${member.firstName || ''} ${member.lastName || ''}`.trim() : 
+                        'Unknown Member');
+                        
     const qrData = JSON.stringify({
-      email: member.email, // Ensure member object has an email property
-      authToken: member.id, // Using ID as a placeholder for authToken for login purposes
-      name: member.name || `${member.firstName || ''} ${member.lastName || ''}`
+      email: member.email || '', // Handle if email is missing
+      authToken: member.id || '', // Using ID as a placeholder for authToken for login purposes
+      name: displayName
     });
     setQrCodeValue(qrData);
-    setCurrentMemberForQr(member);
+    setCurrentMemberForQr({...member, name: displayName}); // Ensure member has name prop
     setShowQrModal(true);
     setManagePatientDropdownOpen(false); // Close manage dropdown if it was open
   };
-
   const downloadQRCode = () => {
     const canvas = qrCodeRef.current?.querySelector('canvas');
     if (canvas) {
       const pngUrl = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream');
       let downloadLink = document.createElement('a');
       downloadLink.href = pngUrl;
-      downloadLink.download = `${currentMemberForQr?.name?.replace(/\s+/g, '_') || 'patient_qr'}_qrcode.png`;
+      
+      // Create a safe filename from member data
+      let fileName = 'patient_qr';
+      if (currentMemberForQr) {
+        const displayName = currentMemberForQr.name || 
+                          (currentMemberForQr.firstName || currentMemberForQr.lastName ? 
+                           `${currentMemberForQr.firstName || ''} ${currentMemberForQr.lastName || ''}`.trim() : 
+                           'patient');
+        fileName = `${displayName.replace(/\s+/g, '_')}_qrcode.png`;
+      }
+      
+      downloadLink.download = fileName;
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
     }
   };
-
   const printQRCode = () => {
     const canvas = qrCodeRef.current?.querySelector('canvas');
     if (canvas) {
       const dataUrl = canvas.toDataURL('image/png');
+      
+      // Get display name safely
+      const displayName = currentMemberForQr?.name || 
+                        (currentMemberForQr?.firstName || currentMemberForQr?.lastName ? 
+                         `${currentMemberForQr?.firstName || ''} ${currentMemberForQr?.lastName || ''}`.trim() : 
+                         'Patient');
+                         
       let windowContent = '<!DOCTYPE html><html><head><title>Print QR Code</title></head><body style="text-align:center;">';
-      windowContent += `<h2>QR Code for ${currentMemberForQr?.name || ''}</h2>`;
+      windowContent += `<h2>QR Code for ${displayName}</h2>`;
       windowContent += `<img src="${dataUrl}" style="max-width: 80%; margin-top: 20px;">`;
       windowContent += '<script type="text/javascript">window.onload = function() { window.print(); window.onafterprint = function(){ window.close(); }; };</script>';
       windowContent += '</body></html>';
@@ -516,7 +563,10 @@ export default function AdminDashboard() {
                   color: '#38bdf8', /* Brighter blue color for better readability */
                   textShadow: '0px 1px 2px rgba(0, 0, 0, 0.3)' /* Text shadow for better contrast */
                 }}>
-                  {selectedMember.name || `${selectedMember.firstName || ''} ${selectedMember.lastName || ''}`}
+                  {selectedMember?.name || 
+                   (selectedMember?.firstName || selectedMember?.lastName ? 
+                     `${selectedMember?.firstName || ''} ${selectedMember?.lastName || ''}`.trim() : 
+                     'Member Profile')}
                 </h2>
                 
                 <div style={{ display: 'flex', gap: '10px', position: 'relative' }}> {/* Adjusted gap */}
@@ -800,7 +850,12 @@ export default function AdminDashboard() {
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
                   <div style={{ background: '#1e293b', padding: '30px', borderRadius: '8px', color: '#e5e7eb', textAlign: 'center', maxWidth: '400px' }}>
                     <h3 style={{ color: '#ef4444', marginTop: 0, marginBottom: '15px' }}>Final Confirmation</h3>
-                    <p>Are you absolutely sure you want to permanently delete all data for {selectedMember?.name || `${selectedMember?.firstName || ''} ${selectedMember?.lastName || ''}`}?</p>
+                    <p>Are you absolutely sure you want to permanently delete all data for {
+                      selectedMember?.name || 
+                      (selectedMember?.firstName || selectedMember?.lastName ? 
+                        `${selectedMember?.firstName || ''} ${selectedMember?.lastName || ''}`.trim() : 
+                        'this member')
+                    }?</p>
                     <div style={{ marginTop: '25px', display: 'flex', justifyContent: 'space-around' }}>
                       <button 
                         onClick={handleDeletePatientData}
@@ -852,18 +907,16 @@ export default function AdminDashboard() {
                   </div>
                   
                   {dropdowns.personalInfo && (
-                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', width: '100%', maxWidth: '100%' }}>
-                      <div style={{ flex: '1', minWidth: '200px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', width: '100%', maxWidth: '100%' }}>                      <div style={{ flex: '1', minWidth: '200px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
                         <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Age</div>
-                        <div>{selectedMember.age || '40'} years</div>
+                        <div>{selectedMember.age ? `${selectedMember.age} years` : '---'}</div>
                       </div>
                       <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
                         <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Gender</div>
-                        <div>{selectedMember.gender || 'Male'}</div>
-                      </div>
-                      <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                        <div>{selectedMember.gender || '---'}</div>
+                      </div><div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
                         <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Last Checkup</div>
-                        <div>{selectedMember.lastCheckup || '2025-03-20'}</div>
+                        <div>{selectedMember.lastCheckup || '---'}</div>
                       </div>
                     </div>
                   )}
@@ -902,18 +955,20 @@ export default function AdminDashboard() {
                   </div>
                   
                   {dropdowns.contactInfo && (
-                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                      <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>                      <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
                         <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Phone</div>
-                        <div>{selectedMember.phoneNumber || '(555) 567-8901'}</div>
+                        <div>{selectedMember.phoneNumber || '---'}</div>
                       </div>
                       <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
                         <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Email</div>
-                        <div>{selectedMember.email || 'robert@example.com'}</div>
-                      </div>
-                      <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                        <div>{selectedMember.email || '---'}</div>
+                      </div>                      <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
                         <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Address</div>
-                        <div>{selectedMember.address || '456 Oak Ave, Townsville'}</div>
+                        <div>
+                          {selectedMember.address 
+                            ? formatAddress(selectedMember.address) 
+                            : '---'}
+                        </div>
                       </div>
                     </div>
                   )}                
@@ -1228,30 +1283,42 @@ export default function AdminDashboard() {
                         <th style={{ padding: '16px', textAlign: 'left', color: '#94a3b8' }}>Name</th>
                         <th style={{ padding: '16px', textAlign: 'left', color: '#94a3b8' }}>Actions</th>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {selectedFamily.members.map(member => (
-                        <tr key={member.id} style={{ borderBottom: '1px solid #334155' }}>
-                          <td style={{ 
-                              padding: '16px',
-                              fontWeight: '500',
-                              fontSize: '15px',
-                              color: '#e2e8f0' /* Lighter color for better readability */
-                          }}>{member.name}</td>
-                          <td style={{ padding: '16px' }}>
-                            <button 
-                              onClick={() => { 
-                                setSelectedMember(member);
-                                setActionView('ck-profile');
-                                setSelectedView('patients');
-                              }}
-                              style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer' }}
-                            >
-                              View Profile
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                    </thead>                  <tbody>
+                      {selectedFamily.members.map(member => {
+                        // Create a display name by safely checking different fields
+                        const displayName = member.name || 
+                                          (member.firstName || member.lastName ? 
+                                            `${member.firstName || ''} ${member.lastName || ''}`.trim() : 
+                                            'Unknown Member');
+                        
+                        return (
+                          <tr key={member.id} style={{ borderBottom: '1px solid #334155' }}>
+                            <td style={{ 
+                                padding: '16px',
+                                fontWeight: '500',
+                                fontSize: '15px',
+                                color: '#e2e8f0' /* Lighter color for better readability */
+                            }}>{displayName}</td>
+                            <td style={{ padding: '16px' }}>
+                              <button 
+                                onClick={() => { 
+                                  // Ensure member object has name property for display
+                                  const enhancedMember = {
+                                    ...member,
+                                    name: displayName // Add name if missing
+                                  };
+                                  setSelectedMember(enhancedMember);
+                                  setActionView('ck-profile');
+                                  setSelectedView('patients');
+                                }}
+                                style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer' }}
+                              >
+                                View Profile
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}
@@ -1653,9 +1720,11 @@ export default function AdminDashboard() {
                   >
                     {selectedFamily.familyName}
                   </span>
-                  <ChevronRight size={16} style={{ margin: '0 4px' }} />
-                  <span style={{ color: '#38bdf8' }}>
-                    {selectedMember.name}
+                  <ChevronRight size={16} style={{ margin: '0 4px' }} />                  <span style={{ color: '#38bdf8' }}>
+                    {selectedMember?.name || 
+                     (selectedMember?.firstName || selectedMember?.lastName ? 
+                      `${selectedMember?.firstName || ''} ${selectedMember?.lastName || ''}`.trim() : 
+                      'Member Profile')}
                   </span>                  
                   <ChevronRight size={16} style={{ margin: '0 4px' }} />                  
                   <span style={{ color: '#38bdf8' }}>
@@ -1671,10 +1740,10 @@ export default function AdminDashboard() {
                 </>
               )}
             </div>
-          </div>          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div className="current-date" style={{ color: '#94a3b8', fontSize: '14px', marginRight: '16px', display: 'flex', alignItems: 'center' }}>
+          </div>          <div style={{ display: 'flex', alignItems: 'center' }}>            <div className="current-date" style={{ color: '#94a3b8', fontSize: '14px', marginRight: '16px', display: 'flex', alignItems: 'center' }}>
               <Calendar size={16} style={{ marginRight: '5px' }} />
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {getCurrentDate().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {isSimulated && <span style={{ marginLeft: '8px', background: '#334155', color: '#38bdf8', fontSize: '11px', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>SIMULATED</span>}
             </div>
             <div style={{ position: 'relative', marginRight: 16 }}>
               <Bell size={20} style={{ cursor: 'pointer' }} />

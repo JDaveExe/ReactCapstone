@@ -1,17 +1,49 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import '../styles/SessionHistory.css'; // We will create this file next
-import { Search, Filter, Calendar, Clock, User, FileText, Loader } from 'lucide-react';
-import CheckUpContext from '../contexts/CheckUpContext'; // To potentially access API_URL or other shared logic if needed
+import '../styles/SessionHistory.css'; 
+import { Search, Filter, Calendar, Clock, User, FileText, Loader, ChevronDown, ChevronRight } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000/api'; // Assuming this is your backend API
+const API_URL = 'http://localhost:5000/api';
 
-const SessionHistory = () => {
+// Helper function to safely display values
+const getDisplayValue = (value) => {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'object') {
+    // Handle address object specifically
+    if (value.houseNo !== undefined || value.street !== undefined || value.barangay !== undefined) {
+      const parts = [];
+      if (value.houseNo) parts.push(value.houseNo);
+      if (value.street) parts.push(value.street);
+      if (value.barangay) parts.push(value.barangay);
+      if (value.city) parts.push(value.city);
+      if (value.region) parts.push(value.region);
+      return parts.join(', ');
+    }
+    
+    // Convert other objects to a string representation
+    try {
+      return JSON.stringify(value);
+    } catch (e) {
+      console.error('Failed to stringify object:', e);
+      return '[Object]';
+    }
+  }
+  return value;
+};
+
+const SessionHistory = () => {  
   const [sessionHistory, setSessionHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOption, setFilterOption] = useState('all'); // Default filter to "all"
+  const [refreshKey, setRefreshKey] = useState(0); // Added to force refresh
+  const [expandedItem, setExpandedItem] = useState(null); // Track only ONE expanded item
+
+  // Toggle expansion - if same item, collapse; if different item, expand new one
+  const toggleExpand = (historyId) => {
+    setExpandedItem(current => current === historyId ? null : historyId);
+  };
 
   useEffect(() => {
     const fetchSessionHistory = async () => {
@@ -20,13 +52,21 @@ const SessionHistory = () => {
       try {
         console.log('[SessionHistory] Fetching session history...');
         const response = await axios.get(`${API_URL}/sessionhistory`);
-        console.log('[SessionHistory] API response for session history:', response.data);
+        
+        if (!Array.isArray(response.data)) {
+          console.error('[SessionHistory] Expected array but got:', typeof response.data);
+          setError('Invalid data format received from server');
+          setSessionHistory([]);
+          return;
+        }
+        
         // Sort by archivedAt or completedAt in descending order (newest first)
         const sortedHistory = response.data.sort((a, b) => {
           const dateA = new Date(a.archivedAt || a.completedAt || 0);
           const dateB = new Date(b.archivedAt || b.completedAt || 0);
           return dateB - dateA;
         });
+        
         setSessionHistory(sortedHistory);
       } catch (err) {
         console.error('[SessionHistory] Error fetching session history:', err);
@@ -37,7 +77,16 @@ const SessionHistory = () => {
     };
 
     fetchSessionHistory();
-  }, []);
+    
+    // Set up polling to refresh session history periodically
+    const pollInterval = setInterval(() => {
+      setRefreshKey(prev => prev + 1);
+    }, 30000); // Poll every 30 seconds
+    
+    return () => {
+      clearInterval(pollInterval);
+    };
+  }, [refreshKey]);
 
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
@@ -47,26 +96,27 @@ const SessionHistory = () => {
     setFilterOption(event.target.value);
   };
 
+  // Format date as YYYY-MM-DD
   const getFormattedDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Invalid Date';
-    return date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+    return date.toLocaleDateString('en-CA');
   };
 
-  const getFormattedTime = (dateString, includeSeconds = false) => {
+  // Format time as HH:MM AM/PM
+  const getFormattedTime = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Invalid Time';
-    const options = { hour: '2-digit', minute: '2-digit', hour12: true };
-    if (includeSeconds) {
-      options.second = '2-digit';
-    }
-    return date.toLocaleTimeString('en-US', options);
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
+  // Filter the history list based on search and filters
   const filteredHistory = sessionHistory.filter(session => {
-    const nameMatch = session.name && session.name.toLowerCase().includes(searchTerm.toLowerCase());
+    // Handle different field names for patient name
+    const patientName = session.patientName || session.name || '';
+    const nameMatch = patientName.toLowerCase().includes(searchTerm.toLowerCase());
     
     let dateMatch = true;
     const sessionDate = new Date(session.completedAt || session.archivedAt);
@@ -75,32 +125,31 @@ const SessionHistory = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Start of today
 
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1); // Start of yesterday
-
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1); // Start of tomorrow (for end of today)
-
+    // Apply date filters
     if (filterOption === 'today') {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1); 
       dateMatch = sessionDate >= today && sessionDate < tomorrow;
     } else if (filterOption === 'yesterday') {
+      const yesterday = new Date(today);
+      yesterday.setDate(today.getDate() - 1);
       dateMatch = sessionDate >= yesterday && sessionDate < today;
     } else if (filterOption === 'thisWeek') {
       const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1)); // Adjust for Sunday as start or Monday
+      startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
       startOfWeek.setHours(0,0,0,0);
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(startOfWeek.getDate() + 7);
       dateMatch = sessionDate >= startOfWeek && sessionDate < endOfWeek;
     } else if (filterOption === 'thisMonth') {
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0); // Day 0 of next month is last day of current
-      endOfMonth.setHours(23, 59, 59, 999); // End of the last day of the month
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      endOfMonth.setHours(23, 59, 59, 999);
       dateMatch = sessionDate >= startOfMonth && sessionDate <= endOfMonth;
     } else if (filterOption === 'thisYear') {
       const startOfYear = new Date(today.getFullYear(), 0, 1);
       const endOfYear = new Date(today.getFullYear(), 11, 31);
-      endOfYear.setHours(23, 59, 59, 999); // End of the last day of the year
+      endOfYear.setHours(23, 59, 59, 999);
       dateMatch = sessionDate >= startOfYear && sessionDate <= endOfYear;
     }
     // 'all' option implies dateMatch remains true
@@ -145,45 +194,74 @@ const SessionHistory = () => {
       </div>
 
       {filteredHistory.length === 0 ? (
-        <div className="no-history-message">
-          No session history records found matching your criteria.
+        <div className="no-sessions-message">
+          <FileText size={48} />
+          <p>No session history found that matches your criteria.</p>
         </div>
       ) : (
-        <div className="session-history-grid">
-          {filteredHistory.map((session) => (
-            <div key={session.historyId || session.id} className="history-card">
-              <div className="history-card-header">
-                <div className="patient-info">
-                  <User size={20} /> 
-                  <span>{session.name || 'N/A'}</span>
-                </div>
-                <div className="session-datetime">
-                  <div className="session-date">
-                    <Calendar size={16} /> {getFormattedDate(session.loggedInAt || session.completedAt)}
+        <div className="session-history-list">
+          {filteredHistory.map(session => {
+            // Check if this item is the expanded one
+            const isExpanded = expandedItem === session.historyId;
+            const sessionDateValue = session.completedAt || session.archivedAt;
+
+            return (
+              <div 
+                key={session.historyId} 
+                className={`session-history-card ${isExpanded ? 'expanded' : ''}`}
+              >
+                <div 
+                  className="session-history-card-header" 
+                  onClick={() => toggleExpand(session.historyId)}
+                >
+                  <div className="header-main-info">
+                    {isExpanded ? 
+                      <ChevronDown size={24} className="expand-icon" /> : 
+                      <ChevronRight size={24} className="expand-icon" />
+                    }
+                    <User size={20} className="patient-icon" />
+                    <span className="patient-name">{session.patientName || 'Unknown Patient'}</span>
                   </div>
-                  <div className="session-time">
-                    <Clock size={16} /> {getFormattedTime(session.loggedInAt || session.completedAt)}
+                </div>
+
+                {isExpanded && (
+                  <div className="session-history-card-body">
+                    <div className="session-detail-item">
+                      <Calendar size={18} className="detail-icon" />
+                      <strong>Date:</strong>
+                      <span>{getFormattedDate(sessionDateValue)}</span>
+                    </div>
+                    <div className="session-detail-item">
+                      <Clock size={18} className="detail-icon" />
+                      <strong>Time:</strong>
+                      <span>{getFormattedTime(sessionDateValue)}</span>
+                    </div>
+                    <div className="session-detail-item">
+                      <FileText size={18} className="detail-icon" />
+                      <strong>Purpose:</strong>
+                      <span>{getDisplayValue(session.purpose)}</span>
+                    </div>
+                    <div className="session-detail-item">
+                      <FileText size={18} className="detail-icon" />
+                      <strong>Notes:</strong>
+                      <span>{getDisplayValue(session.notes)}</span>
+                    </div>
+                    <div className="session-detail-item">
+                      <FileText size={18} className="detail-icon" />
+                      <strong>Prescription:</strong>
+                      <span>{getDisplayValue(session.prescription)}</span>
+                    </div>
+                    {session.familyMembers && session.familyMembers.length > 0 && (
+                      <div className="session-detail-item">
+                        <strong>Family Members:</strong> 
+                        <span>{session.familyMembers.map(fm => fm.name).join(', ')}</span>
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
               </div>
-              <div className="history-card-body">
-                <div className="session-purpose">
-                  <strong>Purpose:</strong> {session.purpose || 'Not specified'}
-                </div>
-                <div className="session-notes-history">
-                  <div className="notes-history-header">
-                    <FileText size={16} />
-                    <strong>Notes</strong>
-                  </div>
-                  <p>{session.notes || 'No notes recorded.'}</p>
-                </div>
-              </div>
-              <div className="history-card-footer">
-                {/* Use archivedAt for the footer timestamp as it's more specific to history entry */}
-                <span>Completed at: {getFormattedTime(session.completedAt || session.archivedAt, true)}</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

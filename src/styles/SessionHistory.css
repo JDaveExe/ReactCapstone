@@ -3,7 +3,7 @@
   color: #cbd5e1; /* Light gray text */
   background-color: #0f172a; /* Dark blue-gray background */
   min-height: 100vh;
-  font-family: 'Inter', sans-serif; /* Assuming a common sans-serif font */
+  font-family: 'Inter', sans-serif;
 }
 
 .session-history-header {
@@ -40,7 +40,7 @@
   margin-left: 8px;
   outline: none;
   font-size: 0.875rem;
-  width: 200px; /* Give search input a default width */
+  width: 200px;
 }
 
 .search-bar input::placeholder {
@@ -59,7 +59,7 @@
   outline: none;
   font-size: 0.875rem;
   cursor: pointer;
-  padding-right: 20px; /* Space for dropdown arrow */
+  padding-right: 20px; 
 }
 
 .filter-dropdown select option {
@@ -67,173 +67,127 @@
   color: #cbd5e1;
 }
 
-.session-history-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); /* Responsive grid */
-  gap: 24px;
+/* Changed from grid to flex column for accordion style */
+.session-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 900px; /* Limit width for better readability */
+  margin: 0 auto;
 }
 
-.history-card {
+.session-history-card {
   background-color: #1e293b; /* Card background */
   border-radius: 8px;
   border: 1px solid #334155;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: box-shadow 0.2s ease;
 }
 
-.history-card:hover {
-  transform: translateY(-3px);
+.session-history-card:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
-.history-card-header {
+.session-history-card-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start; /* Align icon and name to left */
   align-items: center;
   padding: 16px;
-  background-color: #17233a; /* Slightly darker header for card */
-  border-bottom: 1px solid #334155;
+  cursor: pointer;
+  background-color: #1a2235; /* Slightly darker than body */
+  transition: background-color 0.2s;
 }
 
-.patient-info {
+.session-history-card-header:hover {
+  background-color: #1e293b; /* Lighten on hover */
+}
+
+.session-history-card-header .header-main-info {
   display: flex;
   align-items: center;
-  gap: 10px; /* Increased gap */
+  gap: 12px; /* Space between icon and name */
   font-weight: 600;
-  font-size: 1.125rem; /* approx 18px */
+  font-size: 1.125rem; 
   color: #e2e8f0;
 }
 
-.patient-info svg {
-  color: #38bdf8; /* Accent color for icon */
-  min-width: 20px; /* Ensure icon doesn't shrink */
+.session-history-card-header .expand-icon {
+  color: #94a3b8; /* Chevron icon color */
 }
 
-.session-datetime {
-  font-size: 0.875rem; /* approx 14px */
-  color: #94a3b8; /* Muted text color */
-  text-align: right;
+.session-history-card-header .patient-icon {
+  color: #38bdf8; /* Accent color for user icon */
 }
 
-.session-datetime .session-date,
-.session-datetime .session-time {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  justify-content: flex-end; /* Align items to the right */
-}
-.session-datetime svg {
-  color: #64748b;
-  min-width: 16px; /* Ensure icon doesn't shrink */
-}
-
-
-.history-card-body {
-  padding: 20px; /* Increased padding */
-  flex-grow: 1;
+.session-history-card-body {
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 20px; /* Increased gap */
-}
-
-.session-purpose {
-  font-size: 1rem;
-  color: #cbd5e1;
-}
-
-.session-purpose strong {
-  font-weight: 500; /* Adjusted from 600 to match screenshot more closely */
-  color: #94a3b8; /* Muted color for "Purpose:" label */
-  margin-right: 8px;
-}
-
-.session-notes-history {
-  background-color: #0f172a; /* Darker background for notes section */
-  padding: 16px; /* Increased padding */
-  border-radius: 6px;
-  flex-grow: 1;
-  border: 1px solid #2c3a50; /* Subtle border for notes area */
-}
-
-.notes-history-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.875rem;
-  color: #94a3b8;
-  margin-bottom: 10px; /* Increased margin */
-}
-.notes-history-header svg {
-  color: #64748b;
-  min-width: 16px; /* Ensure icon doesn't shrink */
-}
-.notes-history-header strong {
-  font-weight: 500;
-  color: #94a3b8; /* Muted color for "Notes" label */
-}
-
-.session-notes-history p {
-  font-size: 0.875rem;
-  color: #cbd5e1; /* Brighter text for actual notes */
-  line-height: 1.6;
-  white-space: pre-wrap; /* Preserve line breaks in notes */
-  margin: 0;
-  max-height: 120px; /* Limit notes height if needed */
-  overflow-y: auto;
-}
-
-/* Custom scrollbar for notes (optional, webkit only) */
-.session-notes-history p::-webkit-scrollbar {
-  width: 6px;
-}
-.session-notes-history p::-webkit-scrollbar-thumb {
-  background-color: #334155;
-  border-radius: 3px;
-}
-.session-notes-history p::-webkit-scrollbar-track {
-  background-color: #0f172a;
-}
-
-
-.history-card-footer {
-  padding: 10px 16px; /* Adjusted padding */
-  background-color: transparent; /* Match card body background */
+  gap: 12px; /* Space between detail items */
+  background-color: #1e293b;
   border-top: 1px solid #334155;
-  text-align: right;
-  font-size: 0.75rem; /* approx 12px */
-  color: #64748b; /* Muted text for footer */
+}
+
+.session-detail-item {
+  display: flex;
+  align-items: flex-start; /* Align icon with the first line of text */
+  gap: 10px;
+  font-size: 0.875rem;
+  color: #cbd5e1;
+  padding: 6px 0;
+}
+
+.session-detail-item .detail-icon {
+  color: #64748b; /* Icon color for details */
+  margin-top: 3px; /* Align icon slightly better with text */
+  min-width: 18px; /* Prevent icon from shrinking */
+}
+
+.session-detail-item strong {
+  font-weight: 500;
+  color: #94a3b8; /* Lighter label color */
+  min-width: 100px; /* Align values */
+  display: inline-block;
+}
+
+.session-detail-item span {
+  flex-grow: 1;
+  word-break: break-word;
 }
 
 .loading-container.history-loading, 
 .error-container.history-error,
-.no-history-message {
+.no-sessions-message { /* Updated class name to match component */
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 400px; /* Increased height */
+  min-height: 400px;
   color: #64748b;
   text-align: center;
-  font-size: 1.125rem; /* Larger text */
+  font-size: 1.125rem;
   width: 100%;
 }
 
-.loading-container.history-loading svg {
-  width: 56px; /* Larger loader */
+.loading-container.history-loading svg,
+.no-sessions-message svg { /* Updated class name */
+  width: 56px;
   height: 56px;
   margin-bottom: 20px;
-  color: #38bdf8; /* Accent color for loader */
+  color: #38bdf8; 
 }
 
 .error-container.history-error {
-  color: #f87171; /* Error color */
+  color: #f87171;
 }
 
 /* Ensure icons are vertically aligned with text if needed */
-.patient-info svg, 
-.session-datetime svg,
-.notes-history-header svg {
+.session-history-card-header .patient-icon,
+.session-detail-item .detail-icon {
   vertical-align: middle;
+}
+
+/* Animation for expansion - optional */
+.session-history-card-body {
+  transition: max-height 0.25s ease;
 }

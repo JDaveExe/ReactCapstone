@@ -5,12 +5,10 @@ import { getUnsortedMembers, assignFamilyToUnsortedMember, getFamilies } from '.
 export default function UnsortedMembers() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [assigning, setAssigning] = useState(false);
-  const [familyName, setFamilyName] = useState('');
-  const [selectedId, setSelectedId] = useState(null);
+  const [assigningMap, setAssigningMap] = useState({});
+  const [memberStates, setMemberStates] = useState({});
   const [message, setMessage] = useState('');
   const [existingFamilies, setExistingFamilies] = useState([]);
-  const [showNewFamilyInput, setShowNewFamilyInput] = useState(false);
 
   useEffect(() => {
     fetchMembers();
@@ -38,33 +36,50 @@ export default function UnsortedMembers() {
       console.error("Error fetching families:", error);
     }
   };
-
   const handleAssignFamily = async (id) => {
+    const memberState = memberStates[id] || {};
+    const familyName = memberState.familyName || '';
+    
     if (!familyName.trim()) {
         setMessage('Family name cannot be empty.');
         return;
     }
-    setAssigning(true);
+    
+    // Set assigning state for this specific member
+    setAssigningMap(prev => ({ ...prev, [id]: true }));
     setMessage('');
+    
     try {
       await assignFamilyToUnsortedMember(id, familyName.trim());
       setMessage('Family assigned successfully!');
-      setFamilyName('');
-      setSelectedId(null);
-      setShowNewFamilyInput(false);
+      
+      // Reset state for this member
+      setMemberStates(prev => {
+        const newStates = { ...prev };
+        delete newStates[id]; // Remove this member's state
+        return newStates;
+      });
+      
       fetchMembers();
       fetchFamilies();
     } catch (error) {
       console.error("Error assigning family:", error);
       setMessage('Error assigning family. Please try again.');
     }
-    setAssigning(false);
+    
+    setAssigningMap(prev => ({ ...prev, [id]: false }));
   };
 
   const handleSelectMemberToAssign = (memberId) => {
-    setSelectedId(memberId);
-    setFamilyName('');
-    setShowNewFamilyInput(false);
+    // Initialize state for this member if not already set
+    setMemberStates(prev => ({
+      ...prev,
+      [memberId]: { 
+        familyName: '', 
+        showNewFamilyInput: false 
+      }
+    }));
+    
     setMessage('');
   }
 
@@ -93,44 +108,73 @@ export default function UnsortedMembers() {
               <th>Assign Family</th>
             </tr>
           </thead>
-          <tbody>
-            {members.map(m => (
-              <tr key={m.unsorted_member_id}>
+          <tbody>            {members.map(m => (
+              <tr key={m.id}>
                 <td>{m.firstName} {m.lastName}</td>
                 <td>{m.email}</td>
                 <td>{m.phoneNumber}</td>
-                <td>{new Date(m.registrationTime).toLocaleString()}</td>
-                <td>
-                  {selectedId === m.unsorted_member_id ? (
-                    <div className="assign-controls">
-                      <select 
-                        value={familyName}
+                <td>{new Date(m.registrationTime || Date.now()).toLocaleString()}</td>                <td>
+                  {memberStates[m.id] ? (
+                    <div className="assign-controls">                      <select 
+                        value={memberStates[m.id]?.familyName || ''}
                         onChange={e => {
-                            setFamilyName(e.target.value);
-                            setShowNewFamilyInput(e.target.value === '__NEW__');
+                            const newValue = e.target.value;
+                            setMemberStates(prev => ({
+                                ...prev,
+                                [m.id]: {
+                                    ...prev[m.id],
+                                    familyName: newValue,
+                                    showNewFamilyInput: newValue === '__NEW__'
+                                }
+                            }));
                         }}
-                        disabled={assigning}
+                        disabled={assigningMap[m.id]}
                       >
                         <option value="">Select Existing Family</option>
                         {existingFamilies.map(fam => <option key={fam} value={fam}>{fam}</option>)}
                         <option value="__NEW__">Create New Family</option>
-                      </select>
-                      {showNewFamilyInput && (
+                      </select>                      {memberStates[m.id]?.showNewFamilyInput && (
                         <input 
                           type="text"
-                          value={familyName === '__NEW__' ? '' : familyName}
-                          onChange={e => setFamilyName(e.target.value)} 
+                          value={memberStates[m.id]?.familyName === '__NEW__' ? '' : 
+                                 memberStates[m.id]?.familyName || ''}
+                          onChange={e => {
+                              const newValue = e.target.value;
+                              setMemberStates(prev => ({
+                                  ...prev,
+                                  [m.id]: {
+                                      ...prev[m.id],
+                                      familyName: newValue
+                                  }
+                              }));
+                          }}
                           placeholder="Enter New Family Name" 
-                          disabled={assigning}
+                          disabled={assigningMap[m.id]}
                         />
-                      )}
-                      <button onClick={() => handleAssignFamily(m.unsorted_member_id)} disabled={assigning || !familyName || familyName === '__NEW__'}>
-                        {assigning ? 'Assigning...' : 'Save'}
+                      )}                      <button 
+                        onClick={() => handleAssignFamily(m.id)} 
+                        disabled={assigningMap[m.id] || 
+                                 !memberStates[m.id]?.familyName || 
+                                 memberStates[m.id]?.familyName === '__NEW__'}
+                      >
+                        {assigningMap[m.id] ? 'Assigning...' : 'Save'}
                       </button>
-                      <button onClick={() => {setSelectedId(null); setMessage(''); setFamilyName(''); setShowNewFamilyInput(false);}} disabled={assigning}>Cancel</button>
-                    </div>
-                  ) : (
-                    <button onClick={() => handleSelectMemberToAssign(m.unsorted_member_id)} className="assign-button">
+                      <button 
+                        onClick={() => {
+                            // Remove this member's state entirely
+                            setMemberStates(prev => {
+                                const newStates = { ...prev };
+                                delete newStates[m.id];
+                                return newStates;
+                            });
+                            setMessage('');
+                        }} 
+                        disabled={assigningMap[m.id]}
+                      >
+                        Cancel
+                      </button>
+                    </div>                  ) : (
+                    <button onClick={() => handleSelectMemberToAssign(m.id)} className="assign-button">
                       Assign
                     </button>
                   )}

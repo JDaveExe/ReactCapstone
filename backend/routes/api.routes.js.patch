@@ -1,0 +1,64 @@
+// Add this endpoint to assign a family to an unsorted member
+router.patch('/unsorted/:memberId/assign-family', (req, res) => {
+  try {
+    const { memberId } = req.params;
+    const { familyName } = req.body;
+    
+    if (!memberId) {
+      return res.status(400).json({ error: 'Member ID is required' });
+    }
+    
+    if (!familyName) {
+      return res.status(400).json({ error: 'Family name is required' });
+    }
+    
+    console.log(`[API] Assigning member ${memberId} to family "${familyName}"`);
+    
+    // First, check if the family exists
+    db.query('SELECT * FROM families WHERE familyName = ?', [familyName], (err, families) => {
+      if (err) {
+        console.error('[API] Error checking if family exists:', err);
+        return res.status(500).json({ error: err.message });
+      }
+      
+      let familyId;
+      
+      // If family doesn't exist, create it
+      if (families.length === 0) {
+        db.query('INSERT INTO families (familyName) VALUES (?)', [familyName], (err, result) => {
+          if (err) {
+            console.error('[API] Error creating new family:', err);
+            return res.status(500).json({ error: err.message });
+          }
+          
+          familyId = result.insertId;
+          assignMemberToFamily(memberId, familyId);
+        });
+      } else {
+        // Family exists
+        familyId = families[0].id;
+        assignMemberToFamily(memberId, familyId);
+      }
+      
+      // Helper function to assign the member to the family
+      function assignMemberToFamily(memberId, familyId) {
+        db.query('UPDATE users SET familyId = ? WHERE id = ? AND familyId IS NULL', [familyId, memberId], (err, result) => {
+          if (err) {
+            console.error('[API] Error assigning member to family:', err);
+            return res.status(500).json({ error: err.message });
+          }
+          
+          if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Member not found or already assigned to a family' });
+          }
+          
+          console.log(`[API] Successfully assigned member ${memberId} to family ${familyId}`);
+          res.json({ message: 'Member successfully assigned to family', familyId });
+        });
+      }
+    });
+  } catch (error) {
+    console.error('[API] Error in /unsorted/:memberId/assign-family endpoint:', error);
+    res.status(500).json({ error: error.message });
+  }
+});

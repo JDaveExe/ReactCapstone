@@ -20,6 +20,8 @@ const Sessions = ({ userRole = 'doctor' }) => {
   const [sortOrder, setSortOrder] = useState("asc");
   const [editingNotes, setEditingNotes] = useState(null);
   const [noteText, setNoteText] = useState("");
+  const [editingPrescription, setEditingPrescription] = useState(null); // New state for prescription editing
+  const [prescriptionText, setPrescriptionText] = useState(""); // New state for prescription text
   const [activeFilter, setActiveFilter] = useState("ongoing"); // Default to ongoing
 
   // Removed local sessions, loading, error states and fetchSessions function
@@ -70,13 +72,13 @@ const Sessions = ({ userRole = 'doctor' }) => {
       console.log(`[Sessions] Completing session for ${session.name}`);
       // Update status to 'Completed' in today's check-ups
       await updateCheckUpItem({ ...session, status: 'Completed' });
-      
-      // Archive the session to permanent history
+        // Archive the session to permanent history
       // Ensure all necessary session data is passed for archiving
       const sessionToArchive = {
         ...session, // Spread existing session data
         status: 'Completed', // Ensure status is set to Completed
         completedAt: new Date().toISOString(), // Add a completion timestamp
+        patientName: session.name, // Explicitly map name to patientName for clarity
         // Add any other fields required by the session history schema
       };
       await archiveSession(sessionToArchive);
@@ -111,9 +113,29 @@ const Sessions = ({ userRole = 'doctor' }) => {
     }
   };
 
+  const handleSavePrescription = async (sessionId) => {
+    const sessionToUpdate = todaysCheckUps.find(s => s.id === sessionId);
+    if (!sessionToUpdate) return;
+
+    try {
+      console.log(`[Sessions] Saving prescription for session ${sessionId}`);
+      await updateCheckUpItem({ ...sessionToUpdate, prescription: prescriptionText });
+      setEditingPrescription(null);
+      alert('Prescription saved.');
+    } catch (err) {
+      console.error("[Sessions] Error saving prescription:", err);
+      alert("Failed to save prescription. Please try again.");
+    }
+  };
+
   const startEditNotes = (session) => {
     setEditingNotes(session.id);
     setNoteText(session.notes || '');
+  };
+
+  const startEditPrescription = (session) => {
+    setEditingPrescription(session.id);
+    setPrescriptionText(session.prescription || '');
   };
 
   if (contextIsLoading) {
@@ -211,8 +233,36 @@ const Sessions = ({ userRole = 'doctor' }) => {
                     <p>{session.notes || 'No notes yet.'}</p>
                   </div>
                 )}
+
+                {/* Prescription Section - Only for Doctors */}
+                {userRole === 'doctor' && (
+                  <>
+                    {editingPrescription === session.id ? (
+                      <div className="prescription-editor notes-editor"> {/* Reusing notes-editor styles */}
+                        <textarea 
+                          value={prescriptionText} 
+                          onChange={(e) => setPrescriptionText(e.target.value)} 
+                          rows={3}
+                          placeholder="Enter prescription details..."
+                        />
+                        <div className="notes-actions"> {/* Reusing notes-actions styles */}
+                          <button onClick={() => handleSavePrescription(session.id)} className="save-notes-btn">Save Prescription</button>
+                          <button onClick={() => setEditingPrescription(null)} className="cancel-notes-btn">Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="session-prescription-view session-notes-view"> {/* Reusing session-notes-view styles */}
+                        <div className="notes-header"> {/* Reusing notes-header styles */}
+                          <strong><FileText size={16} />Prescription:</strong>
+                          <button onClick={() => startEditPrescription(session)} className="edit-notes-btn"><Edit size={14} /></button>
+                        </div>
+                        <p>{session.prescription || 'No prescription yet.'}</p>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-              {session.status === 'Ongoing' && (
+              {session.status === 'Ongoing' && userRole === 'doctor' && (
                 <div className="session-card-footer">
                   <button 
                     className="complete-session-btn" 

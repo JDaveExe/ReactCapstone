@@ -201,18 +201,18 @@ const AuthPage = () => {
             localStorage.setItem("lastName", "");
           }
         }
-      }
-
-      // Store patient ID if available
+      }      // Store patient ID if available
       if (user.role === "patient" || user.role === "member") {
         localStorage.setItem("patientId", user.id);
-        if (!localStorage.getItem("patientName") && user.name) {
-          localStorage.setItem("patientName", user.name);
-        }
+        
+        // Make sure patient name is set consistently across all storage keys
+        const patientName = user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim();
+        localStorage.setItem("patientName", patientName);
+        
         // Add patient to the check-up list via context
         const patientData = { 
           id: user.id, 
-          name: user.name || `${user.firstName} ${user.lastName}`,
+          name: patientName,
         };
         console.log('[AuthPage] Attempting to add patient to check-up list:', patientData);
         try {
@@ -287,16 +287,17 @@ const AuthPage = () => {
           localStorage.setItem("firstName", nameParts[0]);
         }
       }
-      
-      if (user.role === "patient" || user.role === "member") {
+        if (user.role === "patient" || user.role === "member") {
         localStorage.setItem("patientId", user.id);
-        if (!localStorage.getItem("patientName") && user.name) {
-          localStorage.setItem("patientName", user.name);
-        }
-         // Add patient to the check-up list via context
+        
+        // Make sure patient name is set consistently across all storage keys
+        const patientName = user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || qrDataObj.name || '';
+        localStorage.setItem("patientName", patientName);
+        
+        // Add patient to the check-up list via context
         const patientData = { 
           id: user.id, 
-          name: user.name || `${user.firstName} ${user.lastName}`,
+          name: patientName,
         };
         console.log('[AuthPage] Attempting to add patient via QR to check-up list:', patientData); // Added console.log
         addPatientToCheckUpList(patientData);

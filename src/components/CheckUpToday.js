@@ -3,6 +3,8 @@ import axios from 'axios';
 import '../styles/CheckUpToday.css';
 import { Clock, Calendar, User, Check, Loader } from 'lucide-react';
 import CheckUpContext from '../contexts/CheckUpContext';
+import DateTimeContext from '../contexts/DateTimeContext';
+import { getAllServices, getAvailableServices } from '../utils/serviceScheduleUtils';
 
 export default function CheckUpToday({ showDateTimePerPatient }) {
   const { todaysCheckUps, updateCheckUpItem, setTodaysCheckUps, isLoading, error, allScheduledAppointments } = useContext(CheckUpContext);
@@ -22,25 +24,45 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
       }
     } catch (e) {
       console.error('[CheckUpToday] Error checking localStorage directly:', e);
-    }
-  }, [todaysCheckUps]);
-  const today = new Date();
+    }  }, [todaysCheckUps]);
+  
+  const { getCurrentDate } = useContext(DateTimeContext);
+  const today = getCurrentDate();
   const todayDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState("queueNumber");
   const [sortOrder, setSortOrder] = useState("asc");
+  const [currentTime, setCurrentTime] = useState(formatTime(today));
+  const [availableServices, setAvailableServices] = useState([]);
   
-  const purposeOptions = [
-    'General Consultation',
-    'Follow-up',
-    'Vaccination',
-    'Pediatric Check-Up',
-    'Dental Check-Up',
-    'Eye Exam',
-    'Laboratory Test',
-    'Prescription Refill',
-    'Other'
-  ];
+  // Format time to HH:MM format
+  function formatTime(date) {
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  }
+  
+  // Update available services based on current time
+  useEffect(() => {
+    const services = getAvailableServices(today, currentTime);
+    setAvailableServices(services);
+      // Update time every minute
+    const intervalId = setInterval(() => {
+      const now = getCurrentDate();
+      setCurrentTime(formatTime(now));
+    }, 60000);
+    
+    return () => clearInterval(intervalId);
+  }, []);
+  
+  // Update services when time changes
+  useEffect(() => {
+    const services = getAvailableServices(today, currentTime);
+    setAvailableServices(services);
+  }, [currentTime]);
+    
+  // Get all available services for the dropdown
+  const purposeOptions = getAllServices();
 
   const filtered = todaysCheckUps.filter(c => c.name && c.name.toLowerCase().includes(search.toLowerCase()));
 
@@ -74,6 +96,11 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
   };
 
   const handleStartSession = async (checkup) => {
+    // Add a check for purpose being filled
+    if (!checkup.purpose || checkup.purpose === 'Not Specified' || checkup.purpose === 'Other') {
+      alert("Please select or enter a purpose for the session before starting.");
+      return;
+    }
     try {
       console.log(`Attempting to start session for ${checkup.name}`);
       updateCheckUpItem({ ...checkup, status: 'In Session' });
@@ -83,11 +110,25 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
       alert("Failed to start session. Please try again.");
     }
   };
-
   const handleCustomPurpose = (id) => {
     const customPurpose = prompt("Enter specific purpose:");
     if (customPurpose && customPurpose.trim() !== "") {
       handlePurposeChange(id, customPurpose.trim());
+    }
+  };
+  
+  // Function to handle selection of unavailable service
+  const handleUnavailableServiceSelection = (id, service) => {
+    if (!availableServices.includes(service) && service !== 'Other' && service !== 'No services available at this time') {
+      const confirmChange = window.confirm(
+        `"${service}" is not typically available at the current time slot (${currentTime}). Do you want to proceed with this selection anyway?`
+      );
+      
+      if (confirmChange) {
+        handlePurposeChange(id, service);
+      }
+    } else {
+      handlePurposeChange(id, service);
     }
   };
 
@@ -127,8 +168,7 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
     return <div className="error">{error}</div>;
   }
   return (
-    <>
-      <div className="checkup-today-container">
+    <>      <div className="checkup-today-container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
           <h1 style={{ marginBottom: 0 }}>{showDateTimePerPatient ? 'Your Check Ups Today' : 'Check Ups Today'}</h1>
           <input
@@ -138,6 +178,25 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
             onChange={e => setSearch(e.target.value)}
             style={{ padding: '7px 14px', borderRadius: 6, background: '#172136', border: '1px solid #334155', color: '#fff', outline: 'none', fontSize: 14, minWidth: 180 }}
           />
+        </div>
+        
+        <div style={{ 
+          padding: '10px 15px', 
+          backgroundColor: '#1e293b', 
+          borderRadius: '8px', 
+          marginBottom: '15px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div>
+            <span style={{ fontWeight: 'bold', color: '#38bdf8', marginRight: '10px' }}>Current time:</span>
+            <span>{currentTime}</span>
+          </div>
+          <div>
+            <span style={{ fontWeight: 'bold', color: '#38bdf8', marginRight: '10px' }}>Available services:</span>
+            <span>{availableServices.length > 0 ? availableServices.join(', ') : 'No services available at this time'}</span>
+          </div>
         </div>
         {sorted.length === 0 ? (
           <div className="no-sessions" style={{textAlign: 'center', padding: '20px', color: '#94a3b8'}}>
@@ -171,13 +230,15 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
                   {showDateTimePerPatient && (
                     <td>{new Date(c.loggedInAt).toLocaleTimeString()}</td>
                   )}
-                  <td>
-                    <select 
+                  <td>                    <select 
                       value={c.purpose}
-                      onChange={(e) => e.target.value === 'Other' 
-                        ? handleCustomPurpose(c.id) 
-                        : handlePurposeChange(c.id, e.target.value)
-                      }
+                      onChange={(e) => {
+                        if (e.target.value === 'Other') {
+                          handleCustomPurpose(c.id);
+                        } else {
+                          handleUnavailableServiceSelection(c.id, e.target.value);
+                        }
+                      }}
                       style={{ 
                         padding: '6px', 
                         borderRadius: '4px', 
@@ -187,10 +248,20 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
                         minWidth: '150px'
                       }}
                     >
-                      {purposeOptions.map(option => (
-                        <option key={option} value={option}>{option}</option>
-                      ))}
+                      {availableServices.length > 0 ? (
+                        availableServices.map(option => (
+                          <option key={option} value={option}>{option}</option>
+                        ))
+                      ) : (
+                        purposeOptions.map(option => (
+                          <option key={option} value={option}>{option}</option>
+                        ))
+                      )}
+                      <option value="Other">Other</option>
                     </select>
+                    <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+                      Services shown are based on current time: {currentTime}
+                    </div>
                   </td>
                   <td>
                     <span style={{ 
@@ -212,14 +283,14 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
                   <td>
                     <button
                       onClick={() => handleStartSession(c)}
-                      disabled={c.status !== 'Waiting'}
+                      disabled={c.status !== 'Waiting' || !c.purpose || c.purpose === 'Not Specified' || c.purpose === 'Other'}
                       style={{ 
                         padding: '6px 12px', 
                         borderRadius: '4px', 
-                        backgroundColor: c.status !== 'Waiting' ? '#334155' : '#0e7490',
-                        color: c.status !== 'Waiting' ? '#64748b' : '#fff',
+                        backgroundColor: (c.status !== 'Waiting' || !c.purpose || c.purpose === 'Not Specified' || c.purpose === 'Other') ? '#334155' : '#0e7490',
+                        color: (c.status !== 'Waiting' || !c.purpose || c.purpose === 'Not Specified' || c.purpose === 'Other') ? '#64748b' : '#fff',
                         border: 'none',
-                        cursor: c.status !== 'Waiting' ? 'not-allowed' : 'pointer',
+                        cursor: (c.status !== 'Waiting' || !c.purpose || c.purpose === 'Not Specified' || c.purpose === 'Other') ? 'not-allowed' : 'pointer',
                         fontSize: '14px'
                       }}
                     >

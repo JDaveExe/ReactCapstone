@@ -252,6 +252,7 @@
   border: 1px solid #ced4da;
   border-radius: 8px;
   transition: all 0.15s ease-in-out;
+  background-color: #fff;
 }
 
 .form-control:focus {
@@ -333,7 +334,13 @@
 /* Make login form inputs plain white with default border */
 .login-form input,
 .login-form input:focus,
-.login-form input:active {
+.login-form input:active,
+.registration-form input,
+.registration-form input:focus,
+.registration-form input:active,
+.registration-form select,
+.registration-form select:focus,
+.registration-form select:active {
   background: #fff !important;
   border: 1px solid #ccc !important;
   color: #333 !important;
@@ -369,10 +376,16 @@
 /* Registration form styling */
 .registration-form {
   width: 100%;
-  min-height: 260px;
+  min-height: 400px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+/* Ensure DatePicker has white background */
+.registration-form .react-datepicker-wrapper input,
+.registration-form .react-datepicker__input-container input {
+  background-color: #fff !important;
 }
 
 .register-btn {
@@ -450,7 +463,7 @@
 /* Fix for form shifting issue */
 .login-form, .registration-form {
   width: 100%;
-  min-height: 300px;
+  min-height: 400px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -459,6 +472,7 @@
 
 .login-form > *, .registration-form > * {
   width: 100%;
+  height: 100%;
 }
 
 /* Ensure consistent width between forms */

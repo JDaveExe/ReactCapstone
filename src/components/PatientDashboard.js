@@ -91,28 +91,46 @@ export default function PatientDashboard() {
   const [patient, setPatient] = useState({ name: null }); // Initialize patient as an object with name null
   const [userEmail, setUserEmail] = useState('');
   const [patientId, setPatientId] = useState('');
-
   useEffect(() => {
     const loadPatientData = () => {
       try {
         const storedEmail = localStorage.getItem('userEmail');
         const storedPatientId = localStorage.getItem('patientId');
+        // Try multiple localStorage keys for the patient name
         const storedPatientName = localStorage.getItem('patientName');
+        const storedUserName = localStorage.getItem('userName');
+        const storedFirstName = localStorage.getItem('firstName');
+        const storedLastName = localStorage.getItem('lastName');
 
         setUserEmail(storedEmail || ''); 
         setPatientId(storedPatientId || '');
 
+        // Try to construct a full name from different localStorage variables
+        let fullName = null;
+
         if (storedPatientName) {
-          setPatient({ name: storedPatientName });
+          // Use patientName if available
+          fullName = storedPatientName;
+        } else if (storedUserName) {
+          // Use userName if available
+          fullName = storedUserName;
+        } else if (storedFirstName) {
+          // Construct name from first and last name if available
+          fullName = storedLastName ? `${storedFirstName} ${storedLastName}` : storedFirstName;
+        }
+
+        if (fullName) {
+          setPatient({ name: fullName });
         } else {
           setPatient({ name: null }); // Explicitly set name to null if not found
-          console.warn("PatientDashboard: patientName not found in localStorage. QR code generation might be incomplete or show an alert if name is required.");
+          console.warn("PatientDashboard: No name found in localStorage. QR code generation might be incomplete or show an alert if name is required.");
         }
         
         console.log("PatientDashboard loaded data from localStorage:", { 
             email: storedEmail, 
             patientId: storedPatientId, 
-            patientName: storedPatientName 
+            fullName: fullName,
+            checks: { storedPatientName, storedUserName, storedFirstName, storedLastName } 
         });
 
       } catch (error) {
@@ -339,12 +357,11 @@ export default function PatientDashboard() {
             <button className="icon-button">
               <Bell size={18} />
             </button>
-            
-            <div className="user-profile" onClick={() => setActiveSection('profile')}>
+              <div className="user-profile" onClick={() => setActiveSection('profile')}>
               <div className="avatar">
                 <User size={16} />
               </div>
-              <span className="username">{patient?.name || 'Patient'}</span>
+              <span className="username">{patient?.name || localStorage.getItem('userName') || localStorage.getItem('firstName') || 'Patient'}</span>
             </div>
             
             <button className="icon-button" onClick={handleLogout}>
@@ -355,9 +372,8 @@ export default function PatientDashboard() {
         
         <div className="dashboard-content">
           {activeSection === 'dashboard' && (
-            <>
-              <h1 style={{ fontSize: 24, fontWeight: 600, color: '#f8fafc', marginTop: 0, marginBottom: '24px' }}>
-                Welcome back, {patient?.name || 'Patient'}
+            <>              <h1 style={{ fontSize: 24, fontWeight: 600, color: '#f8fafc', marginTop: 0, marginBottom: '24px' }}>
+                Welcome back, {patient?.name || localStorage.getItem('userName') || localStorage.getItem('firstName') || 'Patient'}
               </h1>
               
               {showQrModal && (
@@ -405,10 +421,17 @@ export default function PatientDashboard() {
           
           {activeSection === 'checkup-history' && (
             <CKProfile member={{ name: patient?.name || 'Patient' }} onBack={() => setActiveSection('dashboard')} />
-          )}
-          
-          {activeSection === 'profile' && (
-            <RegisteredProfile patient={patient} onBack={() => setActiveSection('dashboard')} />
+          )}            {activeSection === 'profile' && (
+            <RegisteredProfile 
+              patient={{
+                id: patientId,
+                name: patient?.name,
+                email: userEmail,
+                firstName: localStorage.getItem('firstName'),
+                lastName: localStorage.getItem('lastName')
+              }} 
+              onBack={() => setActiveSection('dashboard')} 
+            />
           )}
           
           {(activeSection !== 'dashboard' && 

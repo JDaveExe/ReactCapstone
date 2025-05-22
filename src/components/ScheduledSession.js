@@ -6,6 +6,7 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import axios from 'axios';
 import CheckUpContext from '../contexts/CheckUpContext';
+import { getAvailableServices } from '../utils/serviceScheduleUtils';
 
 const ScheduledSession = ({ userRole = 'admin', familiesWithMembers = [] }) => {
   const [selectedFamily, setSelectedFamily] = useState(null);
@@ -15,8 +16,8 @@ const ScheduledSession = ({ userRole = 'admin', familiesWithMembers = [] }) => {
   const [appointmentDate, setAppointmentDate] = useState(new Date());
   const [appointmentTime, setAppointmentTime] = useState('09:00');
   const [appointmentPurpose, setAppointmentPurpose] = useState('Regular Check-up');
-  const [appointmentNotes, setAppointmentNotes] = useState('');
-  const [appointments, setAppointments] = useState([]);
+  const [appointmentNotes, setAppointmentNotes] = useState('');  const [appointments, setAppointments] = useState([]);
+  const [availableServices, setAvailableServices] = useState([]);
   
   // Get the context for appointment management
   const { setTodaysCheckUps, addScheduledAppointmentToList } = useContext(CheckUpContext);
@@ -37,9 +38,52 @@ const ScheduledSession = ({ userRole = 'admin', familiesWithMembers = [] }) => {
     setSelectedFamily(null);
     setSelectedMember(null);
   };
+  const updateAvailableServices = (date, timeString) => {
+    const services = getAvailableServices(date, timeString);
+    setAvailableServices(services);
+    
+    // Check if it's a weekend
+    const dayOfWeek = date.getDay(); // 0 is Sunday, 6 is Saturday
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      alert('Note: Weekend appointments have limited or no services available. Consider scheduling on a weekday.');
+    }
+    
+    // Set a default selected service from the available ones
+    if (services.length > 0 && !services.includes(appointmentPurpose)) {
+      setAppointmentPurpose(services[0]);
+    }
+  };
 
   const handleScheduleAppointment = (member) => {
     setSelectedMember(member);
+    // Default to current date and time
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    let defaultTime;
+    
+    // Set to next available timeslot
+    if (currentHour < 8) {
+      // Before working hours, set to start of day (8:00)
+      defaultTime = "08:00";
+    } else if (currentHour >= 17) {
+      // After working hours, set to next day 8:00
+      const tomorrow = new Date(now);
+      tomorrow.setDate(now.getDate() + 1);
+      setAppointmentDate(tomorrow);
+      defaultTime = "08:00";
+    } else {
+      // During working hours, round to next 30 min interval
+      const roundedMinute = currentMinute < 30 ? 30 : 0;
+      const adjustedHour = roundedMinute === 0 && currentMinute >= 30 ? currentHour + 1 : currentHour;
+      defaultTime = `${adjustedHour.toString().padStart(2, '0')}:${roundedMinute.toString().padStart(2, '0')}`;
+    }
+    
+    setAppointmentTime(defaultTime);
+    
+    // Update available services based on selected date and time
+    updateAvailableServices(now, defaultTime);
+    
     setShowCalendarModal(true);
   };
 
@@ -104,6 +148,13 @@ const ScheduledSession = ({ userRole = 'admin', familiesWithMembers = [] }) => {
     // Show a success message
     alert(`Appointment scheduled for ${selectedMember.name || `${selectedMember.firstName} ${selectedMember.lastName}`} on ${appointmentDate.toLocaleDateString()} at ${appointmentTime}`);
   };
+
+  // Update available services when calendar modal opens
+  useEffect(() => {
+    if (showCalendarModal) {
+      updateAvailableServices(appointmentDate, appointmentTime);
+    }
+  }, [showCalendarModal]);
 
   const timeOptions = [];
   for (let hour = 8; hour < 17; hour++) {
@@ -265,10 +316,12 @@ const ScheduledSession = ({ userRole = 'admin', familiesWithMembers = [] }) => {
           <Form>
             <Form.Group className="mb-3">
               <Form.Label>Date</Form.Label>
-              <div className="date-picker-container">
-                <DatePicker
+              <div className="date-picker-container">                <DatePicker
                   selected={appointmentDate}
-                  onChange={(date) => setAppointmentDate(date)}
+                  onChange={(date) => {
+                    setAppointmentDate(date);
+                    updateAvailableServices(date, appointmentTime);
+                  }}
                   minDate={new Date()}
                   className="form-control"
                   dateFormat="MMMM d, yyyy"
@@ -277,33 +330,36 @@ const ScheduledSession = ({ userRole = 'admin', familiesWithMembers = [] }) => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Time</Form.Label>
-              <Form.Select 
+              <Form.Label>Time</Form.Label>              <Form.Select 
                 value={appointmentTime}
-                onChange={(e) => setAppointmentTime(e.target.value)}
+                onChange={(e) => {
+                  setAppointmentTime(e.target.value);
+                  updateAvailableServices(appointmentDate, e.target.value);
+                }}
               >
                 {timeOptions.map(time => (
                   <option key={time} value={time}>{time}</option>
                 ))}
               </Form.Select>
-            </Form.Group>            
-            <Form.Group className="mb-3">
+            </Form.Group>              <Form.Group className="mb-3">
               <Form.Label>Appointment Purpose</Form.Label>
               <Form.Select 
                 value={appointmentPurpose}
                 onChange={(e) => setAppointmentPurpose(e.target.value)}
-              >
-                <option value="Regular Check-up">Regular Check-up</option>
-                <option value="Follow-up">Follow-up</option>
-                <option value="Vaccination">Vaccination</option>
-                <option value="General Consultation">General Consultation</option>
-                <option value="Pediatric Check-Up">Pediatric Check-Up</option>
-                <option value="Dental Check-Up">Dental Check-Up</option>
-                <option value="Eye Exam">Eye Exam</option>
-                <option value="Laboratory Test">Laboratory Test</option>
-                <option value="Prescription Refill">Prescription Refill</option>
+              >                {availableServices.length > 0 ? (
+                  availableServices.map(service => (
+                    <option key={service} value={service}>{service}</option>
+                  ))
+                ) : (
+                  <option value="No services available">No services available at this time</option>
+                )}
                 <option value="Other">Other</option>
               </Form.Select>
+              <div className="mt-2" style={{ fontSize: '0.8rem', color: availableServices.length <= 2 ? '#ef4444' : '#94a3b8' }}>
+                {availableServices.length <= 2 ? 
+                  'Limited services available at this time slot. Consider selecting a different time.' : 
+                  'Services shown are based on the selected day and time'}
+              </div>
             </Form.Group>
 
             <Form.Group className="mb-3">

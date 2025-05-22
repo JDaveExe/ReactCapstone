@@ -30,14 +30,13 @@ export default function RegisteredProfile({ patient, onBack }) {
   const [patientData, setPatientData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [families, setFamilies] = useState([]);
-  // Function to fetch the user's profile data
+  const [families, setFamilies] = useState([]);  // Function to fetch the user's profile data
   const fetchPatientData = async () => {
     setLoading(true);
     setError('');
+    console.log("RegisteredProfile received patient data:", patient);
     
-    try {
-      // If we have a patient ID, fetch directly from the single patient endpoint
+    try {      // If we have a patient ID, fetch directly from the single patient endpoint
       if (patient && patient.id) {
         try {
           console.log(`Fetching patient data for ID: ${patient.id}`);
@@ -45,16 +44,27 @@ export default function RegisteredProfile({ patient, onBack }) {
           
           if (response.data) {
             console.log("Patient data retrieved successfully:", response.data);
+            // Add the name field if it doesn't exist
+            if (!response.data.name && response.data.firstName) {
+              response.data.name = `${response.data.firstName} ${response.data.lastName || ''}`.trim();
+            }
             setPatientData(response.data);
           } else {
             setError(`No data returned for patient ID ${patient.id}.`);
           }
         } catch (apiErr) {
-          console.error("API error:", apiErr);
+          console.error("API error details:", {
+            message: apiErr.message,
+            name: apiErr.name,
+            stack: apiErr.stack,
+            config: apiErr.config,
+            request: apiErr.request,
+            response: apiErr.response ? { status: apiErr.response.status, data: apiErr.response.data } : undefined
+          });
           if (apiErr.response && apiErr.response.status === 404) {
             setError(`Patient with ID ${patient.id} not found.`);
           } else {
-            setError(`Failed to retrieve data for patient ID ${patient.id}. ${apiErr.message}`);
+            setError(`Failed to retrieve data for patient ID ${patient.id}. Error: ${apiErr.message}`);
           }
         }
       } 
@@ -62,13 +72,44 @@ export default function RegisteredProfile({ patient, onBack }) {
       else if (patient && patient.firstName && patient.lastName) {
         console.log("Using provided patient data:", patient);
         setPatientData(patient);
-      } 
+      }      // Try to use email if available
+      else if (patient && patient.email) {
+        try {
+          console.log(`Fetching patient data for email: ${patient.email}`);
+          const response = await axios.post(`${API_URL}/get-user-details`, { email: patient.email });
+          
+          if (response.data && response.data.user) {
+            console.log("Patient data retrieved successfully via email:", response.data.user);
+            // Add the name field if it doesn't exist
+            if (!response.data.user.name && response.data.user.firstName) {
+              response.data.user.name = `${response.data.user.firstName} ${response.data.user.lastName || ''}`.trim();
+            }
+            setPatientData(response.data.user);
+          } else {
+            setError(`No data returned for email ${patient.email}.`);
+          }
+        } catch (apiErr) {
+          console.error("API error when fetching by email details:", {
+            message: apiErr.message,
+            name: apiErr.name,
+            stack: apiErr.stack,
+            config: apiErr.config,
+            request: apiErr.request,
+            response: apiErr.response ? { status: apiErr.response.status, data: apiErr.response.data } : undefined
+          });
+          setError(`Failed to retrieve data for email ${patient.email}. Error: ${apiErr.message}`);
+        }
+      }
       // No valid patient data provided
       else {
         setError('Patient data not provided or is incomplete.');
       }
     } catch (err) {
-      console.error("Unexpected error:", err);
+      console.error("Unexpected error details:", {
+        message: err.message,
+        name: err.name,
+        stack: err.stack
+      });
       setError(`Failed to load patient data: ${err.message}`);
     }
     
@@ -83,11 +124,10 @@ export default function RegisteredProfile({ patient, onBack }) {
     } catch (err) {
     }
   };
-
   useEffect(() => {
     fetchPatientData();
     fetchFamilies();
-  }, [patient]);
+  }, [patient?.id, patient?.email, patient?.name]);
 
   const getAvailableBarangays = (street) => {
     if (street) {
@@ -105,8 +145,7 @@ export default function RegisteredProfile({ patient, onBack }) {
         </div>
       </Container>
     );
-  }
-  // If error, show error message
+  }  // If error, show error message with more information
   if (error) {
     return (
       <Container fluid className="add-new-patient-form-container" style={{ background: '#0f172a', padding: '30px', borderRadius: '8px', maxWidth: '1200px', margin: '20px auto' }}>
@@ -115,6 +154,8 @@ export default function RegisteredProfile({ patient, onBack }) {
           <Alert.Heading style={{fontSize: '1.5rem', color: '#dc3545'}}>Error Loading Profile</Alert.Heading>
           <p style={{fontSize: '1rem', color: '#f8d7da', marginTop: '10px', marginBottom: '20px'}}>
             {error}
+          </p>          <p style={{fontSize: '0.9rem', color: '#f8d7da', marginBottom: '20px'}}>
+            Debug info: Patient ID: {patient?.id || 'None'}, Patient Name: {patient?.name || 'None'}, Patient Email: {patient?.email || 'None'}
           </p>
           {onBack && (
             <>
@@ -134,10 +175,12 @@ export default function RegisteredProfile({ patient, onBack }) {
     return (
       <Container fluid className="add-new-patient-form-container" style={{ background: '#0f172a', padding: '30px', borderRadius: '8px', maxWidth: '1200px', margin: '20px auto' }}>
         <Alert variant="warning" className="d-flex flex-column align-items-center text-center p-4">
-          <AlertTriangle size={48} className="mb-3" />
-          <Alert.Heading style={{fontSize: '1.5rem', color: '#ffc107'}}>Data Not Available</Alert.Heading>
+          <AlertTriangle size={48} className="mb-3" />          <Alert.Heading style={{fontSize: '1.5rem', color: '#ffc107'}}>Data Not Available</Alert.Heading>
           <p style={{fontSize: '1rem', color: '#212529', marginTop: '10px', marginBottom: '20px'}}>
             No patient data could be displayed at this time. This might indicate an issue with the record or a delay in data synchronization.
+          </p>
+          <p style={{fontSize: '0.9rem', color: '#665429', marginBottom: '20px'}}>
+            Debug info: Patient ID: {patient?.id || 'None'}, Patient Name: {patient?.name || 'None'}, Patient Email: {patient?.email || 'None'}
           </p>
           {onBack && (
             <>
@@ -152,10 +195,9 @@ export default function RegisteredProfile({ patient, onBack }) {
       </Container>
     );
   }
-
   // Format the date for display
   const formatDate = (dateString) => {
-    if (!dateString) return 'Not provided';
+    if (!dateString) return '---';
     
     // Check if it's already in YYYY-MM-DD format
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
@@ -206,63 +248,80 @@ export default function RegisteredProfile({ patient, onBack }) {
           
           <Row className="mb-3">
             <Col md={6}>
-              <Form.Group>
-                <Form.Label className="text-light">Email</Form.Label>
-                <Form.Control type="email" value={patientData.email || 'Not provided'} readOnly />
+              <Form.Group>                <Form.Label className="text-light">Email</Form.Label>
+                <Form.Control type="email" value={patientData.email || '---'} readOnly />
               </Form.Group>
             </Col>
             <Col md={6}>
               <Form.Group>
                 <Form.Label className="text-light">Phone Number</Form.Label>
-                <Form.Control type="text" value={patientData.phoneNumber || 'Not provided'} readOnly />
+                <Form.Control type="text" value={patientData.phoneNumber || '---'} readOnly />
               </Form.Group>
             </Col>
           </Row>
           
           <Row className="mb-4">
             <Col md={6}>
-              <Form.Group>
-                <Form.Label className="text-light">Membership Status</Form.Label>
-                <Form.Control type="text" value={patientData.membershipStatus || 'Not provided'} readOnly />
+              <Form.Group>                <Form.Label className="text-light">Membership Status</Form.Label>
+                <Form.Control type="text" value={patientData.membershipStatus || '---'} readOnly />
               </Form.Group>
             </Col>
             <Col md={6}>
               <Form.Group>
                 <Form.Label className="text-light">PhilHealth Number</Form.Label>
-                <Form.Control type="text" value={patientData.philHealthNumber || 'Not provided'} readOnly />
+                <Form.Control type="text" value={patientData.philHealthNumber || '---'} readOnly />
               </Form.Group>
             </Col>
           </Row>
-          
-          <Row className="mb-4">
+            <Row className="mb-4">
             <Col md={3}>
               <Form.Group>
                 <Form.Label className="text-light">House No./Bldg No.</Form.Label>
-                <Form.Control type="text" value={patientData.houseNo || 'Not provided'} readOnly />
+                <Form.Control 
+                  type="text" 
+                  value={patientData.address && patientData.address.houseNo ? patientData.address.houseNo : (patientData.houseNo || '---')} 
+                  readOnly 
+                />
               </Form.Group>
             </Col>
             <Col md={3}>
               <Form.Group>
                 <Form.Label className="text-light">Street</Form.Label>
-                <Form.Control type="text" value={patientData.street || 'Not provided'} readOnly />
+                <Form.Control 
+                  type="text" 
+                  value={patientData.address && patientData.address.street ? patientData.address.street : (patientData.street || '---')} 
+                  readOnly 
+                />
               </Form.Group>
             </Col>
             <Col md={2}>
               <Form.Group>
                 <Form.Label className="text-light">Barangay</Form.Label>
-                <Form.Control type="text" value={patientData.barangay || 'Not provided'} readOnly />
+                <Form.Control 
+                  type="text" 
+                  value={patientData.address && patientData.address.barangay ? patientData.address.barangay : (patientData.barangay || '---')} 
+                  readOnly 
+                />
               </Form.Group>
             </Col>
             <Col md={2}>
               <Form.Group>
                 <Form.Label className="text-light">City</Form.Label>
-                <Form.Control type="text" value={patientData.city || 'Pasig'} readOnly />
+                <Form.Control 
+                  type="text" 
+                  value={patientData.address && patientData.address.city ? patientData.address.city : (patientData.city || 'Pasig')} 
+                  readOnly 
+                />
               </Form.Group>
             </Col>
             <Col md={2}>
               <Form.Group>
                 <Form.Label className="text-light">Region</Form.Label>
-                <Form.Control type="text" value={patientData.region || 'Metro Manila'} readOnly />
+                <Form.Control 
+                  type="text" 
+                  value={patientData.address && patientData.address.region ? patientData.address.region : (patientData.region || 'Metro Manila')} 
+                  readOnly 
+                />
               </Form.Group>
             </Col>
           </Row>
@@ -274,22 +333,20 @@ export default function RegisteredProfile({ patient, onBack }) {
                 <Form.Control type="text" value={formatDate(patientData.dateOfBirth)} readOnly />
               </Form.Group>
             </Col>
-            <Col md={3}>
-              <Form.Group>
+            <Col md={3}>              <Form.Group>
                 <Form.Label className="text-light">Age</Form.Label>
-                <Form.Control type="text" value={patientData.age || 'Not provided'} readOnly />
+                <Form.Control type="text" value={patientData.age || '---'} readOnly />
               </Form.Group>
             </Col>
             <Col md={3}>
               <Form.Group>
                 <Form.Label className="text-light">Gender</Form.Label>
-                <Form.Control type="text" value={patientData.gender || 'Not provided'} readOnly />
+                <Form.Control type="text" value={patientData.gender || '---'} readOnly />
               </Form.Group>
             </Col>
             <Col md={3}>
-              <Form.Group>
-                <Form.Label className="text-light">Civil Status</Form.Label>
-                <Form.Control type="text" value={patientData.civilStatus || 'Not provided'} readOnly />
+              <Form.Group>                <Form.Label className="text-light">Civil Status</Form.Label>
+                <Form.Control type="text" value={patientData.civilStatus || '---'} readOnly />
               </Form.Group>
             </Col>
           </Row>        </Form>

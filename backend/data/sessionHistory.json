@@ -1,0 +1,79 @@
+[
+  {
+    "historyId": "hist_1747803531546_372",
+    "sessionId": 6,
+    "patientId": null,
+    "patientName": "Janus Kusakabe",
+    "doctorId": null,
+    "doctorName": null,
+    "loggedInAt": "2025-05-21T04:37:26.439Z",
+    "completedAt": "2025-05-21T04:58:51.529Z",
+    "archivedAt": "2025-05-21T04:58:51.546Z",
+    "purpose": "Vaccination",
+    "notes": "",
+    "prescription": "",
+    "status": "Archived",
+    "originalData": {
+      "id": 6,
+      "name": "Janus Kusakabe",
+      "loggedInAt": "2025-05-21T04:37:26.439Z",
+      "queueNumber": 4,
+      "status": "Completed",
+      "purpose": "Vaccination",
+      "completedAt": "2025-05-21T04:58:51.529Z",
+      "patientName": "Janus Kusakabe"
+    }
+  },
+  {
+    "historyId": "hist_1747803611606_209",
+    "sessionId": 10,
+    "patientId": null,
+    "patientName": "Orion Zimmerman",
+    "doctorId": null,
+    "doctorName": null,
+    "loggedInAt": "2025-05-21T04:57:50.327Z",
+    "completedAt": "2025-05-21T05:00:11.597Z",
+    "archivedAt": "2025-05-21T05:00:11.606Z",
+    "purpose": "Vaccination",
+    "notes": "Done",
+    "prescription": "N/A",
+    "status": "Archived",
+    "originalData": {
+      "id": 10,
+      "name": "Orion Zimmerman",
+      "loggedInAt": "2025-05-21T04:57:50.327Z",
+      "queueNumber": 5,
+      "status": "Completed",
+      "purpose": "Vaccination",
+      "notes": "Done",
+      "prescription": "N/A",
+      "completedAt": "2025-05-21T05:00:11.597Z",
+      "patientName": "Orion Zimmerman"
+    }
+  },
+  {
+    "historyId": "hist_1747872138947_356",
+    "sessionId": 9,
+    "patientId": null,
+    "patientName": "Marianne Marquez",
+    "doctorId": null,
+    "doctorName": null,
+    "loggedInAt": "2025-05-21T08:28:25.221Z",
+    "completedAt": "2025-05-22T00:02:18.917Z",
+    "archivedAt": "2025-05-22T00:02:18.946Z",
+    "purpose": "Vaccination",
+    "notes": "",
+    "prescription": "",
+    "status": "Archived",
+    "originalData": {
+      "id": 9,
+      "name": "Marianne Marquez",
+      "loggedInAt": "2025-05-21T08:28:25.221Z",
+      "queueNumber": 7,
+      "status": "Completed",
+      "purpose": "Vaccination",
+      "completedAt": "2025-05-22T00:02:18.917Z",
+      "patientName": "Marianne Marquez"
+    }
+  }
+]

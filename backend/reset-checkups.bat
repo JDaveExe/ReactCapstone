@@ -1,0 +1,6 @@
+@echo off
+echo Running Check-Ups Reset...
+node reset-checkups.js
+echo.
+echo Reset Complete! Press any key to exit...
+pause > nul

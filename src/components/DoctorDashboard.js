@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, User, Calendar, CheckSquare, ChevronRight, Grid, List, Bell, Settings, LogOut, X, Menu, Activity, AlarmClock, FileText, Shield, ChevronDown, ChevronUp } from 'lucide-react';
 import '../styles/SidebarDoc.css';
 import '../styles/DoctorDashboard.css';
+import DateTimeContext from '../contexts/DateTimeContext';
 import AdmittingData from './AdmittingData';
 import ImmunisationH from './ImmunisationH';
 import Referral from './Referral';
@@ -20,6 +21,31 @@ import Sessions from './Sessions';
 import SessionHistory from './SessionHistory';
 import { getPatients, getFamilies, getFamilyMembers, getSortedFamilies } from '../services/api';
 import { Button } from 'react-bootstrap';
+
+// Helper function to format address object into a string
+const formatAddress = (addressObj) => {
+  if (typeof addressObj === 'string') {
+    return addressObj;
+  }
+  if (typeof addressObj !== 'object' || addressObj === null) {
+    return 'N/A'; // Placeholder for invalid or missing address structure
+  }
+
+  const parts = [];
+  // Combine house number and street
+  const streetParts = [];
+  if (addressObj.houseNo) streetParts.push(addressObj.houseNo);
+  if (addressObj.street) streetParts.push(addressObj.street);
+  if (streetParts.length > 0) parts.push(streetParts.join(' '));
+
+  // Add barangay, city, region
+  if (addressObj.barangay) parts.push(addressObj.barangay);
+  if (addressObj.city) parts.push(addressObj.city);
+  if (addressObj.region) parts.push(addressObj.region);
+  
+  const result = parts.join(', ');
+  return result || 'N/A'; // Return 'N/A' if all parts are empty or addressObj was empty
+};
 
 function SidebarItem({ icon, label, active, collapsed, indent, onClick }) {
   return (
@@ -86,7 +112,8 @@ export default function DoctorDashboard() {
   const [activeSection, setActiveSection] = useState('patients');
   const [selectedFamily, setSelectedFamily] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
-  const [actionView, setActionView] = useState(null);  const [dropdowns, setDropdowns] = useState({
+  const [actionView, setActionView] = useState(null);  
+  const [dropdowns, setDropdowns] = useState({
     checkUp: false,
     sessions: false,
     patientManagement: true,
@@ -96,6 +123,7 @@ export default function DoctorDashboard() {
   const [patients, setPatients] = useState([]);
   const [loadingPatients, setLoadingPatients] = useState(false);
   const navigate = useNavigate();
+  const { getCurrentDate, isSimulated } = useContext(DateTimeContext);
   
   // Added for Patient Database functionality
   const [families, setFamilies] = useState([]);
@@ -317,18 +345,29 @@ export default function DoctorDashboard() {
                         <th style={{ padding: '16px', textAlign: 'left', color: '#94a3b8' }}>Actions</th>
                       </tr>
                     </thead>
-                    <tbody>                      {selectedFamily.members.map(member => (
+                    <tbody>                      {selectedFamily.members.map(member => {
+                        // Create a display name by safely checking different fields
+                        const displayName = member.name || 
+                                          (member.firstName || member.lastName ? 
+                                            `${member.firstName || ''} ${member.lastName || ''}`.trim() : 
+                                            'Unknown Member');
+                        return (
                         <tr key={member.id} style={{ borderBottom: '1px solid #334155' }}>
                           <td style={{ 
                               padding: '16px',
                               fontWeight: '500',
                               fontSize: '15px',
                               color: '#e2e8f0' /* Lighter color for better readability */
-                          }}>{member.name}</td>
+                          }}>{displayName}</td>
                           <td style={{ padding: '16px' }}>
                             <button 
                               onClick={() => { 
-                                setSelectedMember(member);
+                                // Ensure member object has name property for display
+                                const enhancedMember = {
+                                  ...member,
+                                  name: displayName // Add name if missing
+                                };
+                                setSelectedMember(enhancedMember);
                                 setActionView('ck-profile');
                                 setActiveSection('patients');
                               }}
@@ -338,7 +377,7 @@ export default function DoctorDashboard() {
                             </button>
                           </td>
                         </tr>
-                      ))}
+                      )})}
                     </tbody>
                   </table>
                 )}
@@ -430,7 +469,12 @@ export default function DoctorDashboard() {
                 justifyContent: 'space-between',
                 alignItems: 'center'
               }}>
-                <span>{selectedMember.name || `${selectedMember.firstName || ''} ${selectedMember.lastName || ''}`}</span>
+                <span>
+                  {selectedMember?.name || 
+                   (selectedMember?.firstName || selectedMember?.lastName ? 
+                     `${selectedMember?.firstName || ''} ${selectedMember?.lastName || ''}`.trim() : 
+                     'Member Profile')}
+                </span>
                 <button
                   style={{
                     background: '#1e293b',
@@ -486,18 +530,16 @@ export default function DoctorDashboard() {
                 </div>
                 
                 {dropdowns.personalInfo && (
-                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                    <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>                    <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
                       <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Age</div>
-                      <div>{selectedMember.age || '40'} years</div>
+                      <div>{selectedMember.age ? `${selectedMember.age} years` : '---'}</div>
                     </div>
                     <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
                       <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Gender</div>
-                      <div>{selectedMember.gender || 'Male'}</div>
-                    </div>
-                    <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                      <div>{selectedMember.gender || '---'}</div>
+                    </div><div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
                       <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Last Checkup</div>
-                      <div>{selectedMember.lastCheckup || '2025-03-20'}</div>
+                      <div>{selectedMember.lastCheckup || '---'}</div>
                     </div>
                   </div>
                 )}
@@ -535,19 +577,21 @@ export default function DoctorDashboard() {
                 </div>
                 
                 {dropdowns.contactInfo && (
-                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                    <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>                    <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
                       <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Phone</div>
-                      <div>{selectedMember.phoneNumber || '(555) 567-8901'}</div>
+                      <div>{selectedMember.phoneNumber || '---'}</div>
                     </div>
                     <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
                       <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Email</div>
-                      <div>{selectedMember.email || 'robert@example.com'}</div>
-                    </div>
-                    <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
-                      <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Address</div>
-                      <div>{selectedMember.address || '456 Oak Ave, Townsville'}</div>
-                    </div>              </div>
+                      <div>{selectedMember.email || '---'}</div>
+                    </div>                      <div style={{ flex: '1', minWidth: '250px', padding: '20px', background: '#1e293b', borderRadius: '8px' }}>
+                        <div style={{ marginBottom: '10px', color: '#94a3b8', fontSize: '14px' }}>Address</div>
+                        <div>
+                          {selectedMember.address 
+                            ? formatAddress(selectedMember.address) 
+                            : '---'}
+                        </div>
+                      </div></div>
                 )}
               </div>
               
@@ -795,13 +839,16 @@ export default function DoctorDashboard() {
         case 'treatment': return <TreatmentRecord member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
         case 'admitting': return <AdmittingData member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
         case 'immunization': return <ImmunisationH member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
-        case 'referral': return <Referral member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;        case 'schedule': return <ScheduleVisit member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
+        case 'referral': return <Referral member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;        
+        case 'schedule': return <ScheduleVisit member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
         case 'registered-profile': return <RegisteredProfile patient={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
         default: setActionView(null);
       }
-    }      switch (activeSection) {
+    }      
+    switch (activeSection) {
       case 'patients':
-        return renderPatientList();      case 'unsorted':
+        return renderPatientList();      
+      case 'unsorted':
         return <UnsortedMembers />;
       case 'yourCheckups':
         return <YourCheckUpsToday />;
@@ -822,7 +869,9 @@ export default function DoctorDashboard() {
         <div style={{ padding: 18, display: 'flex', alignItems: 'center', borderBottom: '1px solid #1e293b' }}>
           <img src={require('../images/maybunga.png')} alt="Maybunga Healthcare Center Logo" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', background: '#fff' }} />
           {!sidebarCollapsed && <span style={{ fontWeight: 600, marginLeft: 10 }}>Maybunga Healthcare Center</span>}
-        </div>        <div style={{ flex: 1, overflowY: 'auto' }}>          <SidebarDropdown icon={<Calendar size={18} />} label="Check Up" collapsed={sidebarCollapsed} isOpen={dropdowns.checkUp} onClick={() => setDropdowns(prev => ({ ...prev, checkUp: !prev.checkUp }))}>
+        </div>        
+        <div style={{ flex: 1, overflowY: 'auto' }}>          
+          <SidebarDropdown icon={<Calendar size={18} />} label="Check Up" collapsed={sidebarCollapsed} isOpen={dropdowns.checkUp} onClick={() => setDropdowns(prev => ({ ...prev, checkUp: !prev.checkUp }))}>
             <SidebarItem label="Your Check Ups Today" active={activeSection === 'yourCheckups'} collapsed={sidebarCollapsed} indent onClick={() => handleSectionChange('yourCheckups')} />
             <SidebarItem label="Schedule New Session" active={activeSection === 'scheduledSessions'} collapsed={sidebarCollapsed} indent onClick={() => handleSectionChange('scheduledSessions')} />
           </SidebarDropdown>
@@ -841,7 +890,9 @@ export default function DoctorDashboard() {
             {sidebarCollapsed ? <Menu size={18} /> : <X size={18} />}
           </button>
         </div>
-      </div>      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>        <div style={{ height: 64, background: '#111827', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', marginBottom: 32 }}>
+      </div>      
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>        
+        <div style={{ height: 64, background: '#111827', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', fontSize: 14 }}>
             <span style={{ color: '#64748b', marginRight: 8 }}>YOU ARE HERE &gt;</span>
             {(() => {
@@ -862,7 +913,8 @@ export default function DoctorDashboard() {
                     path.push(<span key="db-link" style={linkStyle} onClick={() => { handleBackToFamilies(); setSelectedMember(null); setActionView(null); }}>Patient Database</span>);
                     path.push(sep);
                     path.push(<span key="family-link" style={linkStyle} onClick={() => { setSelectedMember(null); setActionView(null); }}>{selectedFamily.familyName}</span>);
-                    path.push(sep);                    path.push(<span key="member-link" style={linkStyle} onClick={() => { setActionView(null); }}>{selectedMember.name}</span>);
+                    path.push(sep);                    
+                    path.push(<span key="member-link" style={linkStyle} onClick={() => { setActionView(null); }}>{selectedMember.name}</span>);
                     path.push(sep);
                     let actionLabel = '';
                     switch (actionView) {
@@ -883,7 +935,8 @@ export default function DoctorDashboard() {
                     path.push(<span key="list" style={baseStyle}>Patient List</span>);
                   } else if (selectedMember && actionView) {
                     path.push(<span key="list-link" style={linkStyle} onClick={() => { setSelectedMember(null); setActionView(null); }}>Patient List</span>);
-                    path.push(sep);                    path.push(<span key="member-link" style={linkStyle} onClick={() => { setActionView(null); }}>{selectedMember.firstName} {selectedMember.lastName}</span>);
+                    path.push(sep);                    
+                    path.push(<span key="member-link" style={linkStyle} onClick={() => { setActionView(null); }}>{selectedMember.firstName} {selectedMember.lastName}</span>);
                     path.push(sep);
                     let actionLabel = '';
                     switch (actionView) {
@@ -897,8 +950,11 @@ export default function DoctorDashboard() {
                       default: actionLabel = actionView;
                     }
                     path.push(<span key="action" style={baseStyle}>{actionLabel}</span>);
-                  }                }                } else if (activeSection === 'unsorted') {
-                path.push(<span key="unsorted" style={baseStyle}>Unsorted Members</span>);              } else if (activeSection === 'yourCheckups') {
+                  }                
+                }                
+              } else if (activeSection === 'unsorted') {
+                path.push(<span key="unsorted" style={baseStyle}>Unsorted Members</span>);              
+              } else if (activeSection === 'yourCheckups') {
                 path.push(<span key="your-checkups" style={baseStyle}>Your Check Ups Today</span>);
               } else if (activeSection === 'scheduledSessions') {
                 path.push(<span key="schedule" style={baseStyle}>Schedule New Session</span>);
@@ -909,10 +965,11 @@ export default function DoctorDashboard() {
               }
               return path;
             })()}
-          </div>          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+          </div>            <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
             <div className="current-date" style={{ color: '#94a3b8', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
               <Calendar size={16} style={{ marginRight: '5px' }} />
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {getCurrentDate().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {isSimulated && <span style={{ marginLeft: '8px', background: '#334155', color: '#38bdf8', fontSize: '11px', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>SIMULATED</span>}
             </div>
             <button style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: '#fff', cursor: 'pointer' }}><Bell size={18} /></button>
             <button style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: '#fff', cursor: 'pointer' }}><Settings size={18} /></button>

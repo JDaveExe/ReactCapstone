@@ -1,0 +1,78 @@
+[
+  {
+    "historyId": "hist_1747801415558_366",
+    "sessionId": 3,
+    "patientId": null,
+    "patientName": "Clarens Mirana",
+    "doctorId": null,
+    "doctorName": null,
+    "loggedInAt": "2025-05-20T17:04:42.396Z",
+    "completedAt": "2025-05-21T04:23:35.547Z",
+    "archivedAt": "2025-05-21T04:23:35.558Z",
+    "purpose": "Not Specified",
+    "notes": "",
+    "status": "Archived",
+    "originalData": {
+      "id": 3,
+      "name": "Clarens Mirana",
+      "loggedInAt": "2025-05-20T17:04:42.396Z",
+      "queueNumber": 1,
+      "status": "Completed",
+      "purpose": "Not Specified",
+      "completedAt": "2025-05-21T04:23:35.547Z",
+      "patientName": "Clarens Mirana"
+    }
+  },
+  {
+    "historyId": "hist_1747801771589_540",
+    "sessionId": 4,
+    "patientId": null,
+    "patientName": "Tre Archibald",
+    "doctorId": null,
+    "doctorName": null,
+    "loggedInAt": "2025-05-21T04:28:27.090Z",
+    "completedAt": "2025-05-21T04:29:31.583Z",
+    "archivedAt": "2025-05-21T04:29:31.589Z",
+    "purpose": "Not Specified",
+    "notes": "Sample",
+    "status": "Archived",
+    "originalData": {
+      "id": 4,
+      "name": "Tre Archibald",
+      "loggedInAt": "2025-05-21T04:28:27.090Z",
+      "queueNumber": 2,
+      "status": "Completed",
+      "purpose": "Not Specified",
+      "prescription": "sample",
+      "notes": "Sample",
+      "completedAt": "2025-05-21T04:29:31.583Z",
+      "patientName": "Tre Archibald"
+    }
+  },
+  {
+    "historyId": "hist_1747802442182_185",
+    "sessionId": 7,
+    "patientId": null,
+    "patientName": "Lia Ramos",
+    "doctorId": null,
+    "doctorName": null,
+    "loggedInAt": "2025-05-21T04:36:15.938Z",
+    "completedAt": "2025-05-21T04:40:42.173Z",
+    "archivedAt": "2025-05-21T04:40:42.181Z",
+    "purpose": "Not Specified",
+    "notes": "sample",
+    "status": "Archived",
+    "originalData": {
+      "id": 7,
+      "name": "Lia Ramos",
+      "loggedInAt": "2025-05-21T04:36:15.938Z",
+      "queueNumber": 3,
+      "status": "Completed",
+      "purpose": "Not Specified",
+      "notes": "sample",
+      "prescription": "sample",
+      "completedAt": "2025-05-21T04:40:42.173Z",
+      "patientName": "Lia Ramos"
+    }
+  }
+]

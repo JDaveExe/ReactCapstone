@@ -1,20 +1,18 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import '../styles/CheckUpToday.css';
-import { Clock, Calendar, User, Check, Loader, Activity, Shield } from 'lucide-react';
+import { Clock, Calendar, User, Check, Loader, Activity } from 'lucide-react';
 import CheckUpContext from '../contexts/CheckUpContext';
 import DateTimeContext from '../contexts/DateTimeContext';
 import { getAllServices, getAvailableServices } from '../utils/serviceScheduleUtils';
 import { requiresVitalSigns } from '../utils/vitalSignsUtils';
-import { requiresVaccination } from '../utils/vaccinationUtils';
 import VitalSignsCheck from './VitalSignsCheck';
-import VaccinationCheck from './VaccinationCheck';
 
 export default function CheckUpToday({ showDateTimePerPatient }) {
   const { todaysCheckUps, updateCheckUpItem, setTodaysCheckUps, isLoading, error, allScheduledAppointments } = useContext(CheckUpContext);
   const [showVitalSignsModal, setShowVitalSignsModal] = useState(false);
-  const [showVaccinationModal, setShowVaccinationModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
+  
   console.log('[CheckUpToday] Received todaysCheckUps from context:', todaysCheckUps);
   console.log('[CheckUpToday] todaysCheckUps is Array?', Array.isArray(todaysCheckUps), 'Length:', todaysCheckUps?.length);
   console.log('[CheckUpToday] Context states - isLoading:', isLoading, 'error:', error);
@@ -112,12 +110,6 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
       return;
     }
     
-    // Check if vaccination check is required for this service but not yet completed
-    if (checkup.purpose && requiresVaccination(checkup.purpose) && !checkup.vaccinationCompleted) {
-      alert("This service requires vaccination check. Please complete the vaccination check before starting the session.");
-      return;
-    }
-    
     try {
       console.log(`Attempting to start session for ${checkup.name}`);
       updateCheckUpItem({ ...checkup, status: 'In Session' });
@@ -127,21 +119,13 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
       alert("Failed to start session. Please try again.");
     }
   };
-    const handleVitalSignsCheck = (checkup) => {
+  
+  const handleVitalSignsCheck = (checkup) => {
     setSelectedPatient(checkup);
     setShowVitalSignsModal(true);
   };
   
-  const handleVaccinationCheck = (checkup) => {
-    setSelectedPatient(checkup);
-    setShowVaccinationModal(true);
-  };
-  
   const handleVitalSignsComplete = (updatedCheckup) => {
-    updateCheckUpItem(updatedCheckup);
-  };
-  
-  const handleVaccinationComplete = (updatedCheckup) => {
     updateCheckUpItem(updatedCheckup);
   };
   const handleCustomPurpose = (id) => {
@@ -197,12 +181,11 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
   if (isLoading) {
     return <div className="loading"><Loader /> Loading today's checkups...</div>;
   }
+
   if (error) {
     return <div className="error">{error}</div>;
-  }
-  
-  return (
-    <div>
+  }  return (
+    <React.Fragment>
       <div className="checkup-today-container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
           <h1 style={{ marginBottom: 0 }}>{showDateTimePerPatient ? 'Your Check Ups Today' : 'Check Ups Today'}</h1>
@@ -316,53 +299,25 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
                     </span>
                   </td>                  <td>                    <div style={{ display: 'flex', gap: '8px' }}>                      <button
                         onClick={() => handleStartSession(c)}
-                        disabled={
-                          c.status !== 'Waiting' || 
-                          !c.purpose || 
-                          c.purpose === 'Not Specified' || 
-                          c.purpose === 'Other' || 
-                          (requiresVitalSigns(c.purpose) && !c.vitalSignsChecked) ||
-                          (requiresVaccination(c.purpose) && !c.vaccinationCompleted)
-                        }
+                        disabled={c.status !== 'Waiting' || !c.purpose || c.purpose === 'Not Specified' || c.purpose === 'Other' || (requiresVitalSigns(c.purpose) && !c.vitalSignsChecked)}
                         style={{ 
                           padding: '6px 12px', 
                           borderRadius: '4px', 
-                          backgroundColor: (
-                            c.status !== 'Waiting' || 
-                            !c.purpose || 
-                            c.purpose === 'Not Specified' || 
-                            c.purpose === 'Other' || 
-                            (requiresVitalSigns(c.purpose) && !c.vitalSignsChecked) ||
-                            (requiresVaccination(c.purpose) && !c.vaccinationCompleted)
-                          ) ? '#334155' : '#0e7490',
-                          color: (
-                            c.status !== 'Waiting' || 
-                            !c.purpose || 
-                            c.purpose === 'Not Specified' || 
-                            c.purpose === 'Other' || 
-                            (requiresVitalSigns(c.purpose) && !c.vitalSignsChecked) ||
-                            (requiresVaccination(c.purpose) && !c.vaccinationCompleted)
-                          ) ? '#64748b' : '#fff',
+                          backgroundColor: (c.status !== 'Waiting' || !c.purpose || c.purpose === 'Not Specified' || c.purpose === 'Other' || (requiresVitalSigns(c.purpose) && !c.vitalSignsChecked)) ? '#334155' : '#0e7490',
+                          color: (c.status !== 'Waiting' || !c.purpose || c.purpose === 'Not Specified' || c.purpose === 'Other' || (requiresVitalSigns(c.purpose) && !c.vitalSignsChecked)) ? '#64748b' : '#fff',
                           border: 'none',
-                          cursor: (
-                            c.status !== 'Waiting' || 
-                            !c.purpose || 
-                            c.purpose === 'Not Specified' || 
-                            c.purpose === 'Other' || 
-                            (requiresVitalSigns(c.purpose) && !c.vitalSignsChecked) ||
-                            (requiresVaccination(c.purpose) && !c.vaccinationCompleted)
-                          ) ? 'not-allowed' : 'pointer',
+                          cursor: (c.status !== 'Waiting' || !c.purpose || c.purpose === 'Not Specified' || c.purpose === 'Other' || (requiresVitalSigns(c.purpose) && !c.vitalSignsChecked)) ? 'not-allowed' : 'pointer',
                           fontSize: '14px'
                         }}
                       >
                         {c.status === 'Waiting' ? 
                           (requiresVitalSigns(c.purpose) && !c.vitalSignsChecked ? 
                             'Complete Vital Signs First' : 
-                            requiresVaccination(c.purpose) && !c.vaccinationCompleted ?
-                            'Complete Vaccination Check First' :
                             'Start Session') : 
                           'Currently In Session'} 
-                      </button>                      {/* Vital Signs Check button - shown for all patients */}
+                      </button>
+
+                      {/* Review Vital Signs button - shown for all patients */}
                       <button
                         onClick={() => handleVitalSignsCheck(c)}
                         style={{ 
@@ -379,30 +334,8 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
                         }}
                       >
                         <Activity size={15} />
-                        {c.vitalSignsChecked ? 'Review Vital Signs' : 'Vital Signs Check'}
+                        {c.vitalSignsChecked ? 'Review Vital Signs' : 'Review Vital Signs'}
                       </button>
-                      
-                      {/* Vaccination Check button - shown when vaccination service is selected */}
-                      {(c.purpose && requiresVaccination(c.purpose)) && (
-                        <button
-                          onClick={() => handleVaccinationCheck(c)}
-                          style={{ 
-                            padding: '6px 12px', 
-                            borderRadius: '4px', 
-                            backgroundColor: c.vaccinationCompleted ? '#064e3b' : '#0f766e',
-                            color: '#fff',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                        >
-                          <Shield size={15} />
-                          {c.vaccinationCompleted ? 'Review Vaccination' : 'Vaccination Check'}
-                        </button>
-                      )}
                         
                       {/* Show additional indicator for required vital signs */}
                       {c.purpose && requiresVitalSigns(c.purpose) && !c.vitalSignsChecked && (
@@ -418,24 +351,6 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
                           border: '1px solid #fbbf24'
                         }}>
                           <Activity size={15} />
-                          Required
-                        </div>
-                      )}
-                      
-                      {/* Show additional indicator for required vaccination */}
-                      {c.purpose && requiresVaccination(c.purpose) && !c.vaccinationCompleted && (
-                        <div style={{
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          backgroundColor: '#7c2d12',
-                          color: '#fbbf24',
-                          fontSize: '12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          border: '1px solid #fbbf24'
-                        }}>
-                          <Shield size={15} />
                           Required
                         </div>
                       )}
@@ -516,7 +431,8 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
             )}
           </div>        </div>
       </div>
-        {/* Vital Signs Check Modal */}
+      
+      {/* Vital Signs Check Modal */}
       {showVitalSignsModal && (
         <VitalSignsCheck
           show={showVitalSignsModal}
@@ -525,22 +441,9 @@ export default function CheckUpToday({ showDateTimePerPatient }) {
           onComplete={(updatedCheckup) => {
             handleVitalSignsComplete(updatedCheckup);
             setShowVitalSignsModal(false);
-          }}        />
-      )}
-      
-      {/* Vaccination Check Modal */}
-      {showVaccinationModal && (
-        <VaccinationCheck
-          show={showVaccinationModal}
-          onHide={() => setShowVaccinationModal(false)}
-          patient={selectedPatient}
-          onComplete={(updatedCheckup) => {
-            handleVaccinationComplete(updatedCheckup);
-            setShowVaccinationModal(false);
           }}
         />
       )}
     </div>
-  </div>
   );
 }

@@ -406,3 +406,189 @@
   max-width: 800px;
   margin: 20px auto;
 }
+
+/* Prescription Dropdown System Styles */
+.prescription-dropdown-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.selected-medications {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.medication-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  color: #cbd5e1;
+  font-size: 0.875rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.medication-item.custom {
+  border-left: 3px solid #38bdf8;
+}
+
+.medication-item span {
+  flex-grow: 1;
+  white-space: pre-wrap;
+  text-align: left;
+}
+
+.remove-medication-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.remove-medication-btn:hover {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.dosage-select {
+  padding: 6px 10px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  min-width: 120px;
+  margin: 0 12px;
+}
+
+.add-medication-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  position: relative;
+}
+
+.add-medication-btn, .add-custom-btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.add-medication-btn {
+  background-color: #0e7490;
+  border: none;
+  color: white;
+}
+
+.add-medication-btn:hover {
+  background-color: #0891b2;
+}
+
+.add-custom-btn {
+  background: transparent;
+  border: 1px solid #475569;
+  color: #94a3b8;
+}
+
+.add-custom-btn:hover {
+  background-color: #334155;
+  color: #e2e8f0;
+}
+
+.medications-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+  margin-top: 4px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.medication-search {
+  padding: 8px;
+  border-bottom: 1px solid #334155;
+  position: sticky;
+  top: 0;
+  background: #1e293b;
+  z-index: 11;
+}
+
+.medication-search-input {
+  width: 100%;
+  padding: 8px 10px;
+  color: #cbd5e1;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.medication-search-input:focus {
+  border-color: #38bdf8;
+}
+
+.medication-dropdown-item {
+  padding: 10px 12px;
+  color: #cbd5e1;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-align: left;
+}
+
+.medication-dropdown-item:hover {
+  background-color: #334155;
+}
+
+.chevron-up {
+  transform: rotate(180deg);
+  transition: transform 0.2s ease;
+}
+
+/* Prescription Display Styles */
+.prescription-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.prescription-item {
+  padding: 8px 12px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}

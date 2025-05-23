@@ -9,6 +9,7 @@ const DATA_DIR = path.join(__dirname, '..', 'data');
 const APPOINTMENTS_FILE = path.join(DATA_DIR, 'appointments.json');
 const TODAYS_CHECKUPS_FILE = path.join(DATA_DIR, 'todaysCheckups.json');
 const SESSION_HISTORY_FILE = path.join(DATA_DIR, 'sessionHistory.json');
+const VITAL_SIGNS_FILE = path.join(DATA_DIR, 'vitalSigns.json');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -1404,6 +1405,109 @@ const scheduleAppointmentCheck = () => {
 
 // Start the scheduler
 scheduleAppointmentCheck();
+
+// In-memory storage for vital signs data
+let vitalSigns = loadDataFromFile(VITAL_SIGNS_FILE, []);
+
+// Endpoint to record vital signs
+router.post('/vital-signs', (req, res) => {
+  try {
+    const vitalSignsData = req.body;
+    
+    if (!vitalSignsData) {
+      return res.status(400).json({
+        message: 'Vital signs data is required'
+      });
+    }
+    
+    // Add ID and timestamp if not provided
+    const newVitalSignsRecord = {
+      ...vitalSignsData,
+      id: vitalSignsData.id || `vs_${Date.now()}`,
+      recordedAt: vitalSignsData.recordedAt || new Date().toISOString()
+    };
+    
+    // Add to the collection
+    vitalSigns.push(newVitalSignsRecord);
+    
+    // Save to file
+    saveDataToFile(VITAL_SIGNS_FILE, vitalSigns);
+    
+    console.log(`[API] Recorded vital signs for patient: ${newVitalSignsRecord.patientName || 'Unknown'}`);
+    
+    // Also update the patient's checkup record if it exists
+    if (newVitalSignsRecord.checkupId) {
+      const checkupIndex = todaysCheckUps.findIndex(c => c.id === newVitalSignsRecord.checkupId);
+      if (checkupIndex !== -1) {
+        todaysCheckUps[checkupIndex] = {
+          ...todaysCheckUps[checkupIndex],
+          vitalSigns: newVitalSignsRecord,
+          vitalSignsChecked: true
+        };
+        
+        saveDataToFile(TODAYS_CHECKUPS_FILE, todaysCheckUps);
+        console.log(`[API] Updated checkup record with vital signs for: ${newVitalSignsRecord.patientName || 'Unknown'}`);
+      }
+    }
+    
+    res.status(201).json({
+      message: 'Vital signs recorded successfully',
+      vitalSigns: newVitalSignsRecord
+    });
+    
+  } catch (error) {
+    console.error('[API] Error recording vital signs:', error);
+    res.status(500).json({
+      message: 'Failed to record vital signs',
+      error: error.message
+    });
+  }
+});
+
+// Endpoint to get vital signs by patient ID
+router.get('/vital-signs/patient/:patientId', (req, res) => {
+  try {
+    const { patientId } = req.params;
+    
+    // Filter vital signs for this patient - convert patientId to the same type for comparison
+    // It could be a string or a number in the database, so convert both to strings for comparison
+    const patientVitalSigns = vitalSigns.filter(vs => 
+      vs.patientId && vs.patientId.toString() === patientId.toString()
+    );
+    
+    res.json(patientVitalSigns);
+  } catch (error) {
+    console.error('[API] Error fetching vital signs:', error);
+    res.status(500).json({
+      message: 'Failed to fetch vital signs',
+      error: error.message
+    });
+  }
+});
+
+// Endpoint to get a specific vital signs record
+router.get('/vital-signs/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Find the vital signs record
+    const vitalSignsRecord = vitalSigns.find(vs => vs.id === id);
+    
+    if (!vitalSignsRecord) {
+      return res.status(404).json({
+        message: 'Vital signs record not found'
+      });
+    }
+    
+    res.json(vitalSignsRecord);
+  } catch (error) {
+    console.error('[API] Error fetching vital signs record:', error);
+    res.status(500).json({
+      message: 'Failed to fetch vital signs record',
+      error: error.message
+    });
+  }
+});
 
 module.exports = router;
 

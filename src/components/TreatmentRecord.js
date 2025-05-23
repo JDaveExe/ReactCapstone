@@ -1,72 +1,60 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/TreatmentRecord.css';
+import VitalSignsHistory from './VitalSignsHistory';
+import { Button } from 'react-bootstrap';
 
-const TreatmentRecord = () => {
+const TreatmentRecord = ({ member, onBack }) => {
   const [formData, setFormData] = useState({
-    familyNumber: '',
-    name: '',
-    address: '',
-    philHealthNumber: '',
-    sex: '',
-    civilStatus: '',
-    birthMonth: '',
-    birthDay: '',
-    birthYear: '',
-    memberType: 'member',
-    // Treatment record fields - left column
-    leftDate: '',
-    leftAge: '',
-    leftCC: '',
-    leftTemp: '',
-    leftO2SAT: '',
-    leftP: '',
-    leftHT: '',
-    leftR: '',
-    leftWT: '',
-    leftBP: '',
-    leftVS: '',
-    // Treatment record fields - right column
-    rightDate: '',
-    rightAge: '',
-    rightCC: '',
-    rightTemp: '',
-    rightO2SAT: '',
-    rightP: '',
-    rightHT: '',
-    rightR: '',
-    rightWT: '',
-    rightBP: '',
-    rightVS: '',
+    familySurname: member?.familyName || member?.familyId || '',
+    familyId: member?.familyId || '',
+    address: member?.address || '',
+    philHealthNumber: member?.philHealthNumber || '',
+    sex: member?.sex || member?.gender || '',
+    civilStatus: member?.civilStatus || '',
+    dateOfBirth: member?.dateOfBirth || '',
+    memberType: member?.memberType || 'member',
+    // Treatment record fields will be managed differently now
   });
 
   const [age, setAge] = useState('');
+  const [showVitalSignsHistory, setShowVitalSignsHistory] = useState(false);
 
   useEffect(() => {
-    // Calculate age when birth date fields change
-    if (formData.birthYear && formData.birthMonth && formData.birthDay) {
-      const birthDate = new Date(
-        parseInt(formData.birthYear), 
-        parseInt(formData.birthMonth) - 1,  // JavaScript months are 0-indexed
-        parseInt(formData.birthDay)
-      );
-      
-      const today = new Date();
-      let calculatedAge = today.getFullYear() - birthDate.getFullYear();
-      
-      // Adjust age if birthday hasn't occurred yet this year
-      const isBirthdayPassed = 
-        today.getMonth() > birthDate.getMonth() || 
-        (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
-      
-      if (!isBirthdayPassed) {
-        calculatedAge--;
+    // Calculate age when dateOfBirth changes
+    if (formData.dateOfBirth) {
+      try {
+        const birthDate = new Date(formData.dateOfBirth);
+        const today = new Date();
+        let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+          calculatedAge--;
+        }
+        setAge(calculatedAge >= 0 ? calculatedAge.toString() : '');
+      } catch (e) {
+        setAge(''); // Invalid date format
       }
-      
-      setAge(calculatedAge >= 0 ? calculatedAge.toString() : '');
     } else {
       setAge('');
     }
-  }, [formData.birthYear, formData.birthMonth, formData.birthDay]);
+  }, [formData.dateOfBirth]);
+
+  // New useEffect to synchronize formData with member prop
+  useEffect(() => {
+    if (member) {
+      setFormData(prevFormData => ({
+        ...prevFormData, // Preserve existing treatment data and other non-member-derived fields
+        familySurname: member.familyName || member.familyId || '',
+        familyId: member.familyId || '',
+        address: member.address || '',
+        philHealthNumber: member.philHealthNumber || '',
+        sex: member.sex || member.gender || '',
+        civilStatus: member.civilStatus || '', // Ensure civilStatus is updated from member prop
+        dateOfBirth: member.dateOfBirth || '',
+        memberType: member.memberType || 'member', // Update memberType from prop, default if not present
+      }));
+    }
+  }, [member]); // Dependency array includes member
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -75,15 +63,24 @@ const TreatmentRecord = () => {
       [name]: value
     });
   };
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Form data submitted:', formData);
-    
-    // Show success message (in real app would save to backend)
-    alert('Treatment record saved successfully!');
-    
-    // Here you would typically call an API endpoint to save the data
-    // Example: await api.savePatientTreatment(formData);
+
+  // Updated formatDate to handle YYYY-MM-DD or return --- if not valid
+  const formatDateForDisplay = (dateString) => {
+    if (!dateString) return '---';
+    // Check if it's already in YYYY-MM-DD format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      try {
+        const date = new Date(dateString + 'T00:00:00'); // Ensure correct parsing by adding time component for UTC
+        const monthName = months.find(m => m.value === (date.getMonth() + 1).toString())?.label || '';
+        if (monthName) {
+          return `${monthName} ${date.getDate()}, ${date.getFullYear()}`;
+        }
+        return dateString; // Fallback to YYYY-MM-DD if month name not found
+      } catch (err) {
+        return dateString; // Fallback if date parsing fails
+      }
+    }
+    return '---'; // If not in YYYY-MM-DD or invalid
   };
 
   // Generate month options
@@ -114,250 +111,175 @@ const TreatmentRecord = () => {
     value: (currentYear - i).toString(),
     label: (currentYear - i).toString()
   }));
-
-  // Field group component to reduce repetition
-  const VitalSignsField = ({ prefix, label, name, value }) => (
-    <div className="form-field">
-      <label>{label}:</label>
-      <input 
-        type="text" 
-        name={`${prefix}${name}`} 
-        value={value} 
-        onChange={handleChange} 
-      />
-    </div>
-  );
-
-  // Treatment record column component
-  const TreatmentColumn = ({ side }) => {
-    const prefix = side === 'left' ? 'left' : 'right';
-    
-    return (
-      <div className="treatment-record-column">
-        <div className="form-row">
-          <VitalSignsField 
-            prefix={prefix} 
-            label="Date" 
-            name="Date" 
-            value={formData[`${prefix}Date`]} 
-          />
-          <VitalSignsField 
-            prefix={prefix} 
-            label="Age" 
-            name="Age" 
-            value={formData[`${prefix}Age`]} 
-          />
-        </div>
-
-        <div className="form-row">
-          <div className="form-field cc-field">
-            <label>CC:</label>
-            <textarea 
-              name={`${prefix}CC`} 
-              value={formData[`${prefix}CC`]} 
-              onChange={handleChange} 
-              placeholder="Chief Complaint"
-            />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <VitalSignsField 
-            prefix={prefix} 
-            label="Temp" 
-            name="Temp" 
-            value={formData[`${prefix}Temp`]} 
-          />
-          <VitalSignsField 
-            prefix={prefix} 
-            label="O2 SAT" 
-            name="O2SAT" 
-            value={formData[`${prefix}O2SAT`]} 
-          />
-        </div>
-
-        <div className="form-row">
-          <VitalSignsField 
-            prefix={prefix} 
-            label="P" 
-            name="P" 
-            value={formData[`${prefix}P`]} 
-          />
-          <VitalSignsField 
-            prefix={prefix} 
-            label="HT" 
-            name="HT" 
-            value={formData[`${prefix}HT`]} 
-          />
-        </div>
-
-        <div className="form-row">
-          <VitalSignsField 
-            prefix={prefix} 
-            label="R" 
-            name="R" 
-            value={formData[`${prefix}R`]} 
-          />
-          <VitalSignsField 
-            prefix={prefix} 
-            label="WT" 
-            name="WT" 
-            value={formData[`${prefix}WT`]} 
-          />
-        </div>
-
-        <div className="form-row">
-          <VitalSignsField 
-            prefix={prefix} 
-            label="BP" 
-            name="BP" 
-            value={formData[`${prefix}BP`]} 
-          />
-          <VitalSignsField 
-            prefix={prefix} 
-            label="V/S" 
-            name="VS" 
-            value={formData[`${prefix}VS`]} 
-          />
-        </div>
-      </div>
-    );
+  const labelStyle = { color: '#38bdf8', fontSize: '14px' };
+  const readOnlyInputBaseStyle = {
+    background: '#1e293b',
+    color: '#e5e7eb',
+    borderColor: '#334155',
+    width: '100%',
+    padding: '12px',
+    borderRadius: '6px',
+    boxSizing: 'border-box', // Ensure padding doesn't affect overall width
   };
+  const readOnlyInputStyle = {
+    ...readOnlyInputBaseStyle,
+    cursor: 'not-allowed',
+  };
+  const disabledSelectStyle = {
+    ...readOnlyInputBaseStyle,
+    appearance: 'none', // Removes default system appearance (like arrows)
+    cursor: 'not-allowed',
+    paddingRight: '12px', // Ensure text doesn't overlap where an arrow might have been
+  };
+
   return (
-    <div className="treatment-record dashboard-card">
-      <h2 className="treatment-record-title dashboard-title">Individual Treatment Record</h2>
+    <div className="treatment-record dashboard-card" style={{ 
+      backgroundColor: '#0f172a', 
+      borderRadius: '8px', 
+      padding: '20px',
+      color: '#e5e7eb',
+      width: '85%',
+      margin: '0 auto',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+    }}>
+      {/* Blue title bar header */}
+      <div style={{ 
+        backgroundColor: '#38bdf8', 
+        padding: '15px',
+        borderRadius: '5px',
+        marginBottom: '20px',
+        textAlign: 'center',
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: '18px'
+      }}>
+        Individual Treatment Record
+      </div>
       
-      <form onSubmit={handleSubmit}>
-        <div className="personal-info-section">
-          <div className="form-row">
-            <div className="form-field family-number">
-              <label>Family Number:</label>
-              <input 
-                type="text" 
-                name="familyNumber" 
-                value={formData.familyNumber} 
-                onChange={handleChange} 
-              />
+      <form> {/* Removed onSubmit={handleSubmit} */}
+        <div className="personal-info-section" style={{ 
+          backgroundColor: '#1e293b', 
+          padding: '20px', 
+          borderRadius: '8px',
+          marginBottom: '20px',
+          border: '1px solid #334155'
+        }}>
+          {/* Row 1: Name (First, Middle, Last, Suffix) */}
+          <div className="form-row" style={{ display: 'flex', gap: '15px', marginBottom: '15px', flexWrap: 'wrap' }}>
+            <div className="form-field" style={{ flex: 1, minWidth: '150px' }}>
+              <label style={labelStyle}>First Name:</label>
+              <input type="text" value={member?.firstName || ''} readOnly style={readOnlyInputStyle} />
+            </div>
+            <div className="form-field" style={{ flex: 1, minWidth: '150px' }}>
+              <label style={labelStyle}>Middle Name:</label>
+              <input type="text" value={member?.middleName || ''} readOnly style={readOnlyInputStyle} />
+            </div>
+            <div className="form-field" style={{ flex: 1, minWidth: '150px' }}>
+              <label style={labelStyle}>Last Name:</label>
+              <input type="text" value={member?.lastName || ''} readOnly style={readOnlyInputStyle} />
+            </div>
+            <div className="form-field" style={{ flex: '0 1 100px', minWidth: '80px' }}>
+              <label style={labelStyle}>Suffix:</label>
+              <input type="text" value={member?.suffix || ''} readOnly style={readOnlyInputStyle} />
             </div>
           </div>
 
-          <div className="form-row">
-            <div className="form-field name-field">              <label className="dashboard-label">Name:</label>
-              <input 
-                type="text" 
-                name="name" 
-                value={formData.name} 
-                onChange={handleChange} 
-                className="dashboard-input"
-              />
-            </div>
-            <div className="form-field sex-field">
-              <label className="dashboard-label">Sex:</label>
-              <select
-                name="sex"
-                value={formData.sex}
-                onChange={handleChange}
-                className="dashboard-select"
-              >
-                <option value="">Select</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-              </select>
-            </div>
-            <div className="form-field civil-status-field">
-              <label>Civil Status:</label>
-              <select
-                name="civilStatus"
-                value={formData.civilStatus}
-                onChange={handleChange}
-              >
-                <option value="">Select</option>
-                <option value="Single">Single</option>
-                <option value="Married">Married</option>
-                <option value="Widowed">Widowed</option>
-                <option value="Divorced">Divorced</option>
-                <option value="Separated">Separated</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-field address-field">
-              <label>Address:</label>
+          {/* Row 2: Address */}
+          <div className="form-row" style={{ display: 'flex', marginBottom: '15px' }}>
+            <div className="form-field address-field" style={{ flex: '1', minWidth: '200px', width: '100%' }}>
+              <label style={labelStyle}>Address:</label>
               <input 
                 type="text" 
                 name="address" 
-                value={formData.address} 
-                onChange={handleChange} 
+                value={typeof formData.address === 'object' ? 
+                  (formData.address.street || formData.address.barangay || formData.address.city || formData.address.region ? // Check if any part of address exists
+                    `${formData.address.houseNo || ''} ${formData.address.street || ''}, ${formData.address.barangay || ''}, ${formData.address.city || 'Pasig'}, ${formData.address.region || 'Metro Manila'}`.replace(/^,|,$/g, '').replace(/,\s*,/g, ',').trim() : 
+                    '' // Display empty if address object is empty
+                  ) : formData.address} 
+                readOnly
+                style={readOnlyInputStyle}
               />
-            </div>
-            
-            <div className="form-field dob-field">
-              <label>Date of Birth:</label>
-              <div className="dob-container">
-                <div className="dob-inputs">
-                  <select
-                    name="birthMonth"
-                    value={formData.birthMonth}
-                    onChange={handleChange}
-                  >
-                    <option value="">Month</option>
-                    {months.map(month => (
-                      <option key={month.value} value={month.value}>
-                        {month.label}
-                      </option>
-                    ))}
-                  </select>
-                  
-                  <select
-                    name="birthDay"
-                    value={formData.birthDay}
-                    onChange={handleChange}
-                  >
-                    <option value="">Day</option>
-                    {days.map(day => (
-                      <option key={day.value} value={day.value}>
-                        {day.label}
-                      </option>
-                    ))}
-                  </select>
-                  
-                  <select
-                    name="birthYear"
-                    value={formData.birthYear}
-                    onChange={handleChange}
-                  >
-                    <option value="">Year</option>
-                    {years.map(year => (
-                      <option key={year.value} value={year.value}>
-                        {year.label}
-                      </option>
-                    ))}
-                  </select>
+              {typeof formData.address === 'object' && formData.address.barangay && (
+                <div style={{ 
+                  fontSize: '14px', 
+                  color: '#94a3b8', 
+                  marginTop: '6px' 
+                }}>
+                  Barangay: {formData.address.barangay}
                 </div>
-                <div className="age-display">
-                  Age: {age}
-                </div>
-              </div>
+              )}
             </div>
           </div>
 
-          <div className="form-row">
-            <div className="form-field philhealth-field">
-              <label>PhilHealth Number:</label>
+          {/* Row 3: Date of Birth, Age, Gender & Civil Status */}
+          <div className="form-row" style={{ display: 'flex', gap: '15px', marginBottom: '15px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            {/* Date of Birth Field */}
+            <div className="form-field" style={{ flex: '1.5 1 200px', minWidth: '180px' }}>
+              <label style={labelStyle}>Date of Birth:</label>
+              <input 
+                type="text" 
+                name="dateOfBirth"
+                value={formData.dateOfBirth ? formData.dateOfBirth.split('T')[0] : ''} // Display YYYY-MM-DD
+                readOnly 
+                style={readOnlyInputStyle} 
+              />
+              <div style={{ marginTop: '6px', fontSize: '14px', color: '#94a3b8' }}>
+                {formatDateForDisplay(formData.dateOfBirth)}
+              </div>
+            </div>
+
+            {/* Age Field */}
+            <div className="form-field" style={{ flex: '0.5 1 80px', minWidth: '70px' }}>
+              <label style={labelStyle}>Age:</label>
+              <input 
+                type="text" 
+                value={age || '---'} 
+                readOnly 
+                style={{...readOnlyInputStyle, textAlign: 'center'}} 
+              />
+            </div>
+
+            {/* Gender Field */}
+            <div className="form-field" style={{ flex: '1 1 150px', minWidth: '120px' }}>
+              <label style={labelStyle}>Gender:</label>
+              <input 
+                type="text" 
+                value={formData.sex || '---'} 
+                readOnly 
+                style={readOnlyInputStyle} 
+              />
+            </div>
+
+            {/* Civil Status Field */}
+            <div className="form-field" style={{ flex: '1 1 150px', minWidth: '120px' }}>
+              <label style={labelStyle}>Civil Status:</label>
+              <input 
+                type="text" 
+                value={formData.civilStatus || '---'} 
+                readOnly 
+                style={readOnlyInputStyle} 
+              />
+            </div>
+          </div>          {/* Row 4: PhilHealth Information */}
+          <div className="form-row" style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap' }}>
+            <div className="form-field philhealth-field" style={{ flex: '0 0 40%', minWidth: '250px' }}>
+              <label style={labelStyle}>PhilHealth Number:</label>
               <input 
                 type="text" 
                 name="philHealthNumber" 
-                value={formData.philHealthNumber} 
-                onChange={handleChange} 
+                value={formData.memberType === 'nonMember' ? '---' : formData.philHealthNumber} 
+                readOnly 
+                style={readOnlyInputStyle}
               />
+              {formData.memberType === 'member' && (
+                <div style={{ fontSize: '14px', color: '#94a3b8', marginTop: '6px' }}>
+                  Member ID: {formData.philHealthNumber || 'Not Available'}
+                </div>
+              )}
             </div>
-          </div>
-
-          <div className="form-row member-type-row">
-            <div className="member-type-options">
+            <div className="member-type-options" style={{ display: 'flex', gap: '15px', marginTop: '22px', alignItems: 'flex-start' }}>
               <div className="member-option">
-                <label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'white' }}>
                   <input
                     type="radio"
                     name="memberType"
@@ -369,19 +291,7 @@ const TreatmentRecord = () => {
                 </label>
               </div>
               <div className="member-option">
-                <label>
-                  <input
-                    type="radio"
-                    name="memberType"
-                    value="dependent"
-                    checked={formData.memberType === 'dependent'}
-                    onChange={(e) => setFormData({...formData, memberType: e.target.value})}
-                  />
-                  Dependent
-                </label>
-              </div>
-              <div className="member-option">
-                <label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'white' }}>
                   <input
                     type="radio"
                     name="memberType"
@@ -394,14 +304,36 @@ const TreatmentRecord = () => {
               </div>
             </div>
           </div>
+          
+          {/* Vital Signs History Button */}
+          <div className="form-row" style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
+            <Button
+              variant="primary"
+              onClick={() => setShowVitalSignsHistory(true)}
+              style={{
+                backgroundColor: '#38bdf8',
+                borderColor: '#38bdf8',
+                padding: '10px 20px',
+                borderRadius: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+              }}
+            >
+              <i className="bi bi-activity"></i>
+              <i className="bi bi-clock-history"></i>
+              View Vital Signs History
+            </Button>
+          </div>
         </div>
-
-        <div className="treatment-records-container">
-          <TreatmentColumn side="left" />
-          <TreatmentColumn side="right" />
-        </div>        <div className="form-actions">
-          <button type="submit" className="submit-button dashboard-btn">Save Record</button>
-        </div>
+        
+        {/* Vital Signs History Modal */}
+        <VitalSignsHistory 
+          show={showVitalSignsHistory} 
+          onHide={() => setShowVitalSignsHistory(false)} 
+          patientId={member?.id} 
+        />
       </form>
     </div>
   );

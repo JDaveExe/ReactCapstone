@@ -1,0 +1,150 @@
+/* Prescription components styling */
+.prescriptions-container {
+  padding: 20px;
+  max-width: 100%;
+  color: #f8fafc;
+}
+
+.prescriptions-container h1 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #f8fafc;
+}
+
+.prescriptions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-select {
+  background-color: #1e293b;
+  color: #f8fafc;
+  border: 1px solid #334155;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.prescriptions-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.prescription-card {
+  background-color: #1e293b;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid #334155;
+}
+
+.prescription-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.prescription-header h2 {
+  font-size: 18px;
+  margin: 0;
+  color: #f8fafc;
+  flex: 1;
+}
+
+.prescription-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.prescription-dosage,
+.prescription-doctor,
+.prescription-purpose {
+  color: #cbd5e1;
+  font-size: 15px;
+}
+
+.prescription-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.complete-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #0d9488;
+  color: #f0fdfa;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.complete-button:hover {
+  background-color: #0f766e;
+}
+
+.prescriptions-loading,
+.prescriptions-error,
+.prescriptions-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 50px 20px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.prescriptions-loading .spinner {
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.history-list {
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+}
+
+.history-card {
+  border-left: 4px solid #0369a1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .prescriptions-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .prescriptions-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}

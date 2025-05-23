@@ -1,0 +1,52 @@
+[
+  {
+    "id": 3,
+    "name": "Clarens Mirana",
+    "loggedInAt": "2025-05-22T02:18:19.710Z",
+    "queueNumber": 1,
+    "status": "Completed",
+    "purpose": "Out-Patient Consultation",
+    "vitalSigns": {
+      "date": "2025-05-22",
+      "age": "30",
+      "cc": "Headache",
+      "temp": "37.2",
+      "o2sat": "80",
+      "pulse": "40",
+      "ht": "172",
+      "respiration": "30",
+      "wt": "79",
+      "bp": "75/120",
+      "patientId": 3,
+      "patientName": "Clarens Mirana",
+      "checkupId": 3,
+      "recordedAt": "2025-05-22T18:02:16.668Z"
+    },
+    "vitalSignsChecked": true
+  },
+  {
+    "id": 7,
+    "name": "Lia Ramos",
+    "loggedInAt": "2025-05-22T18:10:55.271Z",
+    "queueNumber": 2,
+    "status": "Waiting",
+    "purpose": "Dental Consultation & Procedure",
+    "vitalSigns": {
+      "date": "2025-05-22",
+      "age": "30",
+      "cc": "",
+      "temp": "",
+      "o2sat": "",
+      "pulse": "",
+      "ht": "",
+      "respiration": "",
+      "wt": "30",
+      "bp": "",
+      "patientId": 7,
+      "patientName": "Lia Ramos",
+      "checkupId": 7,
+      "recordedAt": "2025-05-22T18:38:57.464Z"
+    },
+    "vitalSignsChecked": true
+  }
+]

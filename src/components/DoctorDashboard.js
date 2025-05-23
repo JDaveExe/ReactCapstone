@@ -1,14 +1,14 @@
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, User, Calendar, CheckSquare, ChevronRight, Grid, List, Bell, Settings, LogOut, X, Menu, Activity, AlarmClock, FileText, Shield, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, User, Calendar, CheckSquare, ChevronRight, Grid, List, Bell, Settings, LogOut, X, Menu, Activity, AlarmClock, Shield, ChevronDown, ChevronUp } from 'lucide-react';
 import '../styles/SidebarDoc.css';
 import '../styles/DoctorDashboard.css';
 import DateTimeContext from '../contexts/DateTimeContext';
-import AdmittingData from './AdmittingData';
+// import AdmittingData from './AdmittingData'; // Removed as requested
 import ImmunisationH from './ImmunisationH';
 import Referral from './Referral';
 import TreatmentRecord from './TreatmentRecord';
-import ScheduleVisit from './ScheduleVisit';
+// import ScheduleVisit from './ScheduleVisit'; // Removed as requested
 import CKProfile from './CKProfile';
 import CheckupRecords from './CheckupRecords';
 import ScheduleSession from './ScheduleSession';
@@ -698,75 +698,11 @@ export default function DoctorDashboard() {
                     <div style={{ fontSize: '14px', color: '#94a3b8' }}>Previous medical records</div>
                   </div>
                 </button>
-                
-                <button 
-                  onClick={() => setActionView('schedule')}
-                  style={{ 
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '15px',
-                    background: '#1e293b', 
-                    padding: '20px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    color: 'white',
-                    textAlign: 'left',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <div style={{ 
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '40px',
-                    height: '40px',
-                    minWidth: '40px',
-                    background: '#38bdf8',
-                    borderRadius: '8px',
-                  }}>
-                    <Calendar size={22} color="#fff" />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>SCHEDULE VISIT</div>
-                    <div style={{ fontSize: '14px', color: '#94a3b8' }}>Set up new appointment</div>
-                  </div>
-                </button>
+                  {/* Schedule Visit button removed as requested */}
               </div>
               
               {/* Second row of buttons */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                <button 
-                  onClick={() => setActionView('admitting')}
-                  style={{ 
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '15px',
-                    background: '#1e293b', 
-                    padding: '20px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    color: 'white',
-                    textAlign: 'left',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <div style={{ 
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '40px',
-                    height: '40px',
-                    minWidth: '40px',
-                    background: '#38bdf8',
-                    borderRadius: '8px',
-                  }}>
-                    <FileText size={22} color="#fff" />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>ADMITTING DATA</div>
-                    <div style={{ fontSize: '14px', color: '#94a3b8' }}>Admission and discharge info</div>
-                  </div>
-                </button>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>                {/* Admitting Data button removed as requested */}
                 
                 <button 
                   onClick={() => setActionView('immunization')}
@@ -835,12 +771,11 @@ export default function DoctorDashboard() {
                 </button>
               </div>
             </div>
-          );
-        case 'treatment': return <TreatmentRecord member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
-        case 'admitting': return <AdmittingData member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
+          );        case 'treatment': return <TreatmentRecord member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
+        // case 'admitting': return <AdmittingData member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />; // Removed as requested
         case 'immunization': return <ImmunisationH member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
         case 'referral': return <Referral member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;        
-        case 'schedule': return <ScheduleVisit member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
+        // case 'schedule': return <ScheduleVisit member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />; // Removed as requested
         case 'registered-profile': return <RegisteredProfile patient={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
         default: setActionView(null);
       }
@@ -911,8 +846,7 @@ export default function DoctorDashboard() {
                     path.push(<span key="family" style={baseStyle}>{selectedFamily.familyName}</span>);
                   } else if (selectedFamily && selectedMember && actionView) {
                     path.push(<span key="db-link" style={linkStyle} onClick={() => { handleBackToFamilies(); setSelectedMember(null); setActionView(null); }}>Patient Database</span>);
-                    path.push(sep);
-                    path.push(<span key="family-link" style={linkStyle} onClick={() => { setSelectedMember(null); setActionView(null); }}>{selectedFamily.familyName}</span>);
+                    path.push(sep);                    path.push(<span key="family-link" style={linkStyle} onClick={() => { setSelectedMember(null); setActionView(null); }}>{selectedFamily.familyName}</span>);
                     path.push(sep);                    
                     path.push(<span key="member-link" style={linkStyle} onClick={() => { setActionView(null); }}>{selectedMember.name}</span>);
                     path.push(sep);
@@ -920,8 +854,8 @@ export default function DoctorDashboard() {
                     switch (actionView) {
                       case 'ck-profile': actionLabel = 'Profile'; break;
                       case 'treatment': actionLabel = 'Individual Treatment Record'; break;
-                      case 'schedule': actionLabel = 'Schedule Visit'; break;
-                      case 'admitting': actionLabel = 'Admitting Data'; break;
+                      // case 'schedule': actionLabel = 'Schedule Visit'; break; // Removed as requested
+                      // case 'admitting': actionLabel = 'Admitting Data'; break; // Removed as requested
                       case 'immunization': actionLabel = 'Immunization History'; break;
                       case 'referral': actionLabel = 'Referral'; break;
                       case 'registered-profile': actionLabel = 'Registered Profile'; break;
@@ -933,8 +867,7 @@ export default function DoctorDashboard() {
                   // List view mode
                   if (!selectedMember && !actionView) {
                     path.push(<span key="list" style={baseStyle}>Patient List</span>);
-                  } else if (selectedMember && actionView) {
-                    path.push(<span key="list-link" style={linkStyle} onClick={() => { setSelectedMember(null); setActionView(null); }}>Patient List</span>);
+                  } else if (selectedMember && actionView) {                    path.push(<span key="list-link" style={linkStyle} onClick={() => { setSelectedMember(null); setActionView(null); }}>Patient List</span>);
                     path.push(sep);                    
                     path.push(<span key="member-link" style={linkStyle} onClick={() => { setActionView(null); }}>{selectedMember.firstName} {selectedMember.lastName}</span>);
                     path.push(sep);
@@ -942,8 +875,8 @@ export default function DoctorDashboard() {
                     switch (actionView) {
                       case 'ck-profile': actionLabel = 'Profile'; break;
                       case 'treatment': actionLabel = 'Individual Treatment Record'; break;
-                      case 'schedule': actionLabel = 'Schedule Visit'; break;
-                      case 'admitting': actionLabel = 'Admitting Data'; break;
+                      // case 'schedule': actionLabel = 'Schedule Visit'; break; // Removed as requested
+                      // case 'admitting': actionLabel = 'Admitting Data'; break; // Removed as requested
                       case 'immunization': actionLabel = 'Immunization History'; break;
                       case 'referral': actionLabel = 'Referral'; break;
                       case 'registered-profile': actionLabel = 'Registered Profile'; break;

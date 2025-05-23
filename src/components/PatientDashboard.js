@@ -10,6 +10,8 @@ import AdmittingData from './AdmittingData';
 import TreatmentRecord from './TreatmentRecord';
 import CKProfile from './CKProfile';
 import RegisteredProfile from './RegisteredProfile';
+import ActivePrescriptions from './ActivePrescriptions';
+import PrescriptionHistory from './PrescriptionHistory';
 
 // SidebarItem Component
 function SidebarItem({ icon, label, active, collapsed, indent, onClick, isDropdownItem }) {
@@ -414,9 +416,22 @@ export default function PatientDashboard() {
           {activeSection === 'admitting-data' && (
             <AdmittingData />
           )}
-          
-          {activeSection === 'treatment-record' && (
-            <TreatmentRecord />
+            {activeSection === 'treatment-record' && (
+            <TreatmentRecord 
+              member={{
+                name: patient?.name || localStorage.getItem('userName') || localStorage.getItem('firstName') || 'Patient',
+                familyId: localStorage.getItem('familyId'),
+                philHealthNumber: localStorage.getItem('philHealthNumber'),
+                address: localStorage.getItem('address'),
+                sex: localStorage.getItem('sex'),
+                civilStatus: localStorage.getItem('civilStatus'),
+                birthMonth: localStorage.getItem('birthMonth'),
+                birthDay: localStorage.getItem('birthDay'),
+                birthYear: localStorage.getItem('birthYear'),
+                memberType: localStorage.getItem('memberType')
+              }}
+              onBack={() => setActiveSection('dashboard')}
+            />
           )}
           
           {activeSection === 'checkup-history' && (
@@ -433,12 +448,21 @@ export default function PatientDashboard() {
               onBack={() => setActiveSection('dashboard')} 
             />
           )}
+            {activeSection === 'active-prescriptions' && (
+            <ActivePrescriptions />
+          )}
+          
+          {activeSection === 'prescription-history' && (
+            <PrescriptionHistory />
+          )}
           
           {(activeSection !== 'dashboard' && 
             activeSection !== 'admitting-data' && 
             activeSection !== 'treatment-record' && 
             activeSection !== 'checkup-history' && 
-            activeSection !== 'profile') && (
+            activeSection !== 'profile' &&
+            activeSection !== 'active-prescriptions' &&
+            activeSection !== 'prescription-history') && (
             <div style={{ color: '#64748b', textAlign: 'center', marginTop: 80, fontSize: 20 }}>
               This section ({activeSection.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}) is under development.
             </div>

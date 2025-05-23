@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useContext } from 'react'; // Added useRef and useContext
 import axios from 'axios';
-import { ChevronDown, ChevronUp, Search, Settings, Bell, LogOut, User, Menu, X, Maximize, BarChart2, Circle, Calendar, Square, ChevronRight, Activity, AlarmClock, FileText, Shield, Grid, List, QrCode } from 'lucide-react'; // Added QrCode
+import { ChevronDown, ChevronUp, Search, Settings, Bell, LogOut, User, Menu, X, Maximize, BarChart2, Circle, Calendar, Square, ChevronRight, Activity, AlarmClock, Shield, Grid, List, QrCode, Heart } from 'lucide-react'; // Added QrCode and Heart
 import DateTimeContext from '../contexts/DateTimeContext';
 import { useNavigate } from 'react-router-dom';
 import '../styles/DashboardAdm.css';
@@ -13,16 +13,17 @@ import CheckUpToday from './CheckUpToday';
 import UnsortedMembers from './UnsortedMembers';
 import CKProfile from './CKProfile';
 import TreatmentRecord from './TreatmentRecord';
-import AdmittingData from './AdmittingData';
+// import AdmittingData from './AdmittingData'; // Removed as requested
 import ImmunisationH from './ImmunisationH';
 import Referral from './Referral';
 import SessionsList from './SessionsList';
 import Sessions from './Sessions';
 import ScheduleSession from './ScheduleSession';
-import ScheduleVisit from './ScheduleVisit'; 
+// import ScheduleVisit from './ScheduleVisit'; // Removed as requested
 import RegisteredProfile from './RegisteredProfile';
 import SessionHistory from './SessionHistory';
 import ScheduledSession from './ScheduledSession';
+import VitalSignsCheck from './VitalSignsCheck';
 import { getPatients, getFamilies, getFamilyMembers, getSortedFamilies, addSurname, assignPatientToFamily } from '../services/api'; // Removed debugFamilyMembers and added addSurname
 import AddNewPatientForm from './AddNewPatientForm'; // Import AddNewPatientForm
 import { Button, Modal } from 'react-bootstrap'; // Import Button and Modal
@@ -198,6 +199,7 @@ export default function AdminDashboard() {
   const [familySearchTerm, setFamilySearchTerm] = useState('');
   const [currentSearchTerm, setCurrentSearchTerm] = useState(''); // Added this line
   const [patients, setPatients] = useState([]);
+  const [showVitalSignsModal, setShowVitalSignsModal] = useState(false); // For showing/hiding the Vital Signs Check modal
   const { getCurrentDate, isSimulated } = useContext(DateTimeContext);
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'admin');
@@ -324,8 +326,7 @@ export default function AdminDashboard() {
     console.log(`Clicking on family: ${JSON.stringify(family)}`);
     setSelectedFamily(family);
     setCurrentSearchTerm(''); // Reset search term when a new family is clicked
-  };
-  const handleBackToFamilies = () => {
+  };  const handleBackToFamilies = () => {
     setSelectedFamily(null);
     setSelectedMember(null);
     setActionView(null);
@@ -335,6 +336,12 @@ export default function AdminDashboard() {
     setCooldownTimer(0);
     setShowAssignFamilyModal(false); // Close assign modal if open
     setShowQrModal(false); // Close QR modal if open
+    setShowVitalSignsModal(false); // Close vital signs modal if open
+  };
+  const handleVitalSignsCheck = () => {
+    console.log('Vital Signs Check button clicked', { selectedMember });
+    setShowVitalSignsModal(true);
+    console.log('showVitalSignsModal set to:', true);
   };
 
   const handleDeletePatientData = () => {
@@ -789,7 +796,7 @@ export default function AdminDashboard() {
                     <Button variant="info" onClick={printQRCode}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-printer" viewBox="0 0 16 16" style={{marginRight: '5px'}}>
                         <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
-                        <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
+                        <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1-1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
                       </svg>
                       Print QR Code
                     </Button>
@@ -1057,45 +1064,7 @@ export default function AdminDashboard() {
                     <div className="action-title">INDIVIDUAL TREATMENT RECORD</div>
                     <div className="action-desc">Previous medical records</div>
                   </div>
-                </button>
-                <button className="action-button" onClick={() => setActionView('schedule')}>
-                  <div style={{ 
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '40px',
-                    height: '40px',
-                    minWidth: '40px',
-                    background: '#38bdf8',
-                    borderRadius: '8px',
-                    marginBottom: 8
-                  }}>
-                    <Calendar size={22} color="#fff" />
-                  </div>
-                  <div>
-                    <div className="action-title">SCHEDULE VISIT</div>
-                    <div className="action-desc">Set up new appointment</div>
-                  </div>
-                </button>
-                <button className="action-button" onClick={() => setActionView('admitting')}>
-                  <div style={{ 
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '40px',
-                    height: '40px',
-                    minWidth: '40px',
-                    background: '#38bdf8',
-                    borderRadius: '8px',
-                    marginBottom: 8
-                  }}>
-                    <FileText size={22} color="#fff" />
-                  </div>
-                  <div>
-                    <div className="action-title">ADMITTING DATA</div>
-                    <div className="action-desc">Admission and discharge info</div>
-                  </div>
-                </button>
+                </button>                {/* Schedule Visit button removed as requested */}                {/* Admitting Data button removed as requested */}
                 <button className="action-button" onClick={() => setActionView('immunization')}>
                   <div style={{ 
                     display: 'flex',
@@ -1133,20 +1102,49 @@ export default function AdminDashboard() {
                     <div className="action-title">REFERRAL</div>
                     <div className="action-desc">Specialist referrals</div>
                   </div>
+                </button>                <button 
+                  className="action-button" 
+                  onClick={() => {
+                    console.log('Vital Signs Check button clicked', { patient: selectedMember });
+                    // Make sure selectedMember is correctly set before opening the modal
+                    if (selectedMember) {
+                      setShowVitalSignsModal(true);
+                    } else {
+                      console.error('No patient selected for vital signs check');
+                      alert('Error: No patient data available for vital signs check');
+                    }
+                  }}
+                >
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '40px',
+                    height: '40px',
+                    minWidth: '40px',
+                    background: '#38bdf8',
+                    borderRadius: '8px',
+                    marginBottom: 8
+                  }}>
+                    <Heart size={22} color="#fff" />
+                  </div>
+                  <div>
+                    <div className="action-title">VITAL SIGNS CHECK</div>
+                    <div className="action-desc">Record patient vitals</div>
+                  </div>
                 </button>
               </div>
             </div>
-          );
-        case 'treatment': 
+          );        case 'treatment': 
           return <TreatmentRecord member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
-        case 'admitting': 
-          return <AdmittingData member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
+        // case 'admitting': 
+        //   return <AdmittingData member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />; // Removed as requested
         case 'immunization': 
           return <ImmunisationH member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
         case 'referral': 
           return <Referral member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;        
-        case 'schedule': 
-          return <ScheduleVisit member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
+        // case 'schedule': 
+        //   return <ScheduleVisit member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />; // Removed as requested
         case 'registered-profile':
           return <RegisteredProfile patient={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
         case 'checkup_history_detail': // Added new case
@@ -1539,13 +1537,33 @@ export default function AdminDashboard() {
           </div>
         )}
       </>
-    );
-  }
-
+    );  }
   return (
-    <div className={`admin-dashboard ${collapsed ? 'collapsed' : ''}`} style={{ display: 'flex', height: '100vh', background: '#0f172a', color: '#fff' }}>
-      {/* Sidebar */}
-      <div className="sidebar" style={{ minWidth: collapsed ? 68 : 260, background: '#131e31', height: '100vh', position: 'fixed', left: 0, top: 0, zIndex: 10, transition: 'min-width 0.3s' }}>
+    <>
+      {/* VitalSignsCheck Modal - Positioned at the root level for proper rendering */}
+      <VitalSignsCheck
+        show={showVitalSignsModal}
+        onHide={() => {
+          console.log('Modal hide triggered');
+          setShowVitalSignsModal(false);
+        }}
+        patient={selectedMember || {}}
+        onComplete={(updatedPatient) => {
+          console.log('Vital signs recorded for:', updatedPatient);
+          if (selectedMember && updatedPatient) {
+            setSelectedMember({
+              ...selectedMember,
+              vitalSigns: updatedPatient.vitalSigns,
+              vitalSignsChecked: true
+            });
+          }
+          setShowVitalSignsModal(false);
+        }}
+      />
+      
+      <div className={`admin-dashboard ${collapsed ? 'collapsed' : ''}`} style={{ display: 'flex', height: '100vh', background: '#0f172a', color: '#fff' }}>
+        {/* Sidebar */}
+        <div className="sidebar" style={{ minWidth: collapsed ? 68 : 260, background: '#131e31', height: '100vh', position: 'fixed', left: 0, top: 0, zIndex: 10, transition: 'min-width 0.3s' }}>
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '20px', borderBottom: '1px solid #1e3256' }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, background: '#1d4ed8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1813,15 +1831,15 @@ export default function AdminDashboard() {
                     <span>Sign Out</span>
                   </div>
                 </div>
-              )}
-            </div>
+              )}          </div>
           </div>
-        </div>        
-        {/* Main dashboard content */}
+        </div>
+          {/* Main dashboard content */}
         <div style={{ padding: 24, flex: 1, overflowY: 'auto', height: 'calc(100vh - 65px)' }}>
           {renderContent()}
         </div>
       </div>
     </div>
+    </>
   );
 }

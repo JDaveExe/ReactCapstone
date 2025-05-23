@@ -44,7 +44,6 @@ const SessionHistory = () => {
   const toggleExpand = (historyId) => {
     setExpandedItem(current => current === historyId ? null : historyId);
   };
-
   useEffect(() => {
     const fetchSessionHistory = async () => {
       setIsLoading(true);
@@ -67,7 +66,27 @@ const SessionHistory = () => {
           return dateB - dateA;
         });
         
-        setSessionHistory(sortedHistory);
+        // Group sessions by patient name
+        const groupedByPatient = {};
+        
+        sortedHistory.forEach(session => {
+          const patientName = session.patientName || 'Unknown Patient';
+          
+          if (!groupedByPatient[patientName]) {
+            groupedByPatient[patientName] = {
+              patientName: patientName,
+              latestSession: session,
+              sessions: [session]
+            };
+          } else {
+            groupedByPatient[patientName].sessions.push(session);
+          }
+        });
+        
+        // Convert the grouped object back to an array
+        const groupedHistory = Object.values(groupedByPatient);
+        
+        setSessionHistory(groupedHistory);
       } catch (err) {
         console.error('[SessionHistory] Error fetching session history:', err);
         setError('Failed to fetch session history. Please try again later.');
@@ -111,50 +130,57 @@ const SessionHistory = () => {
     if (isNaN(date.getTime())) return 'Invalid Time';
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
   };
-
   // Filter the history list based on search and filters
-  const filteredHistory = sessionHistory.filter(session => {
-    // Handle different field names for patient name
-    const patientName = session.patientName || session.name || '';
-    const nameMatch = patientName.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredHistory = sessionHistory.filter(patientGroup => {
+    // Check if any of the patient's sessions match the criteria
+    const nameMatch = patientGroup.patientName.toLowerCase().includes(searchTerm.toLowerCase());
     
-    let dateMatch = true;
-    const sessionDate = new Date(session.completedAt || session.archivedAt);
-    if (isNaN(sessionDate.getTime())) return false; // Invalid date for session
-
+    // If filter is 'all' and name matches, include the whole group
+    if (filterOption === 'all' && nameMatch) {
+      return true;
+    }
+    
+    // For date filters, check if any session in the group matches
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Start of today
-
-    // Apply date filters
-    if (filterOption === 'today') {
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1); 
-      dateMatch = sessionDate >= today && sessionDate < tomorrow;
-    } else if (filterOption === 'yesterday') {
-      const yesterday = new Date(today);
-      yesterday.setDate(today.getDate() - 1);
-      dateMatch = sessionDate >= yesterday && sessionDate < today;
-    } else if (filterOption === 'thisWeek') {
-      const startOfWeek = new Date(today);
-      startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
-      startOfWeek.setHours(0,0,0,0);
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 7);
-      dateMatch = sessionDate >= startOfWeek && sessionDate < endOfWeek;
-    } else if (filterOption === 'thisMonth') {
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      endOfMonth.setHours(23, 59, 59, 999);
-      dateMatch = sessionDate >= startOfMonth && sessionDate <= endOfMonth;
-    } else if (filterOption === 'thisYear') {
-      const startOfYear = new Date(today.getFullYear(), 0, 1);
-      const endOfYear = new Date(today.getFullYear(), 11, 31);
-      endOfYear.setHours(23, 59, 59, 999);
-      dateMatch = sessionDate >= startOfYear && sessionDate <= endOfYear;
-    }
-    // 'all' option implies dateMatch remains true
-
-    return nameMatch && dateMatch;
+    
+    // Check if any session in the group matches the date filter
+    const hasMatchingSession = patientGroup.sessions.some(session => {
+      const sessionDate = new Date(session.completedAt || session.archivedAt);
+      if (isNaN(sessionDate.getTime())) return false; // Invalid date for session
+      
+      // Apply date filters
+      if (filterOption === 'today') {
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        return sessionDate >= today && sessionDate < tomorrow;
+      } else if (filterOption === 'yesterday') {
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        return sessionDate >= yesterday && sessionDate < today;
+      } else if (filterOption === 'thisWeek') {
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+        startOfWeek.setHours(0,0,0,0);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 7);
+        return sessionDate >= startOfWeek && sessionDate < endOfWeek;
+      } else if (filterOption === 'thisMonth') {
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        endOfMonth.setHours(23, 59, 59, 999);
+        return sessionDate >= startOfMonth && sessionDate <= endOfMonth;
+      } else if (filterOption === 'thisYear') {
+        const startOfYear = new Date(today.getFullYear(), 0, 1);
+        const endOfYear = new Date(today.getFullYear(), 11, 31);
+        endOfYear.setHours(23, 59, 59, 999);
+        return sessionDate >= startOfYear && sessionDate <= endOfYear;
+      }
+      
+      return true; // Default case
+    });
+    
+    return nameMatch && hasMatchingSession;
   });
 
   if (isLoading) {
@@ -191,28 +217,28 @@ const SessionHistory = () => {
             </select>
           </div>
         </div>
-      </div>
-
-      {filteredHistory.length === 0 ? (
+      </div>      {filteredHistory.length === 0 ? (
         <div className="no-sessions-message">
           <FileText size={48} />
           <p>No session history found that matches your criteria.</p>
         </div>
       ) : (
         <div className="session-history-list">
-          {filteredHistory.map(session => {
-            // Check if this item is the expanded one
-            const isExpanded = expandedItem === session.historyId;
-            const sessionDateValue = session.completedAt || session.archivedAt;
+          {filteredHistory.map(patientGroup => {
+            // Use the patient name as the key for expansion
+            const isExpanded = expandedItem === patientGroup.patientName;
+            // Use the latest session for the card header
+            const latestSession = patientGroup.sessions[0]; // The sessions are already sorted newest first
+            const sessionDateValue = latestSession.completedAt || latestSession.archivedAt;
 
             return (
               <div 
-                key={session.historyId} 
+                key={patientGroup.patientName} 
                 className={`session-history-card ${isExpanded ? 'expanded' : ''}`}
               >
                 <div 
                   className="session-history-card-header" 
-                  onClick={() => toggleExpand(session.historyId)}
+                  onClick={() => toggleExpand(patientGroup.patientName)}
                 >
                   <div className="header-main-info">
                     {isExpanded ? 
@@ -220,12 +246,14 @@ const SessionHistory = () => {
                       <ChevronRight size={24} className="expand-icon" />
                     }
                     <User size={20} className="patient-icon" />
-                    <span className="patient-name">{session.patientName || 'Unknown Patient'}</span>
+                    <span className="patient-name">{patientGroup.patientName}</span>
                   </div>
                 </div>
 
                 {isExpanded && (
                   <div className="session-history-card-body">
+                    {/* Latest session summary */}
+                    <h4 className="session-date-header">Latest Visit: {getFormattedDate(sessionDateValue)}</h4>
                     <div className="session-detail-item">
                       <Calendar size={18} className="detail-icon" />
                       <strong>Date:</strong>
@@ -239,22 +267,51 @@ const SessionHistory = () => {
                     <div className="session-detail-item">
                       <FileText size={18} className="detail-icon" />
                       <strong>Purpose:</strong>
-                      <span>{getDisplayValue(session.purpose)}</span>
+                      <span>{getDisplayValue(latestSession.purpose)}</span>
                     </div>
                     <div className="session-detail-item">
                       <FileText size={18} className="detail-icon" />
                       <strong>Notes:</strong>
-                      <span>{getDisplayValue(session.notes)}</span>
+                      <span>{getDisplayValue(latestSession.notes)}</span>
                     </div>
                     <div className="session-detail-item">
                       <FileText size={18} className="detail-icon" />
                       <strong>Prescription:</strong>
-                      <span>{getDisplayValue(session.prescription)}</span>
+                      <span>{getDisplayValue(latestSession.prescription)}</span>
                     </div>
-                    {session.familyMembers && session.familyMembers.length > 0 && (
-                      <div className="session-detail-item">
-                        <strong>Family Members:</strong> 
-                        <span>{session.familyMembers.map(fm => fm.name).join(', ')}</span>
+                    
+                    {/* Show previous sessions if there are more than one */}
+                    {patientGroup.sessions.length > 1 && (
+                      <div className="previous-sessions-container">
+                        <h4 className="previous-sessions-header">Previous Visits</h4>
+                        {patientGroup.sessions.slice(1).map((prevSession, index) => {
+                          const prevSessionDate = prevSession.completedAt || prevSession.archivedAt;
+                          return (
+                            <div key={index} className="previous-session-item">
+                              <div className="previous-session-header">
+                                <Calendar size={16} className="detail-icon" />
+                                <span className="previous-session-date">
+                                  {getFormattedDate(prevSessionDate)} at {getFormattedTime(prevSessionDate)}
+                                </span>
+                              </div>
+                              <div className="previous-session-details">
+                                <div className="session-detail-item">
+                                  <strong>Purpose:</strong> {getDisplayValue(prevSession.purpose)}
+                                </div>
+                                {prevSession.notes && (
+                                  <div className="session-detail-item">
+                                    <strong>Notes:</strong> {getDisplayValue(prevSession.notes)}
+                                  </div>
+                                )}
+                                {prevSession.prescription && (
+                                  <div className="session-detail-item">
+                                    <strong>Prescription:</strong> {getDisplayValue(prevSession.prescription)}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>

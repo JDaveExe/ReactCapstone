@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useContext } from 'react';
 import axios from 'axios';
 import { ChevronDown, ChevronUp, Search, Settings, Bell, LogOut, User, Menu, X, Maximize, BarChart2, Circle, Calendar, Square, ChevronRight, Activity, AlarmClock, Shield, Grid, List, QrCode, Heart } from 'lucide-react'; // Added QrCode and Heart
 import DateTimeContext from '../contexts/DateTimeContext';
+import CheckUpContext from '../contexts/CheckUpContext';
 import { useNavigate } from 'react-router-dom';
 import '../styles/DashboardAdm.css';
 import '../styles/SidebarAdmin.css';
@@ -24,7 +25,7 @@ import RegisteredProfile from './RegisteredProfile';
 import SessionHistory from './SessionHistory';
 import ScheduledSession from './ScheduledSession';
 import VitalSignsCheck from './VitalSignsCheck';
-import { getPatients, getFamilies, getFamilyMembers, getSortedFamilies, addSurname, assignPatientToFamily } from '../services/api'; // Removed debugFamilyMembers and added addSurname
+import { getPatients, getFamilies, getFamilyMembers, getSortedFamilies, addSurname, assignPatientToFamily, deletePatient } from '../services/api';
 import AddNewPatientForm from './AddNewPatientForm'; // Import AddNewPatientForm
 import { Button, Modal } from 'react-bootstrap'; // Import Button and Modal
 import { QRCodeCanvas } from 'qrcode.react'; // Added QRCodeCanvas for QR generation
@@ -181,6 +182,8 @@ function LineChart() {
 }
 
 export default function AdminDashboard() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [notification, setNotification] = useState({ show: false, message: '', type: 'info' });
   const [collapsed, setCollapsed] = useState(false);    
   const [dropdowns, setDropdowns] = useState({
     patientManagement: false,
@@ -201,6 +204,7 @@ export default function AdminDashboard() {
   const [patients, setPatients] = useState([]);
   const [showVitalSignsModal, setShowVitalSignsModal] = useState(false); // For showing/hiding the Vital Signs Check modal
   const { getCurrentDate, isSimulated } = useContext(DateTimeContext);
+  const { addPatientToCheckUpList } = useContext(CheckUpContext);
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'admin');
   const [showAddNewPatientForm, setShowAddNewPatientForm] = useState(false);
@@ -212,11 +216,14 @@ export default function AdminDashboard() {
   const [selectedFamilyForAssignment, setSelectedFamilyForAssignment] = useState(null); // New state for selected family in modal
   const [assignFamilySearchTerm, setAssignFamilySearchTerm] = useState(''); // New state for search term in assign modal
   const [familiesWithMembers, setFamiliesWithMembers] = useState([]); // Ensure this state exists
-
   // QR Code State
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrCodeValue, setQrCodeValue] = useState('');
   const [currentMemberForQr, setCurrentMemberForQr] = useState(null);
+
+  // Auto LogIn State
+  const [showAutoLoginModal, setShowAutoLoginModal] = useState(false);
+  const [currentMemberForAutoLogin, setCurrentMemberForAutoLogin] = useState(null);
   const qrCodeRef = useRef(null);
   // Helper function to get current family name
   const getCurrentFamilyName = () => {
@@ -343,13 +350,58 @@ export default function AdminDashboard() {
     setShowVitalSignsModal(true);
     console.log('showVitalSignsModal set to:', true);
   };
+  const handleDeletePatientData = async () => {
+    try {
+      if (!selectedMember?.id) {
+        throw new Error('No patient selected for deletion');
+      }
 
-  const handleDeletePatientData = () => {
-    // Actual deletion logic will go here
-    alert(`Deleting data for ${selectedMember?.name || selectedMember?.firstName + ' ' + selectedMember?.lastName}`);
-    setDeleteStep(null);
-    // Potentially navigate back or refresh data
-    handleBackToFamilies(); // Go back to family list after deletion
+      const patientName = selectedMember?.name || `${selectedMember?.firstName || ''} ${selectedMember?.lastName || ''}`.trim();
+      setIsLoading(true);
+      
+      // Store the family ID before deletion for refreshing family data
+      const familyId = selectedMember.familyId;
+      
+      // Call the API to delete the patient
+      await deletePatient(selectedMember.id);
+      
+      // Reset all relevant states
+      setDeleteStep(null);
+      setIsLoading(false);
+      setSelectedMember(null);
+      setActionView(null);
+      
+      // Refresh the families data to ensure UI is up to date
+      await fetchFamiliesWithMembers();
+      
+      // Show success message with auto-hide after 5 seconds
+      setNotification({
+        show: true,
+        message: `Patient ${patientName} deleted successfully`,
+        type: 'success'
+      });
+      setTimeout(() => {
+        setNotification(prev => ({...prev, show: false}));
+      }, 5000);
+      
+      // Navigate back to family list 
+      handleBackToFamilies();
+      
+    } catch (error) {
+      setIsLoading(false);
+      setDeleteStep(null);
+      console.error("Error deleting patient data:", error);
+      
+      // Show error notification with auto-hide after 5 seconds
+      setNotification({
+        show: true,
+        message: `Error deleting patient: ${error.response?.data?.error || error.message || 'Unknown error'}`,
+        type: 'danger'
+      });
+      setTimeout(() => {
+        setNotification(prev => ({...prev, show: false}));
+      }, 5000);
+    }
   };
 
   const handleOpenAssignFamilyModal = () => {
@@ -474,11 +526,46 @@ export default function AdminDashboard() {
       email: member.email || '', // Handle if email is missing
       authToken: member.id || '', // Using ID as a placeholder for authToken for login purposes
       name: displayName
-    });
-    setQrCodeValue(qrData);
+    });    setQrCodeValue(qrData);
     setCurrentMemberForQr({...member, name: displayName}); // Ensure member has name prop
     setShowQrModal(true);
     setManagePatientDropdownOpen(false); // Close manage dropdown if it was open
+  };
+
+  const handleAutoLogin = (member) => {
+    if (!member) return;
+    
+    // Create a display name safely
+    const displayName = member.name || 
+                      (member.firstName || member.lastName ? 
+                        `${member.firstName || ''} ${member.lastName || ''}`.trim() : 
+                        'Unknown Member');
+                        
+    setCurrentMemberForAutoLogin({...member, name: displayName});
+    setShowAutoLoginModal(true);
+    setManagePatientDropdownOpen(false); // Close manage dropdown if it was open
+  };
+
+  const confirmAutoLogin = async () => {
+    if (!currentMemberForAutoLogin) return;
+    
+    try {
+      await addPatientToCheckUpList(currentMemberForAutoLogin);
+      setNotification({
+        show: true,
+        message: `${currentMemberForAutoLogin.name} has been added to today's check-up list.`,
+        type: 'success'
+      });
+      setShowAutoLoginModal(false);
+      setCurrentMemberForAutoLogin(null);
+    } catch (error) {
+      console.error('Error adding patient to check-up list:', error);
+      setNotification({
+        show: true,
+        message: 'Failed to add patient to check-up list. Please try again.',
+        type: 'error'
+      });
+    }
   };
   const downloadQRCode = () => {
     const canvas = qrCodeRef.current?.querySelector('canvas');
@@ -575,8 +662,27 @@ export default function AdminDashboard() {
                      `${selectedMember?.firstName || ''} ${selectedMember?.lastName || ''}`.trim() : 
                      'Member Profile')}
                 </h2>
-                
-                <div style={{ display: 'flex', gap: '10px', position: 'relative' }}> {/* Adjusted gap */}
+                  <div style={{ display: 'flex', gap: '10px', position: 'relative' }}> {/* Adjusted gap */}
+                  {/* Auto LogIn Button */}
+                  <button
+                    style={{
+                      background: '#EF4444', // Red background
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '10px 16px',
+                      cursor: 'pointer',
+                      fontWeight: '500',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                    onClick={() => handleAutoLogin(selectedMember)}
+                  >
+                    <Heart size={16} />
+                    Auto LogIn
+                  </button>
+
                   {/* New Generate QR Code Button */}
                   <button
                     style={{
@@ -806,6 +912,27 @@ export default function AdminDashboard() {
                         <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
                       </svg>
                       Download QR Code
+                    </Button>
+                  </Modal.Footer>
+                </Modal>              )}
+
+              {/* Auto LogIn Confirmation Modal */}
+              {showAutoLoginModal && currentMemberForAutoLogin && (
+                <Modal show={showAutoLoginModal} onHide={() => { setShowAutoLoginModal(false); setCurrentMemberForAutoLogin(null); }} centered>
+                  <Modal.Header closeButton>
+                    <Modal.Title>Confirm Auto LogIn</Modal.Title>
+                  </Modal.Header>
+                  <Modal.Body>
+                    <p>Are you sure you want to add <strong>{currentMemberForAutoLogin.name}</strong> to today's check-up list?</p>
+                    <p className="text-muted">This will automatically log them in for today's appointments.</p>
+                  </Modal.Body>
+                  <Modal.Footer>
+                    <Button variant="secondary" onClick={() => { setShowAutoLoginModal(false); setCurrentMemberForAutoLogin(null); }}>
+                      Cancel
+                    </Button>
+                    <Button variant="danger" onClick={confirmAutoLogin}>
+                      <Heart size={16} style={{marginRight: '5px'}} />
+                      Confirm Auto LogIn
                     </Button>
                   </Modal.Footer>
                 </Modal>
@@ -1394,7 +1521,7 @@ export default function AdminDashboard() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 16, fontSize: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#4C6EF5', display: 'inline-block', borderRadius: 2 }}></span>RAPID COVID/HEP/STI</div>
               <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#12B886', display: 'inline-block', borderRadius: 2 }}></span>COMPLETE BLOOD COUNT</div>
-              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FA5252', display: 'inline-block', borderRadius: 2 }}></span>BLOOD BIOCHEMISTRY</div>
+                           <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FA5252', display: 'inline-block', borderRadius: 2 }}></span>HEMOGLOBIN A1C</div>
               <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FAB005', display: 'inline-block', borderRadius: 2 }}></span>URINALYSIS</div>
               <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#7950F2', display: 'inline-block', borderRadius: 2 }}></span>OBSTETRICS PA GENES</div>
               <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#228BE6', display: 'inline-block', borderRadius: 2 }}></span>OTHER BIOCHEMISTRY</div>
@@ -1840,6 +1967,26 @@ export default function AdminDashboard() {
         </div>
       </div>
     </div>
+    {notification.show && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            backgroundColor: notification.type === 'success' ? '#10b981' : 
+                           notification.type === 'danger' ? '#ef4444' : 
+                           notification.type === 'warning' ? '#f59e0b' : '#3b82f6',
+            color: 'white',
+            padding: '12px 24px',
+            borderRadius: '6px',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+            zIndex: 1051,
+            maxWidth: '400px'
+          }}
+        >
+          {notification.message}
+        </div>
+      )}
     </>
   );
 }

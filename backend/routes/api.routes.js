@@ -38,6 +38,10 @@ function saveDataToFile(filePath, data) {
   }
 }
 
+// Users data file path
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const PATIENTS_FILE = path.join(DATA_DIR, 'patients.json');
+
 // Function to check and process appointments for today
 function processAppointmentsForToday() {
   try {
@@ -1386,6 +1390,49 @@ router.get('/patients/:id', (req, res) => {
   });
 });
 
+// Endpoint to fetch all patients
+router.get('/patients', (req, res) => {
+  console.log('[API /patients] Fetching all registered patients...');
+    // Query to get all users who are patients (role = 'patient' or 'member')
+  const query = `
+    SELECT 
+      id, 
+      firstName, 
+      lastName, 
+      email, 
+      phoneNumber, 
+      gender, 
+      dateOfBirth,
+      age,
+      houseNo,
+      street,
+      barangay,
+      city,
+      region,
+      philHealthNumber, 
+      membershipStatus,
+      familyId,
+      civilStatus,
+      createdAt
+    FROM users 
+    WHERE membershipStatus IN ('patient', 'member') 
+    ORDER BY lastName, firstName
+  `;
+  
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('[API /patients] Database error fetching patients:', err);
+      return res.status(500).json({ 
+        message: 'Failed to fetch patients', 
+        error: err.message 
+      });
+    }
+    
+    console.log(`[API /patients] Successfully retrieved ${results.length} patients`);
+    res.json(results);
+  });
+});
+
 // Schedule a daily check at midnight to process new appointments for the day
 const scheduleAppointmentCheck = () => {
   const now = new Date();
@@ -1506,6 +1553,469 @@ router.get('/vital-signs/:id', (req, res) => {
       message: 'Failed to fetch vital signs record',
       error: error.message
     });
+  }
+});
+
+// User Registration Endpoint 
+router.post('/register', (req, res) => {
+  try {
+    // Log the registration attempt
+    console.log('Registration attempt:', req.body);
+    
+    // Extract user data from request
+    const {
+      firstName, lastName, middleName, suffix, email, password, phoneNumber,
+      houseNo, street, barangay, city, region, dateOfBirth, age, gender, civilStatus,
+      philHealthNumber, membershipStatus
+    } = req.body;
+
+    // Check if required fields are provided
+    if (!firstName || !lastName || !password) {
+      return res.status(400).json({ error: 'First name, last name, and password are required' });
+    }
+
+    // Check if either email or phone number is provided
+    if (!email && !phoneNumber) {
+      return res.status(400).json({ error: 'Either email or phone number is required' });
+    }
+
+    // Check if user with the same email or phone already exists
+    let checkQuery = 'SELECT * FROM users WHERE ';
+    let queryParams = [];
+    
+    if (email) {
+      checkQuery += 'email = ?';
+      queryParams.push(email);
+    }
+    
+    if (phoneNumber) {
+      if (email) {
+        checkQuery += ' OR phoneNumber = ?';
+      } else {
+        checkQuery += 'phoneNumber = ?';
+      }
+      queryParams.push(phoneNumber);
+    }
+    
+    db.query(checkQuery, queryParams, (err, results) => {
+      if (err) {
+        console.error('Error checking existing user:', err);
+        return res.status(500).json({ error: 'Database error during registration' });
+      }
+      
+      if (results.length > 0) {
+        return res.status(409).json({ error: 'A user with this email or phone number already exists' });
+      }
+      
+      // Create a new user
+      const insertQuery = `
+        INSERT INTO users 
+        (firstName, lastName, middleName, suffix, email, phoneNumber, password, 
+        houseNo, street, barangay, city, region, 
+        dateOfBirth, age, gender, civilStatus, 
+        philHealthNumber, membershipStatus) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+        // If membership status is Non-Member, clear the PhilHealth number
+      let finalPhilHealthNumber = philHealthNumber || '';
+      if (membershipStatus === 'Non-Member') {
+        finalPhilHealthNumber = '';
+      }
+        // Handle empty email as null for MySQL
+      const emailValue = email && email.trim() !== '' ? email : null;
+      
+      const userValues = [
+        firstName,
+        lastName,
+        middleName || '',
+        suffix || '',
+        emailValue,
+        phoneNumber || '',
+        password, // In production, hash the password
+        houseNo || '',
+        street || '',
+        barangay || '',
+        city || 'Pasig',
+        region || 'Metro Manila',
+        dateOfBirth || null,
+        age || '',
+        gender || '',
+        civilStatus || '',
+        finalPhilHealthNumber,
+        membershipStatus || 'Member'
+      ];
+      
+      db.query(insertQuery, userValues, (err, result) => {
+        if (err) {
+          console.error('Error inserting new user:', err);
+          return res.status(500).json({ error: 'Database error during registration' });
+        }
+        
+        // Create response object (exclude password)
+        const responseUser = {
+          id: result.insertId,
+          firstName,
+          lastName,
+          middleName: middleName || '',
+          suffix: suffix || '',
+          email: email || '',
+          phoneNumber: phoneNumber || '',
+          address: {
+            houseNo: houseNo || '',
+            street: street || '',
+            barangay: barangay || '',
+            city: city || 'Pasig',
+            region: region || 'Metro Manila',
+          },
+          dateOfBirth: dateOfBirth || null,
+          age: age || '',
+          gender: gender || '',
+          civilStatus: civilStatus || '',
+          philHealthNumber: philHealthNumber || '',
+          membershipStatus: membershipStatus || 'Member',
+          role: 'patient'
+        };
+        
+        console.log('User registered successfully:', responseUser);
+        res.status(201).json({ message: 'Registration successful', user: responseUser });
+      });
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Server error during registration' });
+  }
+});
+
+// Admin: Add a new patient endpoint
+router.post('/admin/add-patient', (req, res) => {
+  try {
+    // Log the admin add patient attempt
+    console.log('Admin add patient attempt:', req.body);
+    
+    // Extract patient data from request
+    const {
+      firstName, lastName, middleName, suffix, email, password, phoneNumber,
+      houseNo, street, barangay, city, region, dateOfBirth, age, gender, civilStatus,
+      philHealthNumber, membershipStatus, familyName
+    } = req.body;
+
+    // Check required fields
+    if (!firstName || !lastName) {
+      return res.status(400).json({ error: 'First name and last name are required' });
+    }
+
+    // Check if either email or phone number is provided
+    if (!email && !phoneNumber) {
+      return res.status(400).json({ error: 'Either email or phone number is required' });
+    }    // Check if patient with the same email or phone already exists
+    let checkQuery = 'SELECT * FROM users WHERE ';
+    let queryParams = [];
+    
+    if (email) {
+      checkQuery += 'email = ?';
+      queryParams.push(email);
+    }
+    
+    if (phoneNumber) {
+      if (email) {
+        checkQuery += ' OR phoneNumber = ?';
+      } else {
+        checkQuery += 'phoneNumber = ?';
+      }
+      queryParams.push(phoneNumber);
+    }
+    
+    console.log('Checking for existing user with query:', checkQuery, queryParams);
+    db.query(checkQuery, queryParams, (err, results) => {
+      if (err) {
+        console.error('Error checking existing user:', err);
+        return res.status(500).json({ error: 'Database error during patient addition' });
+      }
+      
+      if (results.length > 0) {
+        return res.status(409).json({ error: 'A user with this email or phone number already exists' });
+      }      // Check if family exists first, otherwise create it
+      console.log('Checking for family with name:', familyName);
+      
+      // If no family name provided, add patient without family assignment (unsorted)
+      if (!familyName || familyName.trim() === '') {
+        console.log('No family name provided, adding patient as unsorted');
+        let processFamilyId = (familyId) => {
+          // Insert the new patient into users table
+          const insertUserQuery = `
+            INSERT INTO users 
+            (firstName, lastName, middleName, suffix, email, phoneNumber, password, 
+            houseNo, street, barangay, city, region, 
+            dateOfBirth, age, gender, civilStatus, 
+            philHealthNumber, membershipStatus, familyId) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `;
+          
+          // Handle empty email as null for MySQL
+          const emailValue = email && email.trim() !== '' ? email : null;
+          
+          const userValues = [
+            firstName,
+            lastName,
+            middleName || '',
+            suffix || '',
+            emailValue,
+            phoneNumber || '',
+            password || '', // In production, hash the password
+            houseNo || '',
+            street || '',
+            barangay || '',
+            city || 'Pasig',
+            region || 'Metro Manila',
+            dateOfBirth || null,
+            age || '',
+            gender || '',
+            civilStatus || '',
+            membershipStatus === 'Non-Member' ? '' : (philHealthNumber || ''),
+            membershipStatus || 'Member',
+            familyId // null for unsorted patients
+          ];
+          
+          console.log('Inserting user with values:', userValues);
+          db.query(insertUserQuery, userValues, (err, result) => {
+            if (err) {
+              console.error('Error inserting patient:', err);
+              return res.status(500).json({ error: 'Database error during patient addition' });
+            }
+            
+            console.log('Patient added successfully with ID:', result.insertId);
+            res.status(201).json({ 
+              message: 'Patient added successfully',
+              patientId: result.insertId
+            });
+          });
+        };
+        
+        // Process with null family ID (unsorted patient)
+        processFamilyId(null);
+        return;
+      }
+      
+      db.query('SELECT id FROM families WHERE familyName = ?', [familyName], (err, familyResults) => {
+        if (err) {
+          console.error('Error checking family:', err);
+          return res.status(500).json({ error: 'Database error during patient addition' });
+        }
+        
+        console.log('Family check results:', familyResults);
+        
+        let processFamilyId = (familyId) => {
+          // Insert the new patient into users table
+          const insertUserQuery = `
+            INSERT INTO users 
+            (firstName, lastName, middleName, suffix, email, phoneNumber, password, 
+            houseNo, street, barangay, city, region, 
+            dateOfBirth, age, gender, civilStatus, 
+            philHealthNumber, membershipStatus, familyId) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `;
+            // Handle empty email as null for MySQL
+          const emailValue = email && email.trim() !== '' ? email : null;
+          
+          const userValues = [            firstName,
+            lastName,
+            middleName || '',
+            suffix || '',
+            emailValue,
+            phoneNumber || '',
+            password || '', // In production, hash the password
+            houseNo || '',
+            street || '',
+            barangay || '',
+            city || 'Pasig',
+            region || 'Metro Manila',
+            dateOfBirth || null,
+            age || '',
+            gender || '',
+            civilStatus || '',
+            membershipStatus === 'Non-Member' ? '' : (philHealthNumber || ''),
+            membershipStatus || 'Member',
+            familyId
+          ];
+          
+          db.query(insertUserQuery, userValues, (err, result) => {
+            if (err) {
+              console.error('Error inserting new patient:', err);
+              return res.status(500).json({ error: 'Database error during patient addition' });
+            }
+            
+            // Create response object
+            const responsePatient = {
+              id: result.insertId,
+              firstName,
+              lastName,
+              middleName: middleName || '',
+              suffix: suffix || '',
+              email: email || '',
+              phoneNumber: phoneNumber || '',
+              address: {
+                houseNo: houseNo || '',
+                street: street || '',
+                barangay: barangay || '',
+                city: city || 'Pasig',
+                region: region || 'Metro Manila',
+              },
+              dateOfBirth: dateOfBirth || null,
+              age: age || '',
+              gender: gender || '',
+              civilStatus: civilStatus || '',
+              philHealthNumber: philHealthNumber || '',
+              membershipStatus: membershipStatus || 'Member',
+              familyId: familyId,
+              familyName: familyName,
+              role: 'patient'
+            };
+            
+            console.log('Patient added successfully by admin:', responsePatient);
+            res.status(201).json({ message: 'Patient added successfully', patient: responsePatient });
+          });
+        };
+          // If family doesn't exist, create it first
+        if (familyResults.length === 0) {
+          console.log('Family does not exist, creating new family:', familyName);
+          db.query(
+            'INSERT INTO families (familyName) VALUES (?)',
+            [familyName],
+            (err, insertResult) => {
+              if (err) {
+                console.error('Error creating family:', err);
+                return res.status(500).json({ error: 'Database error during patient addition' });
+              }
+              
+              console.log('Created new family with ID:', insertResult.insertId);
+              // Pass the new family ID to the patient creation function
+              processFamilyId(insertResult.insertId);
+            }
+          );
+        } else {
+          // Use existing family ID
+          console.log('Using existing family ID:', familyResults[0].id);
+          processFamilyId(familyResults[0].id);
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Admin add patient error:', error);
+    res.status(500).json({ error: 'Server error during patient addition' });
+  }
+});
+
+// Delete a patient by ID
+router.delete('/patients/:id', (req, res) => {
+  try {
+    const patientId = req.params.id;
+    console.log(`[API DELETE /patients/:id] Attempting to delete patient with ID ${patientId}`);
+
+    // First check if the patient exists
+    db.query('SELECT id FROM users WHERE id = ?', [patientId], (err, results) => {
+      if (err) {
+        console.error(`[API DELETE /patients/:id] Database error checking patient ${patientId}:`, err);
+        return res.status(500).json({ error: 'Server error checking patient existence' });
+      }
+
+      if (results.length === 0) {
+        console.log(`[API DELETE /patients/:id] No patient found with ID ${patientId}`);
+        return res.status(404).json({ error: 'Patient not found' });
+      }
+
+      // Delete the patient record from users table
+      db.query('DELETE FROM users WHERE id = ?', [patientId], (err, result) => {
+        if (err) {
+          console.error(`[API DELETE /patients/:id] Database error deleting patient ${patientId}:`, err);
+          return res.status(500).json({ error: 'Server error deleting patient' });
+        }
+
+        console.log(`[API DELETE /patients/:id] Successfully deleted patient with ID ${patientId}`);
+        
+        // Also delete related records (you can add more deletion queries as needed)
+        // For example, deleting checkup records
+        db.query('DELETE FROM checkup_records WHERE userId = ?', [patientId], (err, result) => {
+          if (err) {
+            console.error(`[API DELETE /patients/:id] Error deleting related checkup records for patient ${patientId}:`, err);
+            // Continue with success response since the main record was deleted
+          }
+        });
+        
+        return res.status(200).json({ message: 'Patient deleted successfully' });
+      });
+    });
+  } catch (error) {
+    console.error(`[API DELETE /patients/:id] Server error:`, error);
+    res.status(500).json({ error: 'Server error during patient deletion' });
+  }
+});
+
+// Assign a patient to a different family
+router.patch('/patients/:id/assign-family', (req, res) => {
+  try {
+    const patientId = req.params.id;
+    const { familyId } = req.body;
+    
+    console.log(`[API PATCH /patients/:id/assign-family] Assigning patient ${patientId} to family ${familyId}`);
+    
+    if (!familyId) {
+      return res.status(400).json({ 
+        message: 'Family ID is required' 
+      });
+    }
+      // First check if the patient exists
+    const checkPatientQuery = 'SELECT id, firstName, lastName, familyId FROM users WHERE id = ? AND membershipStatus IN ("patient", "member")';
+    db.query(checkPatientQuery, [patientId], (err, patientResults) => {
+      if (err) {
+        console.error(`[API PATCH /patients/:id/assign-family] Database error checking patient ${patientId}:`, err);
+        return res.status(500).json({ message: 'Database error', error: err.message });
+      }
+      
+      if (patientResults.length === 0) {
+        console.log(`[API PATCH /patients/:id/assign-family] No patient found with ID ${patientId}`);
+        return res.status(404).json({ message: 'Patient not found' });
+      }
+      
+      const patient = patientResults[0];
+      
+      // Check if the target family exists
+      const checkFamilyQuery = 'SELECT id, familyName FROM families WHERE id = ?';
+      db.query(checkFamilyQuery, [familyId], (err, familyResults) => {
+        if (err) {
+          console.error(`[API PATCH /patients/:id/assign-family] Database error checking family ${familyId}:`, err);
+          return res.status(500).json({ message: 'Database error', error: err.message });
+        }
+        
+        if (familyResults.length === 0) {
+          console.log(`[API PATCH /patients/:id/assign-family] No family found with ID ${familyId}`);
+          return res.status(404).json({ message: 'Target family not found' });
+        }
+        
+        const targetFamily = familyResults[0];
+        
+        // Update the patient's family assignment
+        const updateQuery = 'UPDATE users SET familyId = ? WHERE id = ?';
+        db.query(updateQuery, [familyId, patientId], (err, updateResults) => {
+          if (err) {
+            console.error(`[API PATCH /patients/:id/assign-family] Database error updating patient ${patientId}:`, err);
+            return res.status(500).json({ message: 'Database error', error: err.message });
+          }
+          
+          console.log(`[API PATCH /patients/:id/assign-family] Successfully assigned patient ${patientId} (${patient.firstName} ${patient.lastName}) to family ${familyId} (${targetFamily.familyName})`);
+          
+          res.json({ 
+            message: `Patient ${patient.firstName} ${patient.lastName} has been successfully assigned to family "${targetFamily.familyName}"`,
+            patientId: patientId,
+            familyId: familyId,
+            familyName: targetFamily.familyName
+          });
+        });
+      });
+    });
+    
+  } catch (error) {
+    console.error('[API PATCH /patients/:id/assign-family] Server error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

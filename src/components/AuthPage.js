@@ -37,14 +37,13 @@ const AuthPage = () => {
     email: '',
     password: '',
     repeatPassword: '',
-    phoneNumber: '',
-    houseNo: '',
+    phoneNumber: '',    houseNo: '',
     street: '',
     barangay: '',
     city: 'Pasig',
     region: 'Metro Manila',
     philHealthNumber: '',
-    membershipStatus: '',
+    membershipStatus: 'Member', // Default to Member to match AddNewPatientForm
     dateOfBirth: null,
     age: '',
     gender: '',
@@ -908,33 +907,18 @@ const AuthPage = () => {
               </Row>
    
               <Row className="mb-3 align-items-center">
-                <Col md={4} className="d-flex align-items-center gap-4">
-                  <Form.Group controlId="membershipStatus" className="mb-0">
-                    <Row className="flex-nowrap">
-                      <Col xs="auto">
-                        <Form.Check
-                          type="radio"
-                          id="member"
-                          name="membershipStatus"
-                          value="member"
-                          checked={formData.membershipStatus === 'member'}
-                          onChange={handleChange}
-                          label={<span style={{whiteSpace: 'nowrap'}}>Member</span>}
-                          className="me-3"
-                        />
-                      </Col>
-                      <Col xs="auto">
-                        <Form.Check
-                          type="radio"
-                          id="nonmember"
-                          name="membershipStatus"
-                          value="nonmember"
-                          checked={formData.membershipStatus === 'nonmember'}
-                          onChange={handleChange}
-                          label={<span style={{whiteSpace: 'nowrap'}}>Non-Member</span>}
-                        />
-                      </Col>
-                    </Row>
+                <Col md={4} className="d-flex align-items-center gap-4">                  <Form.Group controlId="membershipStatus" className="mb-0">
+                    <Form.Select 
+                      name="membershipStatus" 
+                      value={formData.membershipStatus} 
+                      onChange={handleChange}
+                      className="mb-2"
+                    >
+                      <option value="">Select Membership Status</option>
+                      <option value="Member">Member</option>
+                      <option value="Non-Member">Non-Member</option>
+                      <option value="Dependent">Dependent</option>
+                    </Form.Select>
                   </Form.Group>
                   <Form.Group controlId="philHealthNumber" className="mb-0 flex-grow-1">
                     <Form.Control
@@ -943,9 +927,14 @@ const AuthPage = () => {
                       name="philHealthNumber"
                       value={formData.philHealthNumber}
                       onChange={handleChange}
-                      disabled={formData.membershipStatus === 'nonmember'}
+                      disabled={formData.membershipStatus === 'Non-Member'}
                       style={{ minWidth: 200 }}
                     />
+                    {formData.membershipStatus === 'Non-Member' && (
+                      <Form.Text className="text-muted">
+                        PhilHealth Number not required for Non-Members
+                      </Form.Text>
+                    )}
                   </Form.Group>
                 </Col>
               </Row>

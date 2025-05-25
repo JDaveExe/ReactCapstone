@@ -100,5 +100,22 @@
     "checkupId": 9,
     "recordedAt": "2025-05-23T03:56:49.132Z",
     "id": "vs_1747972609145"
+  },
+  {
+    "date": "2025-05-24",
+    "age": "30",
+    "cc": "Headache",
+    "temp": "37",
+    "o2sat": "80",
+    "pulse": "40",
+    "ht": "156",
+    "respiration": "38",
+    "wt": "57.4",
+    "bp": "120/80",
+    "patientId": 7,
+    "patientName": "Lia Ramos",
+    "checkupId": 7,
+    "recordedAt": "2025-05-24T18:32:37.158Z",
+    "id": "vs_1748111557176"
   }
 ]

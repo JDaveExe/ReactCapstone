@@ -77,3 +77,8 @@ export const addSurname = async (data) => {
 export const assignPatientToFamily = (patientId, familyId) => {
   return axios.patch(`${API_URL}/patients/${patientId}/assign-family`, { familyId });
 };
+
+// Delete a patient
+export const deletePatient = (patientId) => {
+  return axios.delete(`${API_URL}/patients/${patientId}`);
+};

@@ -249,5 +249,50 @@
       "completedAt": "2025-05-23T03:59:29.816Z",
       "patientName": "Marianne Marquez"
     }
+  },
+  {
+    "historyId": "hist_1748111643711_709",
+    "sessionId": 7,
+    "patientId": null,
+    "patientName": "Lia Ramos",
+    "doctorId": null,
+    "doctorName": null,
+    "loggedInAt": "2025-05-24T18:31:16.574Z",
+    "completedAt": "2025-05-24T18:34:03.696Z",
+    "archivedAt": "2025-05-24T18:34:03.711Z",
+    "purpose": "Out-Patient Consultation",
+    "notes": "sample",
+    "prescription": "Vitamin A 100,000 IU",
+    "status": "Archived",
+    "originalData": {
+      "id": 7,
+      "name": "Lia Ramos",
+      "loggedInAt": "2025-05-24T18:31:16.574Z",
+      "queueNumber": 1,
+      "status": "Completed",
+      "purpose": "Out-Patient Consultation",
+      "vitalSigns": {
+        "date": "2025-05-24",
+        "age": "30",
+        "cc": "Headache",
+        "temp": "37",
+        "o2sat": "80",
+        "pulse": "40",
+        "ht": "156",
+        "respiration": "38",
+        "wt": "57.4",
+        "bp": "120/80",
+        "patientId": 7,
+        "patientName": "Lia Ramos",
+        "checkupId": 7,
+        "recordedAt": "2025-05-24T18:32:37.158Z"
+      },
+      "vitalSignsChecked": true,
+      "prescription": "Vitamin A 100,000 IU",
+      "prescriptionLastUpdated": "2025-05-24T18:33:58.764Z",
+      "notes": "sample",
+      "completedAt": "2025-05-24T18:34:03.696Z",
+      "patientName": "Lia Ramos"
+    }
   }
 ]

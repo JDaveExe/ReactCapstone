@@ -1,0 +1,53 @@
+[
+  {
+    "id": 7,
+    "name": "Lia Ramos",
+    "loggedInAt": "2025-05-24T18:31:16.574Z",
+    "queueNumber": 1,
+    "status": "Completed",
+    "purpose": "Out-Patient Consultation",
+    "vitalSigns": {
+      "date": "2025-05-24",
+      "age": "30",
+      "cc": "Headache",
+      "temp": "37",
+      "o2sat": "80",
+      "pulse": "40",
+      "ht": "156",
+      "respiration": "38",
+      "wt": "57.4",
+      "bp": "120/80",
+      "patientId": 7,
+      "patientName": "Lia Ramos",
+      "checkupId": 7,
+      "recordedAt": "2025-05-24T18:32:37.158Z"
+    },
+    "vitalSignsChecked": true,
+    "prescription": "Vitamin A 100,000 IU",
+    "prescriptionLastUpdated": "2025-05-24T18:33:58.764Z",
+    "notes": "sample"
+  },
+  {
+    "id": 8,
+    "firstName": "Damian",
+    "lastName": "Alosa",
+    "email": null,
+    "phoneNumber": "09786019230",
+    "membershipStatus": "Non-Member",
+    "dateOfBirth": "2004-05-18T16:00:00.000Z",
+    "gender": "Male",
+    "philHealthNumber": null,
+    "address": {
+      "houseNo": "72",
+      "street": "San Guillermo Street",
+      "barangay": "Pineda",
+      "city": "Pasig",
+      "region": "Metro Manila"
+    },
+    "name": "Damian Alosa",
+    "loggedInAt": "2025-05-24T18:51:24.112Z",
+    "queueNumber": 2,
+    "status": "Waiting",
+    "purpose": "Not Specified"
+  }
+]

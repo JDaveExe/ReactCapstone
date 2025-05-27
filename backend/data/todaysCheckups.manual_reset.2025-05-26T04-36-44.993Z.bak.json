@@ -1,0 +1,113 @@
+[
+  {
+    "id": "appointment_1747880264335",
+    "appointmentId": 1747880264335,
+    "name": "Orion Zimmerman",
+    "familyName": "Zimmerman",
+    "purpose": "Not Specified",
+    "scheduledTime": "09:00",
+    "loggedInAt": "2025-05-26T04:32:46.790Z",
+    "queueNumber": 1,
+    "status": "Waiting"
+  },
+  {
+    "id": 27,
+    "firstName": "Sample",
+    "lastName": "Alosa",
+    "email": null,
+    "phoneNumber": "09516277103",
+    "membershipStatus": "Non-Member",
+    "dateOfBirth": "2002-05-08T16:00:00.000Z",
+    "gender": "Male",
+    "philHealthNumber": "",
+    "address": {
+      "houseNo": "12",
+      "street": "Shaw Boulevard",
+      "barangay": "Oranbo",
+      "city": "Pasig",
+      "region": "Metro Manila"
+    },
+    "name": "Sample Alosa",
+    "loggedInAt": "2025-05-26T04:33:00.390Z",
+    "queueNumber": 2,
+    "status": "Waiting",
+    "purpose": "Vaccination",
+    "vitalSigns": {
+      "date": "2025-05-26",
+      "age": "23",
+      "cc": "N/A",
+      "temp": "35",
+      "o2sat": "80",
+      "pulse": "40",
+      "ht": "160",
+      "respiration": "20",
+      "wt": "60",
+      "bp": "120/80",
+      "patientId": 27,
+      "patientName": "Sample Alosa",
+      "checkupId": 27,
+      "recordedAt": "2025-05-26T04:33:43.900Z"
+    },
+    "vitalSignsChecked": true,
+    "vaccination": {
+      "date": "2025-05-26",
+      "name": "Measles, Mumps, and Rubella (MMR) Vaccine",
+      "notes": "DONE",
+      "patientId": 27,
+      "patientName": "Sample Alosa",
+      "checkupId": 27,
+      "recordedAt": "2025-05-26T04:33:54.833Z"
+    },
+    "vaccinationCompleted": true
+  },
+  {
+    "id": 28,
+    "firstName": "Sample ",
+    "lastName": "Crus",
+    "email": null,
+    "phoneNumber": "09090909000",
+    "membershipStatus": "Non-Member",
+    "dateOfBirth": "1992-05-12T16:00:00.000Z",
+    "gender": "Male",
+    "philHealthNumber": "",
+    "address": {
+      "houseNo": "45",
+      "street": "San Guillermo Street",
+      "barangay": "San Jose",
+      "city": "Pasig",
+      "region": "Metro Manila"
+    },
+    "name": "Sample  Crus",
+    "loggedInAt": "2025-05-26T04:34:45.662Z",
+    "queueNumber": 3,
+    "status": "Waiting",
+    "purpose": "Vaccination",
+    "vitalSigns": {
+      "date": "2025-05-26",
+      "age": "33",
+      "cc": "N/A",
+      "temp": "35",
+      "o2sat": "80",
+      "pulse": "40",
+      "ht": "160",
+      "respiration": "",
+      "wt": "90",
+      "bp": "120/80",
+      "patientId": 28,
+      "patientName": "Sample  Crus",
+      "checkupId": 28,
+      "recordedAt": "2025-05-26T04:35:44.336Z"
+    },
+    "vitalSignsChecked": true,
+    "vaccination": {
+      "date": "2025-05-26",
+      "name": "Tetanus-Diphtheria (Td)",
+      "notes": "DONE",
+      "patientId": 28,
+      "patientName": "Sample  Crus",
+      "checkupId": 28,
+      "recordedAt": "2025-05-26T04:35:56.088Z"
+    },
+    "vaccinationCompleted": true
+  }
+]

@@ -109,6 +109,7 @@ function SidebarDropdown({ icon, label, children, collapsed, isOpen, onClick }) 
 export default function DoctorDashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userName, setUserName] = useState(localStorage.getItem('userName') || 'Doctor');
   const [activeSection, setActiveSection] = useState('patients');
   const [selectedFamily, setSelectedFamily] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
@@ -905,10 +906,11 @@ export default function DoctorDashboard() {
               {isSimulated && <span style={{ marginLeft: '8px', background: '#334155', color: '#38bdf8', fontSize: '11px', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>SIMULATED</span>}
             </div>
             <button style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: '#fff', cursor: 'pointer' }}><Bell size={18} /></button>
-            <button style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: '#fff', cursor: 'pointer' }}><Settings size={18} /></button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><User size={16} /></div>
-              <span style={{ fontSize: 14 }}>Doctor</span>
+            <button style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: '#fff', cursor: 'pointer' }}><Settings size={18} /></button>            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '14px' }}>{userName.charAt(0).toUpperCase()}</span>
+              </div>
+              <span style={{ fontSize: 14 }}>{userName}</span>
             </div>
             <button style={{ background: 'none', border: 'none', borderRadius: '50%', padding: 7, color: '#fff', cursor: 'pointer' }} onClick={() => { localStorage.clear(); navigate('/'); }}><LogOut size={18} /></button>
           </div>

@@ -215,11 +215,24 @@ export const CheckUpProvider = ({ children }) => {
       throw error;
     }
   }, []);
+  // Import DateTimeContext at the top of your file
+  // This happens outside the component
+  const DateTimeCtx = React.createContext(null);
 
   const archiveSession = useCallback(async (sessionData) => {
     console.log('[CheckUpContext] archiveSession called with:', sessionData);
     try {
-      const response = await axios.post(`${API_URL}/sessionhistory`, sessionData);
+      // Get simulated time information from DateTimeContext
+      const dateTimeContext = document.querySelector('[data-is-simulated]');
+      const isSimulated = dateTimeContext ? dateTimeContext.getAttribute('data-is-simulated') === 'true' : false;
+      
+      // Add simulated flag if needed
+      const dataToSend = {
+        ...sessionData,
+        isSimulated: isSimulated
+      };
+      
+      const response = await axios.post(`${API_URL}/sessionhistory`, dataToSend);
       console.log('[CheckUpContext] API response after archiving session:', response.data);
       // Optionally, you might want to remove the archived session from todaysCheckUps
       // or trigger a re-fetch, depending on desired behavior.

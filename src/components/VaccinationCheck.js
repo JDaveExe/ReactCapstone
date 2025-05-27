@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Button, Form, Row, Col } from 'react-bootstrap';
 import axios from 'axios';
 import { Shield } from 'lucide-react';
+import { useMedicalAnalytics } from '../contexts/MedicalAnalyticsContext';
 
 const VaccinationCheck = ({ show, onHide, patient, onComplete }) => {
+  const { incrementVaccineUsage } = useMedicalAnalytics();
   const [vaccination, setVaccination] = useState({
     date: new Date().toISOString().split('T')[0],
     name: '', // Vaccination name
@@ -15,19 +17,41 @@ const VaccinationCheck = ({ show, onHide, patient, onComplete }) => {
   const [success, setSuccess] = useState(false);
   const [immunizationHistory, setImmunizationHistory] = useState([]);
   const [isCompleted, setIsCompleted] = useState(false);
-
-  // Define vaccine options based on the requirements
+  // Define vaccine options based on the requirements - Comprehensive list (33 vaccines)
   const vaccineOptions = [
     { id: 1, name: "BCG (Bacillus Calmette-Guérin)", description: "Administered at birth to prevent tuberculosis." },
     { id: 2, name: "Hepatitis B Vaccine", description: "Given at birth and as part of the Pentavalent vaccine series." },
     { id: 3, name: "Pentavalent Vaccine (DTP-HepB-Hib)", description: "Protects against diphtheria, tetanus, pertussis, hepatitis B, and Haemophilus influenzae type B; administered at 6, 10, and 14 weeks." },
-    { id: 4, name: "Oral Polio Vaccine (OPV) & Inactivated Polio Vaccine (IPV)", description: "Given at 6, 10, and 14 weeks, with boosters at 9 months and 4–6 years." },
-    { id: 5, name: "Pneumococcal Conjugate Vaccine (PCV)", description: "Administered at 6, 10, and 14 weeks, with a booster at 12–15 months." },
-    { id: 6, name: "Measles, Mumps, and Rubella (MMR) Vaccine", description: "First dose at 9 months, second at 12–15 months, and a third at 4–6 years." },
-    { id: 7, name: "Japanese Encephalitis (JE) Vaccine", description: "Given at 12 months." },
-    { id: 8, name: "Influenza Vaccine", description: "First dose at 6 months, with annual boosters." },
-    { id: 9, name: "Rotavirus Vaccine", description: "Administered orally starting at 6 weeks, depending on the vaccine type." },
-    { id: 10, name: "Rabies Vaccine", description: "Recently included in the routine immunization schedule." }
+    { id: 4, name: "Oral Polio Vaccine (OPV)", description: "Given at 6, 10, and 14 weeks, with boosters at 9 months and 4–6 years." },
+    { id: 5, name: "Inactivated Polio Vaccine (IPV)", description: "Given at 14 weeks and 9 months." },
+    { id: 6, name: "Pneumococcal Conjugate Vaccine (PCV)", description: "Administered at 6, 10, and 14 weeks, with a booster at 12–15 months." },
+    { id: 7, name: "Measles, Mumps, and Rubella (MMR) Vaccine", description: "First dose at 9 months, second at 12–15 months, and a third at 4–6 years." },
+    { id: 8, name: "Japanese Encephalitis (JE) Vaccine", description: "Given at 12 months." },
+    { id: 9, name: "Influenza Vaccine", description: "First dose at 6 months, with annual boosters." },
+    { id: 10, name: "Rotavirus Vaccine", description: "Administered orally starting at 6 weeks, depending on the vaccine type." },
+    { id: 11, name: "Rabies Vaccine", description: "Recently included in the routine immunization schedule." },
+    { id: 12, name: "Tetanus Toxoid (TT)", description: "Given to pregnant women and for wound management." },
+    { id: 13, name: "Tetanus-Diphtheria (Td)", description: "Booster vaccine for adolescents and adults." },
+    { id: 14, name: "Tetanus-Diphtheria-Pertussis (Tdap)", description: "Booster vaccine with pertussis component." },
+    { id: 15, name: "Varicella (Chickenpox) Vaccine", description: "Prevents chickenpox, typically given at 12-15 months." },
+    { id: 16, name: "Hepatitis A Vaccine", description: "Protects against hepatitis A virus." },
+    { id: 17, name: "Meningococcal Vaccine", description: "Protects against meningococcal disease." },
+    { id: 18, name: "Human Papillomavirus (HPV) Vaccine", description: "Prevents cervical cancer, given to adolescents." },
+    { id: 19, name: "Yellow Fever Vaccine", description: "Required for travel to endemic areas." },
+    { id: 20, name: "Typhoid Vaccine", description: "Protects against typhoid fever." },
+    { id: 21, name: "Cholera Vaccine", description: "Oral vaccine for cholera prevention." },
+    { id: 22, name: "Dengue Vaccine (Dengvaxia)", description: "For prevention of dengue fever in endemic areas." },
+    { id: 23, name: "Pneumococcal Polysaccharide Vaccine (PPSV23)", description: "For adults and high-risk individuals." },
+    { id: 24, name: "Haemophilus influenzae type b (Hib) Vaccine", description: "Standalone Hib vaccine when needed." },
+    { id: 25, name: "Anthrax Vaccine", description: "For high-risk occupational exposure." },
+    { id: 26, name: "Smallpox Vaccine", description: "For emergency preparedness." },
+    { id: 27, name: "Shingles (Zoster) Vaccine", description: "Prevents shingles in older adults." },
+    { id: 28, name: "COVID-19 mRNA Vaccine (Pfizer)", description: "mRNA vaccine against SARS-CoV-2." },
+    { id: 29, name: "COVID-19 mRNA Vaccine (Moderna)", description: "mRNA vaccine against SARS-CoV-2." },
+    { id: 30, name: "COVID-19 Viral Vector Vaccine (AstraZeneca)", description: "Viral vector vaccine against SARS-CoV-2." },
+    { id: 31, name: "COVID-19 Viral Vector Vaccine (Johnson & Johnson)", description: "Single-dose viral vector vaccine." },
+    { id: 32, name: "COVID-19 Protein Subunit Vaccine (Novavax)", description: "Protein subunit vaccine against SARS-CoV-2." },
+    { id: 33, name: "Respiratory Syncytial Virus (RSV) Vaccine", description: "Protects against RSV in infants and elderly." }
   ];
 
   // Define styles similar to VitalSignsCheck
@@ -181,11 +205,13 @@ const VaccinationCheck = ({ show, onHide, patient, onComplete }) => {
         patientName: patient.name || `${patient.firstName} ${patient.lastName}`,
         checkupId: patient.checkupId || patient.id, // Assuming checkupId might be passed or fallback to patient.id
         recordedAt: new Date().toISOString()
-      };
-
-      // This would be an actual API call in your implementation
+      };      // This would be an actual API call in your implementation
       // For now, we'll simulate a successful response
       console.log('Vaccination recorded:', vaccinationData);
+      
+      // Track vaccine usage for analytics
+      incrementVaccineUsage(vaccination.name);
+      
       setSuccess(true);
       
       if (onComplete) {

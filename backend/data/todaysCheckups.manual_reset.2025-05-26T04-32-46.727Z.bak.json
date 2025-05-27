@@ -1,0 +1,83 @@
+[
+  {
+    "id": "appointment_1747880264335",
+    "appointmentId": 1747880264335,
+    "name": "Orion Zimmerman",
+    "familyName": "Zimmerman",
+    "purpose": "Vaccination",
+    "scheduledTime": "09:00",
+    "loggedInAt": "2025-05-26T04:26:08.131Z",
+    "queueNumber": 1,
+    "status": "Completed",
+    "vitalSigns": {
+      "date": "2025-05-26",
+      "age": "30",
+      "cc": "Normal Consultation",
+      "temp": "36",
+      "o2sat": "80",
+      "pulse": "40",
+      "ht": "170",
+      "respiration": "40",
+      "wt": "90",
+      "bp": "120/80",
+      "patientId": null,
+      "patientName": "Orion Zimmerman",
+      "checkupId": "appointment_1747880264335",
+      "recordedAt": "2025-05-26T04:28:04.294Z"
+    },
+    "vitalSignsChecked": true,
+    "notes": "done",
+    "prescription": "Ibuprofen 100mg/5mL syrup",
+    "prescriptionLastUpdated": "2025-05-26T04:28:45.150Z"
+  },
+  {
+    "id": 27,
+    "firstName": "Sample",
+    "lastName": "Alosa",
+    "email": null,
+    "phoneNumber": "09516277103",
+    "membershipStatus": "Non-Member",
+    "dateOfBirth": "2002-05-08T16:00:00.000Z",
+    "gender": "Male",
+    "philHealthNumber": "",
+    "address": {
+      "houseNo": "12",
+      "street": "Shaw Boulevard",
+      "barangay": "Oranbo",
+      "city": "Pasig",
+      "region": "Metro Manila"
+    },
+    "name": "Sample Alosa",
+    "loggedInAt": "2025-05-26T04:30:07.252Z",
+    "queueNumber": 2,
+    "status": "Waiting",
+    "purpose": "Vaccination",
+    "vitalSigns": {
+      "date": "2025-05-26",
+      "age": "23",
+      "cc": "N/A",
+      "temp": "37.4",
+      "o2sat": "90",
+      "pulse": "54",
+      "ht": "160",
+      "respiration": "33",
+      "wt": "60",
+      "bp": "120/80",
+      "patientId": 27,
+      "patientName": "Sample Alosa",
+      "checkupId": 27,
+      "recordedAt": "2025-05-26T04:30:39.850Z"
+    },
+    "vitalSignsChecked": true,
+    "vaccination": {
+      "date": "2025-05-26",
+      "name": "Tetanus Toxoid (TT)",
+      "notes": "DONE",
+      "patientId": 27,
+      "patientName": "Sample Alosa",
+      "checkupId": 27,
+      "recordedAt": "2025-05-26T04:30:55.750Z"
+    },
+    "vaccinationCompleted": true
+  }
+]

@@ -4,6 +4,8 @@ import '../styles/Sessions.css';
 import '../styles/PrescriptionSection.css'; // Import prescription styles
 import { Clock, Calendar, User, Check, Edit, ArrowRight, FileText, Loader, Plus, X, ChevronDown, Pill, Activity } from 'lucide-react'; // Added Activity icon
 import CheckUpContext from '../contexts/CheckUpContext'; // Import CheckUpContext
+import { useCheckupAnalytics } from '../contexts/CheckupAnalyticsContext'; // Import CheckupAnalyticsContext
+import { useMedicalAnalytics } from '../contexts/MedicalAnalyticsContext'; // Import MedicalAnalyticsContext
 import VitalSignsCheck from './VitalSignsCheck'; // Import VitalSignsCheck
 
 const Sessions = ({ userRole = 'doctor' }) => {
@@ -14,6 +16,11 @@ const Sessions = ({ userRole = 'doctor' }) => {
     updateCheckUpItem, 
     archiveSession // Destructure archiveSession from context
   } = useContext(CheckUpContext); // Consume context
+    // Add checkup analytics hook
+  const { incrementTodayCheckups } = useCheckupAnalytics();
+  
+  // Add medical analytics hook
+  const { incrementPrescriptionUsage } = useMedicalAnalytics();
 
   const today = new Date();
   const todayDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -34,79 +41,138 @@ const Sessions = ({ userRole = 'doctor' }) => {
   const [medicationDropdownOpen, setMedicationDropdownOpen] = useState({});
   const [customMedications, setCustomMedications] = useState({});
   const [medicationSearch, setMedicationSearch] = useState({});
-  
-  // List of standard medications
+    // Comprehensive list of medications organized by categories
   const medicationsList = [
-    "Folic Acid 5mg tablet",
-    "Hydrocortisone 100mg/mL inj",
-    "Hydrite (ORS)",
-    "Iron + Folic Acid (IFA) tablet",
-    "Lagundi 300mg tablet",
-    "Lagundi 600mg tablet",
-    "Mefenamic Acid 500mg tablet",
-    "Metoprolol 50mg tablet",
-    "Metronidazole 500mg tablet",
-    "Multivitamins drops",
-    "Multivitamins syrup",
-    "Multivitamins + Iron drops",
-    "Multivitamins + Iron syrup",
-    "Paracetamol 250mg/5mL syrup",
-    "Paracetamol 500mg tablet",
-    "Paracetamol 100mg/mL drops",
-    "Salbutamol 2mg/5mL syrup",
-    "Vitamin A 100,000 IU",
-    "Vitamin A 200,000 IU",
-    "Vitamin C 100mg chewable tablet",
-    "Vitamin C drops",
-    "Vitamin C syrup",
-    "Ascorbic Acid 100mg chewable tablet",
-    "Ascorbic Acid 250mg/5mL syrup",
+    // Analgesics & Antipyretics
+    "Paracetamol 500mg tablet", "Paracetamol 250mg/5mL syrup", "Paracetamol 100mg/mL drops",
+    "Ibuprofen 200mg tablet", "Ibuprofen 400mg tablet", "Ibuprofen 100mg/5mL syrup",
+    "Aspirin 80mg tablet", "Aspirin 325mg tablet",
+    "Mefenamic Acid 500mg tablet", "Mefenamic Acid 250mg capsule", "Mefenamic Acid 250mg/5mL suspension",
+    "Tramadol 50mg tablet", "Codeine 30mg tablet",
+    
+    // Antibiotics
+    "Amoxicillin 500mg capsule", "Amoxicillin 250mg capsule", "Amoxicillin 250mg/5mL suspension", "Amoxicillin 500mg/5mL suspension",
+    "Amoxicillin + Clavulanic Acid 625mg tablet", "Amoxicillin + Clavulanic Acid 228mg/5mL suspension",
+    "Azithromycin 500mg tablet", "Azithromycin 250mg tablet", "Azithromycin 200mg/5mL suspension",
+    "Ciprofloxacin 500mg tablet", "Ciprofloxacin 250mg tablet",
+    "Cloxacillin 500mg capsule", "Cloxacillin 250mg/5mL suspension",
+    "Co-trimoxazole 400mg/80mg tablet", "Co-trimoxazole 200mg/40mg suspension",
+    "Erythromycin 500mg tablet", "Erythromycin 250mg/5mL suspension",
+    "Cefalexin 500mg capsule", "Cefalexin 250mg/5mL suspension", "Cefalexin 500mg/5mL suspension",
+    "Doxycycline 100mg capsule", "Tetracycline 250mg capsule",
+    "Metronidazole 500mg tablet", "Metronidazole 250mg tablet",
+    "Clindamycin 300mg capsule", "Clindamycin 75mg/5mL suspension",
+    
+    // Anti-inflammatory & Steroids
+    "Prednisolone 5mg tablet", "Prednisolone 15mg/5mL syrup",
+    "Hydrocortisone 1% cream", "Hydrocortisone 100mg/mL injection",
+    "Dexamethasone 0.5mg tablet", "Dexamethasone 4mg/mL injection",
+    "Betamethasone 0.5mg tablet", "Betamethasone cream",
+    
+    // Cardiovascular
+    "Amlodipine 5mg tablet", "Amlodipine 10mg tablet",
+    "Losartan 50mg tablet", "Losartan 100mg tablet",
+    "Metoprolol 50mg tablet", "Metoprolol 100mg tablet",
+    "Atenolol 50mg tablet", "Atenolol 100mg tablet",
+    "Captopril 25mg tablet", "Enalapril 5mg tablet",
+    "Simvastatin 20mg tablet", "Simvastatin 40mg tablet",
+    "Atorvastatin 20mg tablet", "Atorvastatin 40mg tablet",
+    "Aspirin 80mg (cardio-protective)", "Clopidogrel 75mg tablet",
+    "Digoxin 0.25mg tablet", "Furosemide 40mg tablet",
+    
+    // Respiratory
+    "Salbutamol 2mg tablet", "Salbutamol 2mg/5mL syrup", "Salbutamol 5mg/mL nebule",
+    "Salbutamol inhaler 100mcg/dose", "Beclomethasone inhaler 250mcg/dose",
+    "Montelukast 4mg chewable tablet", "Montelukast 5mg chewable tablet", "Montelukast 10mg tablet",
+    "Theophylline 200mg tablet", "Ipratropium bromide nebule",
+    "Ambroxol 30mg/5mL syrup", "Ambroxol 500mg tablet",
+    "Carbocisteine 100mg/5mL syrup", "Carbocisteine 500mg capsule",
+    "Dextromethorphan syrup", "Guaifenesin syrup",
+    
+    // Gastrointestinal
+    "Omeprazole 20mg capsule", "Omeprazole 40mg capsule",
+    "Ranitidine 150mg tablet", "Famotidine 20mg tablet",
     "Aluminum Magnesium (Antacid) 200mg/200mg/20mg per 5mL",
-    "Amoxicillin Trihydrate 500mg capsule",
-    "Amoxicillin Trihydrate 250mg/5mL suspension",
-    "Amoxicillin Trihydrate 500mg/5mL suspension",
-    "Amoxicillin + Clavulanic Acid 228mg/5mL suspension",
-    "Ambroxol 30mg/5mL syrup",
-    "Ambroxol 500mg tablet",
-    "Cetirizine 10mg tablet",
-    "Cetirizine 5mg/5mL syrup",
-    "Chlorphenamine maleate 2mg/5mL syrup",
-    "Chlorphenamine maleate 4mg tablet",
-    "Co-amoxiclav 625mg tablet",
-    "Co-trimoxazole 400mg/80mg tablet",
-    "Co-trimoxazole 200mg/40mg suspension",
-    "Ferrous Sulfate 60mg + Folic Acid 400mcg tablet",
-    "Ferrous Sulfate 15mg drops",
-    "Ferrous Sulfate + Vitamin C 325mg/100mg tablet",
-    "Ferrous Sulfate 60mg/mL drops",
-    "Carbocisteine 100mg/5mL syrup",
-    "Carbocisteine 500mg capsule",
-    "Cefalexin 250mg/5mL suspension",
-    "Cefalexin 500mg capsule",
-    "Cefalexin 500mg/5mL suspension",
-    "Ciprofloxacin 500mg tablet",
-    "Cloxacillin 500mg capsule",
-    "Cloxacillin 250mg/5mL suspension",
-    "Dicycloverine HCl 10mg tablet",
-    "Dicycloverine HCl 5mg/5mL syrup",
-    "Diphenhydramine HCl 12.5mg/5mL syrup",
-    "Diphenhydramine HCl 25mg capsule",
-    "Erythromycin 500mg tablet",
-    "Erythromycin 250mg/5mL suspension",
-    "Ibuprofen 100mg/5mL syrup",
-    "Ibuprofen 200mg tablet",
-    "Lagundi 300mg/5mL syrup",
-    "Loperamide 2mg capsule",
-    "Loratadine 5mg/5mL syrup",
-    "Loratadine 10mg tablet",
-    "Mefenamic Acid 250mg/5mL suspension",
-    "Mefenamic Acid 250mg capsule",
-    "Montelukast 4mg chewable tablet",
-    "Montelukast 5mg chewable tablet",
-    "Salbutamol 2mg tablet",
-    "Salbutamol 2mg/5mL syrup",
-    "Salbutamol 5mg/mL nebule",
-    "Simvastatin 20mg tablet"
+    "Loperamide 2mg capsule", "Bismuth subsalicylate tablet",
+    "Dicycloverine HCl 10mg tablet", "Dicycloverine HCl 5mg/5mL syrup",
+    "Hyoscine butylbromide 10mg tablet", "Simethicone 40mg tablet",
+    "Hydrite (ORS)", "Oral Rehydration Salt sachets",
+    "Lactulose syrup", "Bisacodyl 5mg tablet",
+    
+    // Vitamins & Supplements
+    "Multivitamins tablet", "Multivitamins drops", "Multivitamins syrup",
+    "Multivitamins + Iron drops", "Multivitamins + Iron syrup", "Multivitamins + Iron tablet",
+    "Vitamin A 100,000 IU", "Vitamin A 200,000 IU", "Vitamin A drops",
+    "Vitamin C 100mg chewable tablet", "Vitamin C 500mg tablet", "Vitamin C drops", "Vitamin C syrup",
+    "Ascorbic Acid 100mg chewable tablet", "Ascorbic Acid 250mg/5mL syrup",
+    "Vitamin D3 1000 IU tablet", "Vitamin D3 drops",
+    "Vitamin E 400 IU capsule", "Vitamin B-complex tablet",
+    "Folic Acid 5mg tablet", "Iron + Folic Acid (IFA) tablet",
+    "Ferrous Sulfate 60mg + Folic Acid 400mcg tablet", "Ferrous Sulfate 15mg drops",
+    "Ferrous Sulfate + Vitamin C 325mg/100mg tablet", "Ferrous Sulfate 60mg/mL drops",
+    "Calcium carbonate 500mg tablet", "Calcium + Vitamin D tablet",
+    "Zinc 10mg tablet", "Magnesium 250mg tablet",
+    
+    // Antihistamines
+    "Cetirizine 10mg tablet", "Cetirizine 5mg/5mL syrup",
+    "Loratadine 10mg tablet", "Loratadine 5mg/5mL syrup",
+    "Chlorphenamine maleate 4mg tablet", "Chlorphenamine maleate 2mg/5mL syrup",
+    "Diphenhydramine HCl 25mg capsule", "Diphenhydramine HCl 12.5mg/5mL syrup",
+    "Fexofenadine 60mg tablet", "Fexofenadine 120mg tablet",
+    
+    // Dermatological
+    "Betamethasone cream 0.1%", "Hydrocortisone cream 1%",
+    "Clotrimazole cream 1%", "Miconazole cream 2%",
+    "Ketoconazole shampoo 2%", "Selenium sulfide shampoo",
+    "Calamine lotion", "Zinc oxide ointment",
+    "Mupirocin ointment 2%", "Fusidic acid cream",
+    "Tretinoin cream 0.025%", "Benzoyl peroxide gel 5%",
+    
+    // Endocrine & Diabetes
+    "Metformin 500mg tablet", "Metformin 850mg tablet", "Metformin XR 1000mg tablet",
+    "Glibenclamide 5mg tablet", "Gliclazide 80mg tablet",
+    "Insulin (Regular) 100 IU/mL", "Insulin (NPH) 100 IU/mL",
+    "Levothyroxine 50mcg tablet", "Levothyroxine 100mcg tablet",
+    "Methimazole 5mg tablet", "Propylthiouracil 50mg tablet",
+    
+    // Neurological & Psychiatric
+    "Phenytoin 100mg capsule", "Carbamazepine 200mg tablet",
+    "Valproic acid 250mg tablet", "Levetiracetam 500mg tablet",
+    "Diazepam 5mg tablet", "Lorazepam 1mg tablet",
+    "Fluoxetine 20mg capsule", "Sertraline 50mg tablet",
+    "Amitriptyline 25mg tablet", "Haloperidol 5mg tablet",
+    "Risperidone 2mg tablet", "Clonazepam 0.5mg tablet",
+    
+    // Herbal & Traditional
+    "Lagundi 300mg tablet", "Lagundi 600mg tablet", "Lagundi 300mg/5mL syrup",
+    "Sambong capsule", "Tsaang Gubat tablet",
+    "Banaba leaf extract", "Ampalaya capsule",
+    "Ginger capsule", "Turmeric capsule",
+    "Ginkgo biloba extract", "Ginseng capsule",
+    
+    // Ophthalmic
+    "Artificial tears drops", "Chloramphenicol eye drops",
+    "Tobramycin eye drops", "Prednisolone eye drops",
+    "Timolol eye drops 0.5%", "Pilocarpine eye drops",
+    
+    // Otic (Ear)
+    "Ciprofloxacin ear drops", "Polymyxin B ear drops",
+    "Cerumenex ear drops", "Mineral oil ear drops",
+    
+    // Emergency & Critical Care
+    "Epinephrine 1mg/mL injection", "Atropine 1mg/mL injection",
+    "Dextrose 50% injection", "Normal Saline 0.9%",
+    "Lactated Ringer's solution", "Dopamine injection",
+    "Nitroglycerin sublingual tablet", "Morphine injection",
+    
+    // Contraceptives
+    "Ethinyl estradiol + Levonorgestrel tablet", "Medroxyprogesterone injection",
+    "Levonorgestrel emergency contraceptive", "Condoms",
+    
+    // Anti-parasitic
+    "Mebendazole 100mg tablet", "Albendazole 400mg tablet",
+    "Metronidazole 500mg (anti-parasitic)", "Tinidazole 500mg tablet",
+    "Pyrantel pamoate suspension", "Ivermectin 6mg tablet"
   ];
 
   // Removed local sessions, loading, error states and fetchSessions function
@@ -181,10 +247,13 @@ const Sessions = ({ userRole = 'doctor' }) => {
           session = todaysCheckUps.find(s => s.id === session.id);
         }
       }
-      
-      console.log(`[Sessions] Completing session for ${session.name}`);
+        console.log(`[Sessions] Completing session for ${session.name}`);
       // Update status to 'Completed' in today's check-ups
       await updateCheckUpItem({ ...session, status: 'Completed' });
+      
+      // Capture doctor information from localStorage for session tracking
+      const doctorId = localStorage.getItem("doctorId");
+      const doctorName = localStorage.getItem("doctorName");
       
       // Archive the session to permanent history
       // Ensure all necessary session data is passed for archiving
@@ -192,10 +261,15 @@ const Sessions = ({ userRole = 'doctor' }) => {
         ...session, // Spread existing session data
         status: 'Completed', // Ensure status is set to Completed
         completedAt: new Date().toISOString(), // Add a completion timestamp
-        patientName: session.name, // Explicitly map name to patientName for clarity
+        patientName: session.name, // Explicitly map name to patientName for clarity        // Add doctor information for accountability and tracking
+        doctorId: doctorId || null,
+        doctorName: doctorName || null,
         // Add any other fields required by the session history schema
       };
       await archiveSession(sessionToArchive);
+
+      // Increment today's checkup count for analytics
+      incrementTodayCheckups();
 
       alert(`Session for ${session.name} marked as Completed and archived.`);
     } catch (err) {
@@ -244,13 +318,26 @@ const Sessions = ({ userRole = 'doctor' }) => {
       const finalPrescription = prescriptionLines.length > 0 
         ? prescriptionLines.join('\\n') 
         : "N/A";
-      
-      console.log(`[Sessions] Saving prescription for session ${sessionId}`);
+        console.log(`[Sessions] Saving prescription for session ${sessionId}`);
       await updateCheckUpItem({ 
         ...sessionToUpdate, 
         prescription: finalPrescription,
         prescriptionLastUpdated: new Date().toISOString() // Add timestamp for prescription update
       });
+      
+      // Track prescription usage for analytics (only if there are actual prescriptions)
+      if (prescriptionLines.length > 0) {
+        // Track each medication for analytics
+        medsForSession.forEach(med => {
+          incrementPrescriptionUsage(med);
+        });
+        
+        customMedsForSession.forEach(custom => {
+          // For custom medications, track the base medication name
+          const medicationName = custom.split(' - ')[0].trim();
+          incrementPrescriptionUsage(medicationName);
+        });
+      }
       
       setEditingPrescription(null);
       alert('Prescription saved.');

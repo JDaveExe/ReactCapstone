@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Bar, Line, Pie } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Title, Tooltip, Legend } from 'chart.js';
 import { FileText, Calendar, BarChart, PieChart, LineChart, Download, AlertCircle, BarChart2 } from 'lucide-react';
+import useAnalytics from '../hooks/useAnalytics';
 import "../styles/Reports.css";
 
 ChartJS.register(
@@ -28,6 +29,15 @@ const Reports = () => {
     startDate: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0]
   });
+
+  // Analytics integration - connect to dashboard analytics
+  const analyticsTimeFrame = timeFrame === 'day' ? 'day' : 
+                             timeFrame === 'week' ? 'week' : 
+                             timeFrame === 'month' ? 'month1' :
+                             timeFrame === 'quarter' ? 'month3' :
+                             timeFrame === 'year' ? 'year' : 'month1';
+  
+  const { data: analyticsData, loading: analyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useAnalytics(analyticsTimeFrame);
 
   // Mock data for different report types
   const mockReportData = {
@@ -146,22 +156,111 @@ const Reports = () => {
       }
     }
   };
+  // Helper function to transform analytics data for reports
+  const getReportDataFromAnalytics = () => {
+    if (!analyticsData || analyticsLoading) return null;
+    
+    let reportData = null;
+    
+    switch (reportType) {
+      case 'consultation':
+        if (analyticsData.consultations && analyticsData.consultations.data) {
+          const consultationData = analyticsData.consultations.data;
+          reportData = {
+            labels: consultationData.map(item => item.date || item.name || 'Unknown'),
+            datasets: [{
+              label: 'Consultations',
+              data: consultationData.map(item => item.total || item.value || 0),
+              backgroundColor: '#38bdf8',
+              borderColor: '#0ea5e9',
+              borderWidth: 1,
+            }]
+          };
+        }
+        break;
+      case 'diagnosis':
+        if (analyticsData.diagnosticTests && analyticsData.diagnosticTests.data) {
+          const diagnosisData = analyticsData.diagnosticTests.data;
+          reportData = {
+            labels: diagnosisData.map(item => item.name || 'Unknown'),
+            datasets: [{
+              label: 'Diagnosis Count',
+              data: diagnosisData.map(item => item.value || 0),
+              backgroundColor: ['#38bdf8', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
+              borderWidth: 1,
+            }]
+          };
+        }
+        break;
+      case 'medication':
+        if (analyticsData.medications && analyticsData.medications.data) {
+          const medicationData = analyticsData.medications.data;
+          reportData = {
+            labels: medicationData.map(item => item.name || 'Unknown'),
+            datasets: [{
+              label: 'Medication Usage',
+              data: medicationData.map(item => item.value || 0),
+              backgroundColor: '#10b981',
+              borderColor: '#059669',
+              borderWidth: 1,
+            }]
+          };
+        }
+        break;
+      case 'patientDemographics':
+        if (analyticsData.services && analyticsData.services.data) {
+          const servicesData = analyticsData.services.data;
+          reportData = {
+            labels: servicesData.map(item => item.name || 'Unknown'),
+            datasets: [{
+              label: 'Patient Demographics',
+              data: servicesData.map(item => item.value || 0),
+              backgroundColor: ['#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#38bdf8', '#10b981'],
+              borderWidth: 1,
+            }]
+          };
+        }
+        break;
+      default:
+        reportData = null;
+    }
+    
+    return reportData;
+  };
 
-  // Generate report function
+  // Generate report function - now uses real analytics data
   const generateReport = () => {
     setIsGenerating(true);
     
-    // Simulate API call with timeout
-    setTimeout(() => {
-      setGeneratedReport({
-        type: reportType,
-        timeFrame: timeFrame,
-        chartType: chartType,
-        dateRange: dateRange,
-        data: mockReportData[reportType],
-      });
-      setIsGenerating(false);
-    }, 1500);
+    // Refresh analytics data first, then generate report
+    refetchAnalytics().then(() => {
+      setTimeout(() => {
+        const analyticsReportData = getReportDataFromAnalytics();
+        
+        setGeneratedReport({
+          type: reportType,
+          timeFrame: timeFrame,
+          chartType: chartType,
+          dateRange: dateRange,
+          data: analyticsReportData || mockReportData[reportType], // Fallback to mock data if no analytics
+          isAnalyticsData: !!analyticsReportData
+        });
+        setIsGenerating(false);
+      }, 500);
+    }).catch(() => {
+      // Fallback to mock data if analytics fails
+      setTimeout(() => {
+        setGeneratedReport({
+          type: reportType,
+          timeFrame: timeFrame,
+          chartType: chartType,
+          dateRange: dateRange,
+          data: mockReportData[reportType],
+          isAnalyticsData: false
+        });
+        setIsGenerating(false);
+      }, 500);
+    });
   };
 
   // Export report function
@@ -269,9 +368,8 @@ const Reports = () => {
                   </div>
                 </div>
               )}
-              
-              <div className="form-group">
-                <label htmlFor="chartType">Chart Type</label>
+                <div className="form-group">
+                <label htmlFor="chartType">Customize</label>
                 <select 
                   id="chartType" 
                   className="form-select"

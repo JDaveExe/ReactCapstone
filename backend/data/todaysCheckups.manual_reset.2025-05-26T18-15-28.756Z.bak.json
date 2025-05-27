@@ -1,0 +1,102 @@
+[
+  {
+    "id": "appointment_1747880264335",
+    "appointmentId": 1747880264335,
+    "name": "Orion Zimmerman",
+    "familyName": "Zimmerman",
+    "purpose": "Not Specified",
+    "scheduledTime": "09:00",
+    "loggedInAt": "2025-05-26T04:36:45.027Z",
+    "queueNumber": 1,
+    "status": "Waiting"
+  },
+  {
+    "id": 27,
+    "firstName": "Sample",
+    "lastName": "Alosa",
+    "email": null,
+    "phoneNumber": "09516277103",
+    "membershipStatus": "Non-Member",
+    "dateOfBirth": "2002-05-08T16:00:00.000Z",
+    "gender": "Male",
+    "philHealthNumber": "",
+    "address": {
+      "houseNo": "12",
+      "street": "Shaw Boulevard",
+      "barangay": "Oranbo",
+      "city": "Pasig",
+      "region": "Metro Manila"
+    },
+    "name": "Sample Alosa",
+    "loggedInAt": "2025-05-26T04:41:07.346Z",
+    "queueNumber": 2,
+    "status": "Waiting",
+    "purpose": "Consultation"
+  },
+  {
+    "id": 10,
+    "firstName": "Orion",
+    "lastName": "Zimmerman",
+    "email": "zimmer01@gmail.com",
+    "phoneNumber": "09295830840",
+    "membershipStatus": "Non-Member",
+    "dateOfBirth": "2005-02-25T16:00:00.000Z",
+    "gender": "Male",
+    "philHealthNumber": null,
+    "address": {
+      "houseNo": "14",
+      "street": "Ortigas Avenue",
+      "barangay": "San Antonio",
+      "city": "Pasig",
+      "region": "Metro Manila"
+    },
+    "name": "Orion Zimmerman",
+    "loggedInAt": "2025-05-26T04:42:01.236Z",
+    "queueNumber": 3,
+    "status": "Waiting",
+    "purpose": "Follow Up"
+  },
+  {
+    "id": 9,
+    "firstName": "Marianne",
+    "lastName": "Marquez",
+    "email": null,
+    "phoneNumber": "09951135600",
+    "membershipStatus": "nonmember",
+    "dateOfBirth": "1987-04-24T16:00:00.000Z",
+    "gender": "Female",
+    "philHealthNumber": "",
+    "address": {
+      "houseNo": "24",
+      "street": "E. Rodriguez Jr. Avenue (C-5)",
+      "barangay": "Pinagbuhatan",
+      "city": "Pasig",
+      "region": "Metro Manila"
+    },
+    "name": "Marianne Marquez",
+    "loggedInAt": "2025-05-26T04:43:37.510Z",
+    "queueNumber": 4,
+    "status": "Completed",
+    "purpose": "Consultation",
+    "vitalSigns": {
+      "date": "2025-05-26",
+      "age": "38",
+      "cc": "",
+      "temp": "35",
+      "o2sat": "80",
+      "pulse": "40",
+      "ht": "132",
+      "respiration": "",
+      "wt": "39",
+      "bp": "120/70",
+      "patientId": 9,
+      "patientName": "Marianne Marquez",
+      "checkupId": 9,
+      "recordedAt": "2025-05-26T04:44:35.627Z"
+    },
+    "vitalSignsChecked": true,
+    "notes": "N/A",
+    "prescription": "Aspirin 325mg tablet - Once daily",
+    "prescriptionLastUpdated": "2025-05-26T04:46:00.388Z"
+  }
+]

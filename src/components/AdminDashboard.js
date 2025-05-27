@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef, useContext } from 'react'; // Added useRef and useContext
 import axios from 'axios';
-import { ChevronDown, ChevronUp, Search, Settings, Bell, LogOut, User, Menu, X, Maximize, BarChart2, Circle, Calendar, Square, ChevronRight, Activity, AlarmClock, Shield, Grid, List, QrCode, Heart } from 'lucide-react'; // Added QrCode and Heart
+import { ChevronDown, ChevronUp, Search, Settings, Bell, LogOut, User, Menu, X, Maximize, BarChart2, Circle, Calendar, Square, ChevronRight, Activity, AlarmClock, Shield, Grid, List, QrCode, Heart, RefreshCw, MessageSquare } from 'lucide-react'; // Added QrCode, Heart, RefreshCw, MessageSquare
 import DateTimeContext from '../contexts/DateTimeContext';
 import CheckUpContext from '../contexts/CheckUpContext';
 import { useNavigate } from 'react-router-dom';
+import useAnalytics from '../hooks/useAnalytics';
+import CheckupDashboard from './CheckupDashboard';
+import SimplePieChart from './SimplePieChart';
+import { useMedicalAnalytics } from '../contexts/MedicalAnalyticsContext';
 import '../styles/DashboardAdm.css';
 import '../styles/SidebarAdmin.css';
 import '../styles/AdminDashboardV2.css'; // Added for enhanced styling
@@ -25,6 +29,7 @@ import RegisteredProfile from './RegisteredProfile';
 import SessionHistory from './SessionHistory';
 import ScheduledSession from './ScheduledSession';
 import VitalSignsCheck from './VitalSignsCheck';
+import SMSNotification from './SMSNotification'; // Import SMS Notification component
 import { getPatients, getFamilies, getFamilyMembers, getSortedFamilies, addSurname, assignPatientToFamily, deletePatient } from '../services/api';
 import AddNewPatientForm from './AddNewPatientForm'; // Import AddNewPatientForm
 import { Button, Modal } from 'react-bootstrap'; // Import Button and Modal
@@ -163,28 +168,75 @@ function PieChart({ colors, data }) {
   );
 }
 
-function LineChart() {
-  return (
-    <svg width="100%" height="100%" viewBox="0 0 1000 300">
-      {[0, 1, 2, 3, 4].map((i) => (
-        <line key={`h-${i}`} x1="0" y1={i * 60} x2="1000" y2={i * 60} stroke="#334155" strokeWidth="1" strokeDasharray="5,5" />
-      ))}
-      <line x1="0" y1="240" x2="1000" y2="240" stroke="#334155" strokeWidth="1" />
-      {['Jan', 'Feb', 'Mar', 'Apr', 'May'].map((month, i) => (
-        <text key={`month-${i}`} x={i * 200 + 100} y="260" textAnchor="middle" fill="#94a3b8" fontSize="12">{month}</text>
-      ))}
-      <path d="M0,240 C50,180 100,200 150,160 C200,120 250,140 300,160 C350,180 400,160 450,120 C500,100 550,140 600,160 C650,180 700,140 750,120 C800,100 850,140 900,120 C950,100 1000,140 1000,240 L1000,240 L0,240 Z" fill="rgba(59,130,246,0.15)" />
-      <path d="M0,180 C50,120 100,140 150,100 C200,60 250,80 300,100 C350,120 400,100 450,60 C500,40 550,80 600,100 C650,120 700,80 750,60 C800,40 850,80 900,60 C950,40 1000,80 1000,120" stroke="#3B82F6" strokeWidth="2" fill="none" />
-      <path d="M0,80 C50,120 100,100 150,160 C200,200 250,180 300,140 C350,120 400,140 450,180 C500,220 550,180 600,120 C650,80 700,100 750,160 C800,220 850,180 900,120 C950,60 1000,80 1000,120" stroke="#10B981" strokeWidth="2" fill="none" />
-      <path d="M0,140 C50,160 100,180 150,140 C200,120 250,140 300,160 C350,180 400,160 450,120 C500,100 550,120 600,180 C650,200 700,160 750,120 C800,100 850,160 900,220 C950,200 1000,160 1000,140" stroke="#EF4444" strokeWidth="2" fill="none" strokeDasharray="5,5" />
-    </svg>
-  );
-}
+
 
 export default function AdminDashboard() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [notification, setNotification] = useState({ show: false, message: '', type: 'info' });
-  const [collapsed, setCollapsed] = useState(false);    
+  // Add CSS for refresh animation
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.innerHTML = `
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+  // States for Medical Analytics section
+  const [vaccineManageOpen, setVaccineManageOpen] = useState(false);
+  const [prescriptionManageOpen, setPrescriptionManageOpen] = useState(false);
+  const [refreshingCharts, setRefreshingCharts] = useState(false);
+  
+  // Confirmation dialog states
+  const [confirmDialog, setConfirmDialog] = useState({
+    show: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    type: 'info' // 'info', 'warning', 'danger'
+  });
+  const handleChartsRefresh = () => {
+    setRefreshingCharts(true);
+    setTimeout(() => {
+      // This forces a re-render of the charts
+      setRefreshingCharts(false);
+    }, 500);
+  };
+
+  // Helper functions for confirmation dialogs
+  const showConfirmDialog = (title, message, onConfirm, type = 'info') => {
+    setConfirmDialog({
+      show: true,
+      title,
+      message,
+      onConfirm,
+      type
+    });
+  };
+
+  const hideConfirmDialog = () => {
+    setConfirmDialog({
+      show: false,
+      title: '',
+      message: '',
+      onConfirm: null,
+      type: 'info'
+    });
+  };
+
+  const handleConfirmAction = () => {
+    if (confirmDialog.onConfirm) {
+      confirmDialog.onConfirm();
+    }
+    hideConfirmDialog();
+  };
+  const [isLoading, setIsLoading] = useState(false);  const [notification, setNotification] = useState({ show: false, message: '', type: 'info' });  const [collapsed, setCollapsed] = useState(false);
+  const { getVaccineChartData, getPrescriptionChartData, resetVaccineData, resetPrescriptionData, generateTestVaccineData, generateTestPrescriptionData } = useMedicalAnalytics();
   const [dropdowns, setDropdowns] = useState({
     patientManagement: false,
     reports: false,
@@ -193,20 +245,21 @@ export default function AdminDashboard() {
     personalInfo: true, // For profile section
     contactInfo: true   // For profile section
   });
-  const [selectedView, setSelectedView] = useState('dashboard');  const [zoomedChart, setZoomedChart] = useState(null);
+  const [selectedView, setSelectedView] = useState('dashboard');const [zoomedChart, setZoomedChart] = useState(null);
   const navigate = useNavigate();
   const [selectedFamily, setSelectedFamily] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
   const [viewMode, setViewMode] = useState('list');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [familySearchTerm, setFamilySearchTerm] = useState('');
-  const [currentSearchTerm, setCurrentSearchTerm] = useState(''); // Added this line
-  const [patients, setPatients] = useState([]);
+  const [currentSearchTerm, setCurrentSearchTerm] = useState(''); // Added this line  const [patients, setPatients] = useState([]);
   const [showVitalSignsModal, setShowVitalSignsModal] = useState(false); // For showing/hiding the Vital Signs Check modal
+  const [showSMSModal, setShowSMSModal] = useState(false); // For showing/hiding the SMS Notification modal
   const { getCurrentDate, isSimulated } = useContext(DateTimeContext);
   const { addPatientToCheckUpList } = useContext(CheckUpContext);
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'admin');
+  const [userName, setUserName] = useState(localStorage.getItem('userName') || 'Admin');
   const [showAddNewPatientForm, setShowAddNewPatientForm] = useState(false);
   const [actionView, setActionView] = useState(null); // Added for member profile view
   const [managePatientDropdownOpen, setManagePatientDropdownOpen] = useState(false);
@@ -216,6 +269,10 @@ export default function AdminDashboard() {
   const [selectedFamilyForAssignment, setSelectedFamilyForAssignment] = useState(null); // New state for selected family in modal
   const [assignFamilySearchTerm, setAssignFamilySearchTerm] = useState(''); // New state for search term in assign modal
   const [familiesWithMembers, setFamiliesWithMembers] = useState([]); // Ensure this state exists
+  
+  // Analytics integration
+  const { data: analyticsData, loading: analyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useAnalytics('month1');
+  
   // QR Code State
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrCodeValue, setQrCodeValue] = useState('');
@@ -328,12 +385,13 @@ export default function AdminDashboard() {
     }
     console.log('AdminDashboard: fetchFamiliesWithMembers finished');
   };
-
   const handleFamilyClick = (family) => {
     console.log(`Clicking on family: ${JSON.stringify(family)}`);
     setSelectedFamily(family);
     setCurrentSearchTerm(''); // Reset search term when a new family is clicked
-  };  const handleBackToFamilies = () => {
+  };
+
+  const handleBackToFamilies = () => {
     setSelectedFamily(null);
     setSelectedMember(null);
     setActionView(null);
@@ -344,11 +402,16 @@ export default function AdminDashboard() {
     setShowAssignFamilyModal(false); // Close assign modal if open
     setShowQrModal(false); // Close QR modal if open
     setShowVitalSignsModal(false); // Close vital signs modal if open
-  };
-  const handleVitalSignsCheck = () => {
+  };  const handleVitalSignsCheck = () => {
     console.log('Vital Signs Check button clicked', { selectedMember });
     setShowVitalSignsModal(true);
     console.log('showVitalSignsModal set to:', true);
+  };
+
+  const handleSMSNotification = () => {
+    console.log('SMS Notification button clicked', { selectedMember });
+    setShowSMSModal(true);
+    console.log('showSMSModal set to:', true);
   };
   const handleDeletePatientData = async () => {
     try {
@@ -613,9 +676,355 @@ export default function AdminDashboard() {
         printWin.document.close();
       } else {
         alert('Please allow popups to print the QR code.');
+      }    }
+  };  // Chart cards data - keeping only the Patient Checkup Trends chart we made together
+  const chartCards = useMemo(() => {
+    return [
+      {        
+        title: 'Patient Checkup Trends',
+        content: (
+          <div style={{ marginTop: -16, marginLeft: -24, marginRight: -24, marginBottom: -16, width: '100%' }}>
+            <CheckupDashboard />
+          </div>
+        ),
+        isFullWidth: true, // Special flag for wider display
+        style: { maxWidth: '100%', flex: '1 1 100%' } // Additional styling for full width
+      },      {        title: 'Medical Analytics',
+        content: (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginTop: 0 }}>
+            {/* Charts Container */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              {/* Vaccine Usage Chart */}
+              <div style={{ background: '#374151', borderRadius: 8, padding: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 600, color: '#f1f5f9', margin: 0 }}>
+                    Vaccine Usage
+                  </h3>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button 
+                      onClick={handleChartsRefresh}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#94a3b8',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '4px',
+                        borderRadius: '4px'
+                      }}
+                      title="Refresh"
+                    >
+                      <RefreshCw size={16} style={{ animation: refreshingCharts ? 'spin 1s linear infinite' : 'none' }} />
+                    </button>
+                  </div>
+                </div>
+                <div style={{ width: '100%', height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {(() => {
+                    const vaccineData = getVaccineChartData();
+                    if (vaccineData.length === 0 || refreshingCharts) {
+                      return (
+                        <div style={{ textAlign: 'center', color: '#94a3b8' }}>
+                          <Activity size={48} style={{ marginBottom: 12, opacity: 0.5 }} />
+                          <div style={{ fontSize: 14 }}>No vaccine data available</div>
+                          <div style={{ fontSize: 12, marginTop: 4 }}>Vaccines administered will appear here</div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <SimplePieChart 
+                        data={vaccineData}
+                        width={280}
+                        height={280}
+                      />
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Prescription Usage Chart */}
+              <div style={{ background: '#374151', borderRadius: 8, padding: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 600, color: '#f1f5f9', margin: 0 }}>
+                    Prescription Usage
+                  </h3>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button 
+                      onClick={handleChartsRefresh}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#94a3b8',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '4px',
+                        borderRadius: '4px'
+                      }}
+                      title="Refresh"
+                    >
+                      <RefreshCw size={16} style={{ animation: refreshingCharts ? 'spin 1s linear infinite' : 'none' }} />
+                    </button>
+                  </div>
+                </div>
+                <div style={{ width: '100%', height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {(() => {
+                    const prescriptionData = getPrescriptionChartData();
+                    if (prescriptionData.length === 0 || refreshingCharts) {
+                      return (
+                        <div style={{ textAlign: 'center', color: '#94a3b8' }}>
+                          <Activity size={48} style={{ marginBottom: 12, opacity: 0.5 }} />
+                          <div style={{ fontSize: 14 }}>No prescription data available</div>
+                          <div style={{ fontSize: 12, marginTop: 4 }}>Prescriptions given will appear here</div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <SimplePieChart 
+                        data={prescriptionData}
+                        width={280}
+                        height={280}
+                      />
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+
+            {/* Manage Buttons Container */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              {/* Vaccine Manage Dropdown */}
+              <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+                <button
+                  onClick={() => setVaccineManageOpen(!vaccineManageOpen)}
+                  style={{
+                    background: '#6b7280',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 14
+                  }}
+                >
+                  <Settings size={16} />
+                  Manage Vaccines
+                  <ChevronDown size={14} style={{ 
+                    transform: vaccineManageOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s'
+                  }} />
+                </button>
+                
+                {/* Vaccine Dropdown Menu */}
+                {vaccineManageOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    zIndex: 1000,
+                    background: '#1e293b',
+                    borderRadius: 8,
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)',
+                    width: 200,
+                    marginTop: 8
+                  }}>
+                    <div style={{height: '8px'}}></div>
+                    
+                    <button
+                      onClick={() => {
+                        setVaccineManageOpen(false);
+                        showConfirmDialog(
+                          'Generate Test Data',
+                          'This will generate random test data for the vaccine usage chart. This action cannot be undone.',
+                          () => {
+                            generateTestVaccineData();
+                            handleChartsRefresh();
+                            setNotification({ show: true, message: 'Test vaccine data generated successfully!', type: 'success' });
+                            setTimeout(() => setNotification({ show: false, message: '', type: 'info' }), 3000);
+                          },
+                          'info'
+                        );
+                      }}
+                      style={{
+                        width: '100%',
+                        background: 'none',
+                        border: 'none',
+                        color: '#60a5fa',
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        fontSize: 14,
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#4b5563'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                    >
+                      <Activity size={16} />
+                      Test Chart
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setVaccineManageOpen(false);
+                        showConfirmDialog(
+                          'Reset Vaccine Data',
+                          'This will permanently delete all vaccine usage data. This action cannot be undone.',
+                          () => {
+                            resetVaccineData();
+                            handleChartsRefresh();
+                            setNotification({ show: true, message: 'Vaccine data has been reset!', type: 'success' });
+                            setTimeout(() => setNotification({ show: false, message: '', type: 'info' }), 3000);
+                          },
+                          'danger'
+                        );
+                      }}
+                      style={{
+                        width: '100%',
+                        background: 'none',
+                        border: 'none',
+                        color: '#f87171',
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        fontSize: 14,
+                        borderRadius: '0 0 8px 8px',
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#4b5563'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                    >
+                      <RefreshCw size={16} />
+                      Reset Testing
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Prescription Manage Dropdown */}
+              <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+                <button
+                  onClick={() => setPrescriptionManageOpen(!prescriptionManageOpen)}
+                  style={{
+                    background: '#6b7280',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 14
+                  }}
+                >
+                  <Settings size={16} />
+                  Manage Prescriptions
+                  <ChevronDown size={14} style={{ 
+                    transform: prescriptionManageOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s'
+                  }} />                </button>
+                
+                {/* Prescription Dropdown Menu */}
+                {prescriptionManageOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    zIndex: 1000,
+                    background: '#1e293b',
+                    borderRadius: 8,
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)',
+                    width: 220,
+                    marginTop: 8
+                  }}>
+                    <div style={{height: '8px'}}></div>
+                    
+                    <button
+                      onClick={() => {
+                        setPrescriptionManageOpen(false);
+                        showConfirmDialog(
+                          'Generate Test Data',
+                          'This will generate random test data for the prescription usage chart. This action cannot be undone.',
+                          () => {
+                            generateTestPrescriptionData();
+                            handleChartsRefresh();
+                            setNotification({ show: true, message: 'Test prescription data generated successfully!', type: 'success' });
+                            setTimeout(() => setNotification({ show: false, message: '', type: 'info' }), 3000);
+                          },
+                          'info'
+                        );
+                      }}
+                      style={{
+                        width: '100%',
+                        background: 'none',
+                        border: 'none',
+                        color: '#60a5fa',
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        fontSize: 14,
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#4b5563'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                    >
+                      <Activity size={16} />
+                      Test Chart
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setPrescriptionManageOpen(false);
+                        showConfirmDialog(
+                          'Reset Prescription Data',
+                          'This will permanently delete all prescription usage data. This action cannot be undone.',
+                          () => {
+                            resetPrescriptionData();
+                            handleChartsRefresh();
+                            setNotification({ show: true, message: 'Prescription data has been reset!', type: 'success' });
+                            setTimeout(() => setNotification({ show: false, message: '', type: 'info' }), 3000);
+                          },
+                          'danger'
+                        );
+                      }}
+                      style={{
+                        width: '100%',
+                        background: 'none',
+                        border: 'none',
+                        color: '#f87171',
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        fontSize: 14,
+                        borderRadius: '0 0 8px 8px',
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#4b5563'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                    >
+                      <RefreshCw size={16} />
+                      Reset Testing
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ),
+        isFullWidth: true,
+        style: { maxWidth: '100%', flex: '1 1 100%' }
       }
-    }
-  };
+    ];
+  }, [analyticsData, analyticsLoading, analyticsError, getVaccineChartData, getPrescriptionChartData]);
 
   function renderContent() {
     console.log('AdminDashboard actionView:', actionView, 'selectedMember:', selectedMember); // DEBUG LINE
@@ -666,7 +1075,7 @@ export default function AdminDashboard() {
                   {/* Auto LogIn Button */}
                   <button
                     style={{
-                      background: '#EF4444', // Red background
+                      background: '#f5c71a', // Red background
                       color: 'white',
                       border: 'none',
                       borderRadius: '4px',
@@ -786,7 +1195,7 @@ export default function AdminDashboard() {
                           cursor: 'pointer',
                           borderBottom: '1px solid #334155' // Separator line
                         }}
-                        onClick={() => { alert('Notify functionality to be implemented'); setManagePatientDropdownOpen(false); }}
+                        onClick={handleSMSNotification}
                       >
                         Notify
                       </button>
@@ -902,7 +1311,7 @@ export default function AdminDashboard() {
                     <Button variant="info" onClick={printQRCode}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-printer" viewBox="0 0 16 16" style={{marginRight: '5px'}}>
                         <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
-                        <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1-1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
+                        <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1-1v2H4V3zm1 5a2 2 0 0 0-2 2v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
                       </svg>
                       Print QR Code
                     </Button>
@@ -1254,15 +1663,45 @@ export default function AdminDashboard() {
                     marginBottom: 8
                   }}>
                     <Heart size={22} color="#fff" />
-                  </div>
-                  <div>
+                  </div>                  <div>
                     <div className="action-title">VITAL SIGNS CHECK</div>
                     <div className="action-desc">Record patient vitals</div>
                   </div>
                 </button>
+                
+                <button 
+                  className="action-button" 
+                  onClick={() => {
+                    console.log('SMS Notification button clicked', { patient: selectedMember });
+                    if (selectedMember) {
+                      handleSMSNotification();
+                    } else {
+                      console.error('No patient selected for SMS notification');
+                      alert('Error: No patient data available for SMS notification');
+                    }
+                  }}
+                >
+                  <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '40px',
+                    height: '40px',
+                    minWidth: '40px',
+                    background: '#10b981',
+                    borderRadius: '8px',
+                    marginBottom: 8
+                  }}>
+                    <MessageSquare size={22} color="#fff" />
+                  </div>
+                  <div>
+                    <div className="action-title">SMS NOTIFICATION</div>
+                    <div className="action-desc">Send text message</div>
+                  </div>
+                </button>
               </div>
             </div>
-          );        case 'treatment': 
+          );case 'treatment': 
           return <TreatmentRecord member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />;
         // case 'admitting': 
         //   return <AdmittingData member={selectedMember} onBack={() => { setActionView('ck-profile'); }} />; // Removed as requested
@@ -1391,7 +1830,7 @@ export default function AdminDashboard() {
                       style={{
                         padding: '8px 16px',
                         background: '#3b82f6',
-                        color: '#fff',
+                        color: 'white',
                         border: 'none',
                         borderRadius: '4px',
                         marginTop: '12px',
@@ -1495,98 +1934,9 @@ export default function AdminDashboard() {
             )
           }
         </div>
-      );
-    }
+      );    }
     if (selectedView === 'reports') return <div style={{ color: '#f1f5f9' }}><Reports /></div>;
-    if (selectedView === 'settings') return <div style={{ color: '#f1f5f9' }}><Asettings /></div>;
-
-    const chartCards = [
-      {
-        title: 'Consultations (MTD)',
-        content: (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ background: '#3b82f6', height: 120, width: '100%', borderRadius: 8 }}></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 14 }}>
-              <span>0</span>
-              <span>75</span>
-            </div>
-          </div>
-        )
-      },
-      {
-        title: '10 Diagnostic Test (Month to Date)',
-        content: (
-          <div style={{ marginTop: 16 }}>
-            <PieChart colors={['#4C6EF5', '#12B886', '#FA5252', '#FAB005', '#7950F2', '#228BE6']} data={[25, 20, 15, 15, 15, 10]} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 16, fontSize: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#4C6EF5', display: 'inline-block', borderRadius: 2 }}></span>RAPID COVID/HEP/STI</div>
-              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#12B886', display: 'inline-block', borderRadius: 2 }}></span>COMPLETE BLOOD COUNT</div>
-                           <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FA5252', display: 'inline-block', borderRadius: 2 }}></span>HEMOGLOBIN A1C</div>
-              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FAB005', display: 'inline-block', borderRadius: 2 }}></span>URINALYSIS</div>
-              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#7950F2', display: 'inline-block', borderRadius: 2 }}></span>OBSTETRICS PA GENES</div>
-              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#228BE6', display: 'inline-block', borderRadius: 2 }}></span>OTHER BIOCHEMISTRY</div>
-            </div>
-          </div>
-        )
-      },
-      {
-        title: '10 Diagnostic Test (Month to Date)',
-        content: (
-          <div style={{ marginTop: 16 }}>
-            <PieChart colors={['#FF6B6B', '#22B8CF', '#FD7E14', '#AE3EC9', '#51CF66']} data={[30, 25, 20, 15, 10]} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 4, marginTop: 16, fontSize: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FF6B6B', display: 'inline-block', borderRadius: 2 }}></span>FAMILY PLANNING IMMUNIZATION</div>
-              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#22B8CF', display: 'inline-block', borderRadius: 2 }}></span>ACUTE RESPIRATORY INFECTION</div>
-              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FD7E14', display: 'inline-block', borderRadius: 2 }}></span>CONTRACEPTIVE</div>
-              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#AE3EC9', display: 'inline-block', borderRadius: 2 }}></span>TB PULMONARY</div>
-              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#51CF66', display: 'inline-block', borderRadius: 2 }}></span>URINARY TRACT INFECTION</div>
-            </div>
-          </div>
-        )
-      },
-      {
-        title: '10 Diagnostic Test (Month to Date)',
-        content: (
-          <div style={{ marginTop: 16 }}>
-            <PieChart colors={['#339AF0', '#51CF66', '#FF922B', '#F06595', '#845EF7']} data={[35, 25, 20, 12, 8]} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 4, marginTop: 16, fontSize: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#339AF0', display: 'inline-block', borderRadius: 2 }}></span>LANOXIN 200 MCG/MSAL</div>
-              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#51CF66', display: 'inline-block', borderRadius: 2 }}></span>METOPROLOL (BETALOC/LOPRESOR)</div>
-              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#FF922B', display: 'inline-block', borderRadius: 2 }}></span>FERROUS SULFATE</div>
-              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#F06595', display: 'inline-block', borderRadius: 2 }}></span>CEFUROXIME 125</div>
-              <div style={{ display: 'flex', alignItems: 'center' }}><span style={{ width: 12, height: 12, marginRight: 6, background: '#845EF7', display: 'inline-block', borderRadius: 2 }}></span>ASCORBIC ACID (CLAVULANIC ACID)</div>
-            </div>
-          </div>
-        )
-      }
-    ];
-
-    if (zoomedChart !== null) {
-      if (zoomedChart === 'trend') {
-        return (
-          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(15,23,42,0.96)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: '90vw', maxWidth: 1200, maxHeight: '90vh', overflow: 'auto' }}>
-              <DashboardCard title="Daily Trend Analysis" onClose={handleUnzoom}>
-                <div style={{ minHeight: 400, minWidth: 600 }}><LineChart /></div>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 32, marginTop: 18 }}>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ width: 12, height: 12, borderRadius: 6, background: '#EF4444', marginRight: 8, display: 'inline-block' }}></span>
-                    <span style={{ fontSize: 14 }}>Consultations</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ width: 12, height: 12, borderRadius: 6, background: '#3B82F6', marginRight: 8, display: 'inline-block' }}></span>
-                    <span style={{ fontSize: 14 }}>Diagnostic Tests</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ width: 12, height: 12, borderRadius: 6, background: '#10B981', marginRight: 8, display: 'inline-block' }}></span>
-                    <span style={{ fontSize: 14 }}>Medications</span>
-                  </div>
-                </div>
-              </DashboardCard>
-            </div>
-          </div>
-        );
-      }
+    if (selectedView === 'settings') return <div style={{ color: '#f1f5f9' }}><Asettings /></div>;    if (zoomedChart !== null) {
       if (typeof zoomedChart === 'number' && chartCards[zoomedChart]) {
         const card = chartCards[zoomedChart];
         return (
@@ -1599,70 +1949,68 @@ export default function AdminDashboard() {
           </div>
         );
       }
-    }
-
-    return (
+    }    return (
       <>
-        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 32, color: '#f1f5f9', letterSpacing: 0.2 }}>Analytics</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: '#f1f5f9', letterSpacing: 0.2, margin: 0 }}>Analytics</h1>
+            {analyticsError && (
+              <div style={{ color: '#ef4444', fontSize: 14, marginTop: 4 }}>
+                Error loading analytics: {analyticsError}
+              </div>
+            )}
+            {analyticsLoading && (
+              <div style={{ color: '#94a3b8', fontSize: 14, marginTop: 4 }}>
+                Loading analytics data...
+              </div>
+            )}
+          </div>
+          <button 
+            onClick={refetchAnalytics}
+            disabled={analyticsLoading}
+            style={{ 
+              background: analyticsLoading ? '#374151' : '#3b82f6', 
+              color: '#fff', 
+              border: 'none', 
+              padding: '10px 16px', 
+              borderRadius: '8px', 
+              cursor: analyticsLoading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              opacity: analyticsLoading ? 0.6 : 1
+            }}
+          >
+            <Activity size={16} />
+            {analyticsLoading ? 'Refreshing...' : 'Refresh Data'}
+          </button>        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, marginBottom: 32 }}>
-          {chartCards.map((card, idx) =>
-            <DashboardCard
-              key={idx}
-              title={card.title}
-              onZoom={() => handleZoomChart(idx)}
-            >
-              {card.content}
-            </DashboardCard>
-          )}
-        </div>
-        <div style={{ background: '#1e293b', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', padding: 20, marginBottom: 32, position: 'relative' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-            <h2 style={{ fontSize: 17, fontWeight: 600, color: '#f1f5f9', letterSpacing: 0.2 }}>Daily Trend Analysis</h2>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button style={{ background: 'none', border: 'none', borderRadius: 6, padding: 6, color: '#fff', cursor: 'pointer' }} onClick={() => setZoomedChart('trend')}><Maximize size={16} /></button>
-            </div>
-          </div>
-          <div style={{ height: 260, width: '100%' }}>
-            <LineChart />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 32, marginTop: 18 }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ width: 12, height: 12, borderRadius: 6, background: '#EF4444', marginRight: 8, display: 'inline-block' }}></span>
-              <span style={{ fontSize: 14 }}>Consultations</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ width: 12, height: 12, borderRadius: 6, background: '#3B82F6', marginRight: 8, display: 'inline-block' }}></span>
-              <span style={{ fontSize: 14 }}>Diagnostic Tests</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ width: 12, height: 12, borderRadius: 6, background: '#10B981', marginRight: 8, display: 'inline-block' }}></span>
-              <span style={{ fontSize: 14 }}>Medications</span>
-            </div>
-          </div>
-        </div>
-        {zoomedChart === 'trend' && (
-          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(15,23,42,0.96)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: '90vw', maxWidth: 1200, maxHeight: '90vh', overflow: 'auto' }}>
-              <DashboardCard title="Daily Trend Analysis" onClose={handleUnzoom}>
-                <div style={{ minHeight: 400, minWidth: 600 }}><LineChart /></div>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 32, marginTop: 18 }}>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ width: 12, height: 12, borderRadius: 6, background: '#EF4444', marginRight: 8, display: 'inline-block' }}></span>
-                    <span style={{ fontSize: 14 }}>Consultations</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ width: 12, height: 12, borderRadius: 6, background: '#3B82F6', marginRight: 8, display: 'inline-block' }}></span>
-                    <span style={{ fontSize: 14 }}>Diagnostic Tests</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ width: 12, height: 12, borderRadius: 6, background: '#10B981', marginRight: 8, display: 'inline-block' }}></span>
-                    <span style={{ fontSize: 14 }}>Medications</span>
-                  </div>
+          {chartCards.map((card, idx) => {
+            // Special handling for full-width cards
+            if (card.isFullWidth) {
+              return (
+                <div key={idx} style={{ gridColumn: '1 / -1' }}>
+                  <DashboardCard
+                    title={card.title}
+                    onZoom={() => handleZoomChart(idx)}
+                  >
+                    {card.content}
+                  </DashboardCard>
                 </div>
+              );
+            }
+            
+            // Regular cards
+            return (
+              <DashboardCard
+                key={idx}
+                title={card.title}
+                onZoom={() => handleZoomChart(idx)}
+              >
+                {card.content}
               </DashboardCard>
-            </div>
-          </div>
-        )}
+            );
+          })}        </div>
       </>
     );  }
   return (
@@ -1685,7 +2033,15 @@ export default function AdminDashboard() {
             });
           }
           setShowVitalSignsModal(false);
+        }}      />
+        {/* SMS Notification Modal - Positioned at the root level for proper rendering */}
+      <SMSNotification
+        show={showSMSModal}
+        onHide={() => {
+          console.log('SMS Modal hide triggered');
+          setShowSMSModal(false);
         }}
+        patient={selectedMember || {}}
       />
       
       <div className={`admin-dashboard ${collapsed ? 'collapsed' : ''}`} style={{ display: 'flex', height: '100vh', background: '#0f172a', color: '#fff' }}>
@@ -1900,11 +2256,10 @@ export default function AdminDashboard() {
                 onClick={() => setSettingsOpen(!settingsOpen)}
                 aria-haspopup="true"
                 aria-expanded={settingsOpen}
-              >
-                <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#1e3a8a', marginRight: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f1f5f9', fontWeight: 'bold' }}>
-                  A
+              >                <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#1e3a8a', marginRight: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f1f5f9', fontWeight: 'bold' }}>
+                  {userName.charAt(0).toUpperCase()}
                 </div>
-                {!collapsed && <span style={{ marginRight: 8 }}>Admin</span>}
+                {!collapsed && <span style={{ marginRight: 8 }}>{userName}</span>}
                 <Settings size={16} />
               </button>
               
@@ -1966,8 +2321,7 @@ export default function AdminDashboard() {
           {renderContent()}
         </div>
       </div>
-    </div>
-    {notification.show && (
+    </div>    {notification.show && (
         <div
           style={{
             position: 'fixed',
@@ -1985,6 +2339,97 @@ export default function AdminDashboard() {
           }}
         >
           {notification.message}
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
+      {confirmDialog.show && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1052
+        }}>
+          <div style={{
+            backgroundColor: '#1e293b',
+            borderRadius: '12px',
+            padding: '24px',
+            maxWidth: '400px',
+            width: '90%',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.25)'
+          }}>
+            <h3 style={{
+              color: '#f1f5f9',
+              margin: '0 0 12px 0',
+              fontSize: '18px',
+              fontWeight: '600'
+            }}>
+              {confirmDialog.title}
+            </h3>
+            <p style={{
+              color: '#94a3b8',
+              margin: '0 0 24px 0',
+              fontSize: '14px',
+              lineHeight: '1.5'
+            }}>
+              {confirmDialog.message}
+            </p>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'flex-end'
+            }}>
+              <button
+                onClick={hideConfirmDialog}
+                style={{
+                  backgroundColor: '#374151',
+                  color: '#d1d5db',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#4b5563'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#374151'}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmAction}
+                style={{
+                  backgroundColor: confirmDialog.type === 'danger' ? '#ef4444' : 
+                                 confirmDialog.type === 'warning' ? '#f59e0b' : '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  const currentBg = confirmDialog.type === 'danger' ? '#dc2626' : 
+                                   confirmDialog.type === 'warning' ? '#d97706' : '#2563eb';
+                  e.target.style.backgroundColor = currentBg;
+                }}
+                onMouseLeave={(e) => {
+                  const originalBg = confirmDialog.type === 'danger' ? '#ef4444' : 
+                                    confirmDialog.type === 'warning' ? '#f59e0b' : '#3b82f6';
+                  e.target.style.backgroundColor = originalBg;
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>

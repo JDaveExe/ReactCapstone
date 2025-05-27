@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import '../styles/SessionHistory.css'; 
-import { Search, Filter, Calendar, Clock, User, FileText, Loader, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, Filter, Calendar, Clock, User, FileText, Loader, ChevronDown, ChevronRight, Stethoscope, Trash2, AlertCircle } from 'lucide-react';
+import DateTimeContext from '../contexts/DateTimeContext';
 
 const API_URL = 'http://localhost:5000/api';
 
@@ -32,6 +33,7 @@ const getDisplayValue = (value) => {
 };
 
 const SessionHistory = () => {  
+  const { isCurrentTimeSimulated } = useContext(DateTimeContext);
   const [sessionHistory, setSessionHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,6 +41,7 @@ const SessionHistory = () => {
   const [filterOption, setFilterOption] = useState('all'); // Default filter to "all"
   const [refreshKey, setRefreshKey] = useState(0); // Added to force refresh
   const [expandedItem, setExpandedItem] = useState(null); // Track only ONE expanded item
+  const [deleteMessage, setDeleteMessage] = useState(''); // For deletion feedback
 
   // Toggle expansion - if same item, collapse; if different item, expand new one
   const toggleExpand = (historyId) => {
@@ -183,6 +186,34 @@ const SessionHistory = () => {
     return nameMatch && hasMatchingSession;
   });
 
+  // Function to delete a session
+  const deleteSession = async (historyId, isSimulated) => {
+    // Only allow deletion of simulated sessions
+    if (!isSimulated) {
+      setDeleteMessage('Only simulated sessions can be deleted');
+      setTimeout(() => setDeleteMessage(''), 3000);
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      const response = await axios.delete(`${API_URL}/sessionhistory/${historyId}`);
+      
+      if (response.status === 200) {
+        // Force refresh of session data
+        setRefreshKey(old => old + 1);
+        setDeleteMessage('Session deleted successfully');
+        setTimeout(() => setDeleteMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      setDeleteMessage('Failed to delete session');
+      setTimeout(() => setDeleteMessage(''), 3000);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (isLoading) {
     return <div className="loading-container history-loading"><Loader size={48} /> Loading session history...</div>;
   }
@@ -192,9 +223,13 @@ const SessionHistory = () => {
   }
 
   return (
-    <div className="session-history-container">
-      <div className="session-history-header">
+    <div className="session-history-container">      <div className="session-history-header">
         <h1>Session History</h1>
+        {deleteMessage && (
+          <div className={`delete-message ${deleteMessage.includes('Failed') || deleteMessage.includes('Only') ? 'error' : ''}`}>
+            {deleteMessage}
+          </div>
+        )}
         <div className="session-history-controls">
           <div className="search-bar">
             <Search size={18} />
@@ -253,22 +288,33 @@ const SessionHistory = () => {
                 {isExpanded && (
                   <div className="session-history-card-body">
                     {/* Latest session summary */}
-                    <h4 className="session-date-header">Latest Visit: {getFormattedDate(sessionDateValue)}</h4>
-                    <div className="session-detail-item">
+                    <h4 className="session-date-header">Latest Visit: {getFormattedDate(sessionDateValue)}</h4>                    <div className="session-detail-item">
                       <Calendar size={18} className="detail-icon" />
                       <strong>Date:</strong>
                       <span>{getFormattedDate(sessionDateValue)}</span>
+                      {latestSession.isSimulated && (
+                        <span className="simulated-tag">
+                          <AlertCircle size={14} />
+                          Simulated
+                        </span>
+                      )}
                     </div>
                     <div className="session-detail-item">
                       <Clock size={18} className="detail-icon" />
                       <strong>Time:</strong>
                       <span>{getFormattedTime(sessionDateValue)}</span>
-                    </div>
-                    <div className="session-detail-item">
+                    </div><div className="session-detail-item">
                       <FileText size={18} className="detail-icon" />
                       <strong>Purpose:</strong>
                       <span>{getDisplayValue(latestSession.purpose)}</span>
                     </div>
+                    {latestSession.doctorName && (
+                      <div className="session-detail-item">
+                        <Stethoscope size={18} className="detail-icon" />
+                        <strong>Doctor:</strong>
+                        <span>{getDisplayValue(latestSession.doctorName)}</span>
+                      </div>
+                    )}
                     <div className="session-detail-item">
                       <FileText size={18} className="detail-icon" />
                       <strong>Notes:</strong>
@@ -289,15 +335,36 @@ const SessionHistory = () => {
                           return (
                             <div key={index} className="previous-session-item">
                               <div className="previous-session-header">
-                                <Calendar size={16} className="detail-icon" />
-                                <span className="previous-session-date">
+                                <Calendar size={16} className="detail-icon" />                                <span className="previous-session-date">
                                   {getFormattedDate(prevSessionDate)} at {getFormattedTime(prevSessionDate)}
+                                  {prevSession.isSimulated && (
+                                    <span className="simulated-tag small">
+                                      <AlertCircle size={12} />
+                                      Simulated
+                                    </span>
+                                  )}
                                 </span>
-                              </div>
-                              <div className="previous-session-details">
+                                {prevSession.isSimulated && (
+                                  <button 
+                                    className="delete-session-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteSession(prevSession.historyId, prevSession.isSimulated);
+                                    }}
+                                    title="Delete simulated session"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                )}
+                              </div>                              <div className="previous-session-details">
                                 <div className="session-detail-item">
                                   <strong>Purpose:</strong> {getDisplayValue(prevSession.purpose)}
                                 </div>
+                                {prevSession.doctorName && (
+                                  <div className="session-detail-item">
+                                    <strong>Doctor:</strong> {getDisplayValue(prevSession.doctorName)}
+                                  </div>
+                                )}
                                 {prevSession.notes && (
                                   <div className="session-detail-item">
                                     <strong>Notes:</strong> {getDisplayValue(prevSession.notes)}
@@ -314,11 +381,25 @@ const SessionHistory = () => {
                         })}
                       </div>
                     )}
+                    <div className="session-delete-container">
+                      <button 
+                        className="delete-session-button" 
+                        onClick={() => deleteSession(latestSession.historyId, latestSession.isSimulated)}
+                      >
+                        <Trash2 size={18} />
+                        Delete Session
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
             );
           })}
+        </div>
+      )}
+      {deleteMessage && (
+        <div className="delete-message-container">
+          <p className="delete-message">{deleteMessage}</p>
         </div>
       )}
     </div>

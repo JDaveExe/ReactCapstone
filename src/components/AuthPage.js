@@ -142,31 +142,10 @@ const AuthPage = () => {
     }
     setLoginError("");
   };
-
   const handleLogin = async () => {
     setLoginError(""); // Clear any previous error messages
 
-    // Hard-coded credentials check for admin and doctor
-    if (emailOrPhone === "admin@gmail.com" && password === "admin") {
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("userRole", "admin");
-      localStorage.setItem("userEmail", emailOrPhone);
-      localStorage.setItem("userName", "Admin User");
-      localStorage.setItem("firstName", "Admin");
-      console.log("Redirecting to admin dashboard");
-      navigate("/admin/dashboard");
-      return;
-    } else if (emailOrPhone === "doctor@gmail.com" && password === "doctor") {
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("userRole", "doctor");
-      localStorage.setItem("userEmail", emailOrPhone);
-      localStorage.setItem("userName", "Doctor User");
-      localStorage.setItem("firstName", "Doctor");
-      console.log("Redirecting to doctor dashboard");
-      navigate("/doctor/dashboard");
-      return;
-    }
-
+    // All authentication now goes through the database
     try {
       const loginData = {
         emailOrPhone,
@@ -175,13 +154,19 @@ const AuthPage = () => {
       const response = await axios.post('http://localhost:5000/api/login', loginData);
       const { user } = response.data;
 
-      console.log("Login response:", user);
-
-      // Store user data in localStorage consistently
+      console.log("Login response:", user);      // Store user data in localStorage consistently
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userRole", user.role);
       localStorage.setItem("userEmail", user.email);
-        // Make sure we store the name consistently
+      localStorage.setItem("userId", user.id); // Store user ID for all users
+      
+      // Store doctor-specific information for session tracking
+      if (user.role === "doctor") {
+        localStorage.setItem("doctorId", user.id);
+        localStorage.setItem("doctorName", user.name || `${user.firstName} ${user.lastName || ""}`.trim());
+      }
+      
+      // Make sure we store the name consistently
       if (user.firstName) {
         localStorage.setItem("firstName", user.firstName);
         localStorage.setItem("lastName", user.lastName || "");
@@ -200,7 +185,7 @@ const AuthPage = () => {
             localStorage.setItem("lastName", "");
           }
         }
-      }      // Store patient ID if available
+      }// Store patient ID if available
       if (user.role === "patient" || user.role === "member") {
         localStorage.setItem("patientId", user.id);
         
@@ -263,11 +248,17 @@ const AuthPage = () => {
       const { user } = response.data;
       
       console.log("QR Login response:", user);
-      
-      // Store user data in localStorage with the same pattern as regular login
+        // Store user data in localStorage with the same pattern as regular login
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userRole", user.role);
       localStorage.setItem("userEmail", user.email);
+      localStorage.setItem("userId", user.id); // Store user ID for all users
+      
+      // Store doctor-specific information for session tracking
+      if (user.role === "doctor") {
+        localStorage.setItem("doctorId", user.id);
+        localStorage.setItem("doctorName", user.name || `${user.firstName} ${user.lastName || ""}`.trim());
+      }
       
       // Store name data consistently
       if (user.firstName) {
@@ -301,10 +292,11 @@ const AuthPage = () => {
         console.log('[AuthPage] Attempting to add patient via QR to check-up list:', patientData); // Added console.log
         addPatientToCheckUpList(patientData);
       }
-      
-      // Redirect based on role
+        // Redirect based on role
       if (user.role === "admin") {
         navigate("/admin/dashboard");
+      } else if (user.role === "doctor") {
+        navigate("/doctor/dashboard");
       } else {
         navigate("/dashboard");
       }
@@ -904,21 +896,38 @@ const AuthPage = () => {
                     />
                   </Form.Group>
                 </Col>
-              </Row>
-   
-              <Row className="mb-3 align-items-center">
+              </Row>              <Row className="mb-3 align-items-center">
                 <Col md={4} className="d-flex align-items-center gap-4">                  <Form.Group controlId="membershipStatus" className="mb-0">
-                    <Form.Select 
-                      name="membershipStatus" 
-                      value={formData.membershipStatus} 
-                      onChange={handleChange}
-                      className="mb-2"
-                    >
-                      <option value="">Select Membership Status</option>
-                      <option value="Member">Member</option>
-                      <option value="Non-Member">Non-Member</option>
-                      <option value="Dependent">Dependent</option>
-                    </Form.Select>
+                    <Form.Label className="mb-2 fw-bold">Membership Status:</Form.Label>
+                    <div className="d-flex gap-3 mb-2">
+                      <Form.Check
+                        type="radio"
+                        id="member"
+                        name="membershipStatus"
+                        value="Member"
+                        label="Member"
+                        checked={formData.membershipStatus === "Member"}
+                        onChange={handleChange}
+                      />
+                      <Form.Check
+                        type="radio"
+                        id="non-member"
+                        name="membershipStatus"
+                        value="Non-Member"
+                        label="Non-Member"
+                        checked={formData.membershipStatus === "Non-Member"}
+                        onChange={handleChange}
+                      />
+                      <Form.Check
+                        type="radio"
+                        id="dependent"
+                        name="membershipStatus"
+                        value="Dependent"
+                        label="Dependent"
+                        checked={formData.membershipStatus === "Dependent"}
+                        onChange={handleChange}
+                      />
+                    </div>
                   </Form.Group>
                   <Form.Group controlId="philHealthNumber" className="mb-0 flex-grow-1">
                     <Form.Control

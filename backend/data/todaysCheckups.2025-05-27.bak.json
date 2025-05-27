@@ -1,0 +1,13 @@
+[
+  {
+    "id": "appointment_1747880264335",
+    "appointmentId": 1747880264335,
+    "name": "Orion Zimmerman",
+    "familyName": "Zimmerman",
+    "purpose": "Not Specified",
+    "scheduledTime": "09:00",
+    "loggedInAt": "2025-05-26T18:15:28.860Z",
+    "queueNumber": 1,
+    "status": "Waiting"
+  }
+]

@@ -14,12 +14,15 @@ export const DateTimeProvider = ({ children }) => {
     }
     setSimulatedDate(date);
   };
-  
-  // Function to get current date (simulated or real)
+    // Function to get current date (simulated or real)
   const getCurrentDate = () => {
     return simulatedDate || new Date();
   };
-  
+
+  // Function to check if current time is simulated
+  const isCurrentTimeSimulated = () => {
+    return simulatedDate !== null;
+  };
   // Load simulated date from localStorage on mount
   useEffect(() => {
     const savedDate = localStorage.getItem('simulatedDate');
@@ -27,14 +30,19 @@ export const DateTimeProvider = ({ children }) => {
       setSimulatedDate(new Date(savedDate));
     }
   }, []);
-  
   return (
     <DateTimeContext.Provider value={{ 
       simulatedDate, 
       setSimulationDate, 
       getCurrentDate,
-      isSimulated: simulatedDate !== null
+      isSimulated: simulatedDate !== null,
+      isCurrentTimeSimulated
     }}>
+      <div 
+        data-is-simulated={simulatedDate !== null} 
+        data-simulated-date={simulatedDate ? simulatedDate.toISOString() : null} 
+        style={{display: 'none'}} 
+      />
       {children}
     </DateTimeContext.Provider>
   );

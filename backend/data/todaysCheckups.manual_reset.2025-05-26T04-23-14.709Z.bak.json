@@ -1,0 +1,98 @@
+[
+  {
+    "id": "appointment_1747880264335",
+    "appointmentId": 1747880264335,
+    "name": "Orion Zimmerman",
+    "familyName": "Zimmerman",
+    "purpose": "Vaccination",
+    "scheduledTime": "09:00",
+    "loggedInAt": "2025-05-26T01:05:03.437Z",
+    "queueNumber": 1,
+    "status": "In Session",
+    "vitalSigns": {
+      "date": "2025-05-26",
+      "age": "30",
+      "cc": "N/A",
+      "temp": "35",
+      "o2sat": "80",
+      "pulse": "40",
+      "ht": "160",
+      "respiration": "",
+      "wt": "80",
+      "bp": "120/80",
+      "patientId": null,
+      "patientName": "Orion Zimmerman",
+      "checkupId": "appointment_1747880264335",
+      "recordedAt": "2025-05-26T03:40:20.937Z"
+    },
+    "vitalSignsChecked": true,
+    "vaccination": {
+      "date": "2025-05-26",
+      "name": "COVID-19 mRNA Vaccine (Pfizer)",
+      "notes": "N/A",
+      "patientId": null,
+      "patientName": "Orion Zimmerman",
+      "checkupId": "appointment_1747880264335",
+      "recordedAt": "2025-05-26T03:41:02.919Z"
+    },
+    "vaccinationCompleted": true
+  },
+  {
+    "id": 27,
+    "firstName": "Sample",
+    "lastName": "Alosa",
+    "email": null,
+    "phoneNumber": "09516277103",
+    "membershipStatus": "Non-Member",
+    "dateOfBirth": "2002-05-08T16:00:00.000Z",
+    "gender": "Male",
+    "philHealthNumber": "",
+    "address": {
+      "houseNo": "12",
+      "street": "Shaw Boulevard",
+      "barangay": "Oranbo",
+      "city": "Pasig",
+      "region": "Metro Manila"
+    },
+    "name": "Sample Alosa",
+    "loggedInAt": "2025-05-26T03:34:56.736Z",
+    "queueNumber": 2,
+    "status": "Waiting",
+    "purpose": "Vaccination",
+    "vitalSigns": {
+      "date": "2025-05-26",
+      "age": "23",
+      "cc": "N/A",
+      "temp": "36",
+      "o2sat": "80",
+      "pulse": "40",
+      "ht": "160",
+      "respiration": "40",
+      "wt": "60",
+      "bp": "120/80",
+      "patientId": 27,
+      "patientName": "Sample Alosa",
+      "checkupId": 27,
+      "recordedAt": "2025-05-26T03:43:28.249Z"
+    },
+    "vitalSignsChecked": true,
+    "vaccination": {
+      "date": "2025-05-26",
+      "name": "Human Papillomavirus (HPV) Vaccine",
+      "notes": "n/a",
+      "patientId": 27,
+      "patientName": "Sample Alosa",
+      "checkupId": 27,
+      "recordedAt": "2025-05-26T03:43:41.847Z"
+    },
+    "vaccinationCompleted": true
+  },
+  {
+    "id": 6,
+    "name": "Janus Kusakabe",
+    "loggedInAt": "2025-05-26T03:35:31.224Z",
+    "queueNumber": 3,
+    "status": "Waiting",
+    "purpose": "Not Specified"
+  }
+]

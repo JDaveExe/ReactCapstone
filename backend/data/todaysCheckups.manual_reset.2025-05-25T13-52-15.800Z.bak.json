@@ -1,0 +1,18 @@
+[
+  {
+    "id": 25,
+    "name": "Dr. James Wiseman",
+    "loggedInAt": "2025-05-25T11:47:59.752Z",
+    "queueNumber": 1,
+    "status": "Waiting",
+    "purpose": "Not Specified"
+  },
+  {
+    "id": 24,
+    "name": "John Joestar",
+    "loggedInAt": "2025-05-25T11:49:52.766Z",
+    "queueNumber": 2,
+    "status": "Waiting",
+    "purpose": "Not Specified"
+  }
+]

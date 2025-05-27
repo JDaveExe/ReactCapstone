@@ -32,13 +32,17 @@ import DocDashboard from "./components/DoctorDashboard";
 import AdminDashboard from "./components/AdminDashboard";
 import { CheckUpProvider } from './contexts/CheckUpContext'; // Import the provider
 import { DateTimeProvider } from './contexts/DateTimeContext'; // Import the date/time provider
+import { CheckupAnalyticsProvider } from './contexts/CheckupAnalyticsContext'; // Import the checkup analytics provider
+import { MedicalAnalyticsProvider } from './contexts/MedicalAnalyticsContext'; // Import the medical analytics provider
  
 function App() {
   // Sidebar logic can be handled in each component if needed
-  return (
+    return (
     <DateTimeProvider>
       <CheckUpProvider>
-      <Routes>
+        <CheckupAnalyticsProvider>
+          <MedicalAnalyticsProvider>
+            <Routes>
         {/* Public/User Routes */}
         <Route path="/home" element={<Homepage />} /> 
         <Route path="/" element={<Navigate to="/home" />} /> {/* Redirect root to /home */}
@@ -127,13 +131,13 @@ function App() {
               </div>
             </div>
           </div>
-        } />
-        {/* Fallback route */}
+        } />        {/* Fallback route */}
         <Route path="*" element={<Navigate to="/home" />} /> {/* Ensure fallback goes to /home */}
-      </Routes>
+            </Routes>
+          </MedicalAnalyticsProvider>
+        </CheckupAnalyticsProvider>
       </CheckUpProvider>
-    </DateTimeProvider>
-  );
+    </DateTimeProvider>  );
 }
  
 export default App;

@@ -1,0 +1,42 @@
+[
+  {
+    "id": 8,
+    "firstName": "Damian",
+    "lastName": "Alosa",
+    "email": null,
+    "phoneNumber": "09786019230",
+    "membershipStatus": "Non-Member",
+    "dateOfBirth": "2004-05-18T16:00:00.000Z",
+    "gender": "Male",
+    "philHealthNumber": null,
+    "address": {
+      "houseNo": "72",
+      "street": "San Guillermo Street",
+      "barangay": "Pineda",
+      "city": "Pasig",
+      "region": "Metro Manila"
+    },
+    "name": "Damian Alosa",
+    "loggedInAt": "2025-05-25T18:14:05.665Z",
+    "queueNumber": 1,
+    "status": "Waiting",
+    "purpose": "Not Specified",
+    "vitalSigns": {
+      "date": "2025-05-25",
+      "age": "21",
+      "cc": "Backpain",
+      "temp": "38.2",
+      "o2sat": "90",
+      "pulse": "50",
+      "ht": "170",
+      "respiration": "40",
+      "wt": "100",
+      "bp": "120/80",
+      "patientId": 8,
+      "patientName": "Damian Alosa",
+      "checkupId": 8,
+      "recordedAt": "2025-05-25T18:16:25.962Z"
+    },
+    "vitalSignsChecked": true
+  }
+]

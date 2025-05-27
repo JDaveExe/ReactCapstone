@@ -22,8 +22,7 @@ db.connect((err) => {
     console.error('2. Are credentials correct?');
     console.error('3. Does database "project1" exist?');
     return;
-  }
-  console.log('✓ MySQL Connected');
+  }  console.log('✓ MySQL Connected');
   
   // Once connected, verify that the users table exists
   db.query(`
@@ -36,6 +35,7 @@ db.connect((err) => {
       email VARCHAR(100) NULL UNIQUE,
       phoneNumber VARCHAR(20),
       password VARCHAR(255) NOT NULL,
+      role ENUM('patient', 'doctor', 'admin') DEFAULT 'patient',
       houseNo VARCHAR(50),
       street VARCHAR(100),
       barangay VARCHAR(100),
@@ -127,8 +127,17 @@ const createDefaultAdmin = () => {
     lastName: 'User',
     email: 'admin@example.com',
     password: 'adminpassword', // In production, use a hashed password
-    membershipStatus: 'admin'
+    role: 'admin'
   };
+
+  // Also add the role column if it doesn't exist (for existing databases)
+  db.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS role ENUM("patient", "doctor", "admin") DEFAULT "patient"', (err) => {
+    if (err && !err.message.includes('Duplicate column name')) {
+      console.error('Error adding role column:', err);
+    } else {
+      console.log('✓ Role column ready');
+    }
+  });
 
   db.query('SELECT id FROM users WHERE email = ?', [adminUser.email], (err, results) => {
     if (err) {
@@ -139,8 +148,8 @@ const createDefaultAdmin = () => {
     if (results.length === 0) {
       // Admin doesn't exist, create it
       db.query(
-        'INSERT INTO users (firstName, lastName, email, password, membershipStatus) VALUES (?, ?, ?, ?, ?)',
-        [adminUser.firstName, adminUser.lastName, adminUser.email, adminUser.password, adminUser.membershipStatus],
+        'INSERT INTO users (firstName, lastName, email, password, role) VALUES (?, ?, ?, ?, ?)',
+        [adminUser.firstName, adminUser.lastName, adminUser.email, adminUser.password, adminUser.role],
         (err, result) => {
           if (err) {
             console.error('Error creating admin user:', err);

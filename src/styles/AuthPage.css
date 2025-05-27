@@ -493,3 +493,57 @@
   min-width: 120px;
   text-align: center;
 }
+
+/* Form check radio button styling for membership status */
+.form-check-input {
+  background-color: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 50%;
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.form-check-input:checked {
+  background-color: #007bff !important;
+  border-color: #007bff !important;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-check-input:focus {
+  border-color: #007bff;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-check-input:hover {
+  border-color: #007bff;
+}
+
+.form-check-label {
+  color: #333 !important;
+  font-weight: 500;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.form-check {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+/* Ensure radio buttons are properly visible and styled */
+.form-check-input[type="radio"] {
+  background-image: none;
+  position: relative;
+}
+
+.form-check-input[type="radio"]:checked {
+  background-image: radial-gradient(circle, #fff 25%, transparent 25%);
+  background-size: 0.5rem 0.5rem;
+  background-position: center;
+  background-repeat: no-repeat;
+}
